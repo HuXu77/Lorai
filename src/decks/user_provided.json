@@ -1,0 +1,77 @@
+{
+    "name": "User Provided Deck",
+    "cards": [
+        {
+            "name": "Under The Sea",
+            "count": 2
+        },
+        {
+            "name": "Daisy Duck - Donald's Date",
+            "count": 4
+        },
+        {
+            "name": "Merryweather - Good Fairy",
+            "count": 1
+        },
+        {
+            "name": "Clarabelle - Contented Wallflower",
+            "count": 3
+        },
+        {
+            "name": "Emerald Chromicon",
+            "count": 3
+        },
+        {
+            "name": "Go Go Tomago - Darting Dynamo",
+            "count": 4
+        },
+        {
+            "name": "Prince Phillip - Royal Explorer",
+            "count": 2
+        },
+        {
+            "name": "Lilo - Escape Artist",
+            "count": 4
+        },
+        {
+            "name": "Lady - Elegant Spaniel",
+            "count": 4
+        },
+        {
+            "name": "Tramp - Enterprising Dog",
+            "count": 4
+        },
+        {
+            "name": "Lady - Miss Park Avenue",
+            "count": 4
+        },
+        {
+            "name": "Tramp - Street-Smart Dog",
+            "count": 4
+        },
+        {
+            "name": "Lady - Decisive Dog",
+            "count": 4
+        },
+        {
+            "name": "Lady - Family Dog",
+            "count": 2
+        },
+        {
+            "name": "Bobby Zimuruski - Spray Cheese Kid",
+            "count": 4
+        },
+        {
+            "name": "Ursula - Deceiver",
+            "count": 3
+        },
+        {
+            "name": "Webby Vanderquack - Mystery Enthusiast",
+            "count": 4
+        },
+        {
+            "name": "Mowgli - Man Cub",
+            "count": 4
+        }
+    ]
+}

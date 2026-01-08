@@ -1,0 +1,21 @@
+node_modules
+dist
+test-outputs/
+*.txt
+.DS_Store
+coverage
+.env
+src/tests/generated-all/
+
+# Debug files and logs
+.next/
+.vercel/
+debug*.ts
+debug*.js
+debug*.log
+*_debug.log
+test_output*.log
+parser_failures.log
+parser_output.log
+debug_output/
+DEBUG
