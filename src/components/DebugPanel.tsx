@@ -9,7 +9,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { CardPickerModal } from './CardPickerModal';
-import { StateManipulator, DEBUG_PRESETS, getCategories, DebugPreset } from '../debug';
+import { StateManipulator, DEBUG_PRESETS, getCategories, DebugPreset } from '../devtools';
 import { TurnManager } from '../engine/actions';
 import { GameStateManager } from '../engine/state';
 import { GameState, ZoneType, CardInstance } from '../engine/models';
@@ -195,8 +195,8 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                         <button
                                             onClick={() => setTargetPlayer('player1')}
                                             className={`flex-1 py-2 text-sm rounded ${targetPlayer === 'player1'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                                 }`}
                                         >
                                             You (P1)
@@ -204,8 +204,8 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                         <button
                                             onClick={() => setTargetPlayer('player2')}
                                             className={`flex-1 py-2 text-sm rounded ${targetPlayer === 'player2'
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                ? 'bg-red-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                                 }`}
                                         >
                                             Bot (P2)
@@ -222,8 +222,8 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                                 key={zone}
                                                 onClick={() => setTargetZone(zone)}
                                                 className={`py-2 text-sm rounded capitalize ${targetZone === zone
-                                                        ? 'bg-yellow-600 text-white'
-                                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                    ? 'bg-yellow-600 text-white'
+                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                                     }`}
                                             >
                                                 {zone} ({getZoneCount(targetPlayer, zone)})
@@ -330,8 +330,8 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                                 refreshState();
                                             }}
                                             className={`flex-1 py-2 text-sm rounded ${engineState.turnPlayerId === 'player1'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                                 }`}
                                         >
                                             Your Turn
@@ -342,8 +342,8 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                                 refreshState();
                                             }}
                                             className={`flex-1 py-2 text-sm rounded ${engineState.turnPlayerId === 'player2'
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                ? 'bg-red-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                                 }`}
                                         >
                                             Bot's Turn
