@@ -9,7 +9,7 @@ import { CardInstance, ZoneType, CardType } from '../engine/models';
 import { TurnManager } from '../engine/actions';
 import { GameStateManager, PlayerState } from '../engine/state';
 import { parseToAbilityDefinition } from '../engine/ability-parser';
-import { DebugPreset, CardSetup } from './DebugPresets';
+import { DebugPreset, CardSetup } from './presets';
 
 // Import card database
 const allCards = require('../../allCards.json');
