@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CardInstance, ZoneType } from '../engine/models';
 import { getCardImagePath } from '../utils/card-images';
 import StatModificationBadge from './StatModificationBadge';
+import AbilityBadge from './AbilityBadge';
 
 interface CardProps {
     card: CardInstance;
@@ -124,31 +125,27 @@ export default function Card({
                     {/* Temporary Keyword Indicators */}
                     {((card.meta?.temporaryKeywords?.length ?? 0) > 0 || (card.meta?.resist || 0) > 0) && (
                         <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                            {card.meta?.temporaryKeywords?.includes('Evasive') && (
-                                <div className="bg-purple-600 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg border border-purple-400 flex items-center gap-1">
-                                    <span>🌊</span>
-                                    <span>Evasive</span>
-                                </div>
-                            )}
-                            {card.meta?.temporaryKeywords?.includes('Ward') && (
-                                <div className="bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg border border-blue-400 flex items-center gap-1">
-                                    <span>🛡️</span>
-                                    <span>Ward</span>
-                                </div>
-                            )}
-                            {card.meta?.temporaryKeywords?.includes('Bodyguard') && (
-                                <div className="bg-orange-600 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg border border-orange-400 flex items-center gap-1">
-                                    <span>🛡️</span>
-                                    <span>Bodyguard</span>
-                                </div>
-                            )}
-                            {/* Resist Indicator */}
+                            {/* Render numeric Resist first if present */}
                             {(card.meta?.resist || 0) > 0 && (
-                                <div className="bg-slate-600 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg border border-slate-400 flex items-center gap-1">
-                                    <span>🛡️</span>
-                                    <span>Resist +{card.meta?.resist}</span>
-                                </div>
+                                <AbilityBadge keyword="resist" value={card.meta?.resist} />
                             )}
+
+                            {/* Render other temporary keywords */}
+                            {card.meta?.temporaryKeywords
+                                ?.filter((k: string) => k !== 'Singer' && k !== 'Resist') // Resist handled above, Singer excluded
+                                .map((keyword: string) => {
+                                    // Parse keyword string matching AbilityBadge types (lowercase)
+                                    const lower = keyword.toLowerCase();
+                                    // Map string to valid KeywordType if possible. 
+                                    // AbilityBadge checks config, safely returns null if invalid.
+                                    return (
+                                        <AbilityBadge
+                                            key={keyword}
+                                            keyword={lower as any}
+                                        />
+                                    );
+                                })
+                            }
                         </div>
                     )}
 
