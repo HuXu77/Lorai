@@ -11,4 +11,4 @@ export {
     type DebugPreset,
     type PlayerSetup,
     type CardSetup
-} from './DebugPresets';
+} from './presets';
