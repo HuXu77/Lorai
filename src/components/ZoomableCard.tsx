@@ -14,12 +14,15 @@ export const CARD_SIZES = {
     md: 'w-28 h-40',        // 112x160px - medium (hand cards)
     lg: 'w-32 h-44',        // 128x176px - large (modals, selection)
     xl: 'w-40 h-56',        // 160x224px - extra large
-    zoom: 'w-60 h-[336px]', // 240x336px - fixed hover zoom size
+    zoom: 'w-60 h-[336px]', // 240x336px - fixed hover zoom size (portrait)
+    zoomLandscape: 'w-[336px] h-60', // 336x240px - fixed hover zoom size (landscape for Locations)
 } as const;
 
 // Zoom dimensions in pixels for calculations
 const ZOOM_WIDTH = 240;
 const ZOOM_HEIGHT = 336;
+const ZOOM_WIDTH_LANDSCAPE = 336;
+const ZOOM_HEIGHT_LANDSCAPE = 240;
 const VIEWPORT_PADDING = 16; // Minimum distance from viewport edge
 
 export type CardSize = keyof typeof CARD_SIZES;
@@ -91,6 +94,9 @@ export default function ZoomableCard({
         setCardRect(null);
     };
 
+    // Check if this is a Location card (landscape orientation)
+    const isLocation = card.type === 'Location';
+
     // Calculate smart position that keeps zoom within viewport
     const getZoomPosition = () => {
         if (!cardRect) return { left: 0, top: 0 };
@@ -102,9 +108,11 @@ export default function ZoomableCard({
         let left = cardRect.left + cardRect.width / 2;
         let top = cardRect.top + cardRect.height / 2;
 
-        // Calculate zoom box boundaries if centered
-        const halfWidth = ZOOM_WIDTH / 2;
-        const halfHeight = ZOOM_HEIGHT / 2;
+        // Calculate zoom box boundaries if centered - use landscape dimensions for Locations
+        const zoomW = isLocation ? ZOOM_WIDTH_LANDSCAPE : ZOOM_WIDTH;
+        const zoomH = isLocation ? ZOOM_HEIGHT_LANDSCAPE : ZOOM_HEIGHT;
+        const halfWidth = zoomW / 2;
+        const halfHeight = zoomH / 2;
 
         // Clamp horizontal position
         if (left - halfWidth < VIEWPORT_PADDING) {
@@ -215,7 +223,7 @@ export default function ZoomableCard({
                     }}
                 >
                     {/* Always use fixed ZOOM size for the enlarged view */}
-                    <div className={`${CARD_SIZES.zoom} rounded-lg overflow-hidden shadow-2xl relative ring-2 ring-white/20`}>
+                    <div className={`${isLocation ? CARD_SIZES.zoomLandscape : CARD_SIZES.zoom} rounded-lg overflow-hidden shadow-2xl relative ring-2 ring-white/20`}>
                         <Card
                             card={card}
                             disableHoverZoom={true}
