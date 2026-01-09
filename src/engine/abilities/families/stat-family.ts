@@ -30,12 +30,7 @@ export class StatFamilyHandler extends BaseFamilyHandler {
         this.executor = executor;
     }
 
-    protected async resolveTargets(target: any, context: GameContext): Promise<any[]> {
-        if (this.executor?.resolveTargets) {
-            return this.executor.resolveTargets(target, context);
-        }
-        return super.resolveTargets(target, context);
-    }
+
 
     setTurnManager(turnManager: any): void {
         this.turnManager = turnManager;

@@ -3,6 +3,8 @@ import { matchesCardFilter } from '../filters';
 import type { GameContext } from '../executor';
 import type { EffectAST, TargetAST } from '../effect-ast';
 import type { ChoiceOption } from '../../models';
+import type { ChoiceRequest } from '../../models';
+import { ChoiceType } from '../../models';
 import { GameEvent } from '../events';
 
 export class ChoiceFamilyHandler extends BaseFamilyHandler {
@@ -537,19 +539,29 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
             }));
 
             if (this.turnManager.requestChoice) {
-                const choiceRequest = {
-                    id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    type: 'target_card_in_hand' as any,
-                    playerId: context.player.id,
-                    prompt: `Choose a card from opponent's hand to discard`,
-                    options: discardOptions,
+                // Map ALL cards to options, but mark non-matching ones as invalid
+                const options = opponent.hand.map((card: any) => ({
+                    id: card.instanceId,
+                    display: card.name, // Client should show full card details
+                    valid: finalEligible.some((c: any) => c.instanceId === card.instanceId),
+                    // Pass extra data so UI knows why it's invalid if needed, or just relying on valid flag
+                    // We can also pass 'card' object in a real implementation if the UI supports it, 
+                    // but for now we rely on the ID matching the card availability in the UI's view of the hand.
+                }));
+
+                const choiceRequest: ChoiceRequest = {
+                    id: `choice_discard_${Date.now()}`,
+                    type: ChoiceType.TARGET_CARD_IN_HAND,
+                    playerId: context.player.id, // The player ("you") chooses
+                    prompt: `Choose a card from ${opponent.name}'s hand to discard`,
+                    options: options, // Show all cards
                     source: {
                         card: context.card,
                         abilityName: context.abilityName || 'Reveal and Discard',
                         player: context.player
                     },
                     context: {
-                        revealedCards: finalEligible,
+                        revealedCards: opponent.hand, // Reveal ALL cards
                         opponentHand: opponent.hand
                     },
                     min: 1,
@@ -560,7 +572,9 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 const response = await this.turnManager.requestChoice(choiceRequest);
                 if (response.selectedIds && response.selectedIds.length > 0) {
                     const toDiscard = opponent.hand.find((c: any) => c.instanceId === response.selectedIds[0]);
-                    if (toDiscard) {
+
+                    // Validate selection again just in case (though UI should prevent it)
+                    if (toDiscard && finalEligible.some((c: any) => c.instanceId === toDiscard.instanceId)) {
                         opponent.hand = opponent.hand.filter((c: any) => c.instanceId !== toDiscard.instanceId);
                         toDiscard.zone = 'discard';
                         opponent.discard.push(toDiscard);
@@ -574,17 +588,22 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                                 source: context.card
                             });
                         }
+                    } else if (toDiscard) {
+                        this.turnManager?.logger.warn(`Player attempted to discard invalid target ${toDiscard.name}`);
                     }
                 }
             } else {
-                const toDiscard = finalEligible[Math.floor(Math.random() * finalEligible.length)];
-                opponent.hand = opponent.hand.filter((c: any) => c !== toDiscard);
-                toDiscard.zone = 'discard';
-                opponent.discard.push(toDiscard);
+                // Fallback for AI/No-UI: randomly pick a VALID card
+                if (finalEligible.length > 0) {
+                    const toDiscard = finalEligible[Math.floor(Math.random() * finalEligible.length)];
+                    opponent.hand = opponent.hand.filter((c: any) => c !== toDiscard);
+                    toDiscard.zone = 'discard';
+                    opponent.discard.push(toDiscard);
 
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${opponent.name} discards ${toDiscard.name} (random fallback)`);
-                    this.turnManager.trackZoneChange(toDiscard, 'hand', 'discard');
+                    if (this.turnManager) {
+                        this.turnManager.logger.info(`${opponent.name} discards ${toDiscard.name} (random fallback)`);
+                        this.turnManager.trackZoneChange(toDiscard, 'hand', 'discard');
+                    }
                 }
             }
         } else {

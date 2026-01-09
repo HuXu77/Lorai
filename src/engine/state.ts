@@ -17,6 +17,7 @@ export class PlayerState implements Player {
     id: string;
     name: string;
     lore: number = 0;
+    loreGoal: number = 20;
     deck: CardInstance[] = [];
     hand: CardInstance[] = [];
     play: CardInstance[] = [];

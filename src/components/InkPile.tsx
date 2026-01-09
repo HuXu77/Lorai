@@ -25,12 +25,12 @@ export default function InkPile({ cards, label = 'Ink' }: InkPileProps) {
             </div>
 
             {/* Visual Ink Dots */}
-            <div className="flex flex-wrap justify-center gap-1 max-w-[100px] mx-auto">
-                {/* Available ink (bright) */}
+            <div className="flex flex-wrap justify-center gap-1.5 px-2">
+                {/* Available ink (glowing) */}
                 {Array.from({ length: availableInk }).map((_, i) => (
                     <div
                         key={`available-${i}`}
-                        className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/30 border border-blue-300"
+                        className="w-4 h-4 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[0_0_8px_rgba(56,189,248,0.6)] border border-cyan-300 transform hover:scale-110 transition-transform"
                         title="Available ink"
                     />
                 ))}
@@ -38,25 +38,11 @@ export default function InkPile({ cards, label = 'Ink' }: InkPileProps) {
                 {Array.from({ length: usedInk }).map((_, i) => (
                     <div
                         key={`used-${i}`}
-                        className="w-3 h-3 rounded-full bg-gray-600 opacity-50 border border-gray-500"
+                        className="w-4 h-4 rounded-full bg-slate-800 border border-slate-600 shadow-inner"
                         title="Used ink"
                     />
                 ))}
             </div>
-
-            {/* Card Stack Visual (smaller) */}
-            {totalInk > 0 && (
-                <div className="relative w-16 h-20 mx-auto mt-3">
-                    <div className="absolute top-0 left-0 w-full h-full rounded transform translate-x-0.5 translate-y-0.5 bg-purple-900 opacity-40"></div>
-                    <div className="absolute top-0 left-0 w-full h-full rounded-lg overflow-hidden border-2 border-purple-500 shadow-lg">
-                        <img
-                            src="/images/card-back.png"
-                            alt="Ink pile"
-                            className="w-full h-full object-cover opacity-80"
-                        />
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

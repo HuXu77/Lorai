@@ -206,6 +206,7 @@ export interface Player {
     id: string;
     name: string;
     lore: number;
+    loreGoal: number;
     deck: CardInstance[];
     hand: CardInstance[];
     play: CardInstance[];
@@ -215,6 +216,7 @@ export interface Player {
     restrictions?: ContinuousEffect[]; // Active restrictions (e.g. can't play actions)
     inkedThisTurn: boolean;
 }
+
 
 export interface CostReduction {
     amount: number;

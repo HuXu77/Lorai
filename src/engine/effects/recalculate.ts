@@ -26,6 +26,7 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
 
     // PASS 1: Reset stats and keywords for ALL cards
     players.forEach(player => {
+        player.loreGoal = 20;
         player.play.forEach(card => {
             // Reset stats to base
             if (card.baseStrength !== undefined) {
@@ -124,6 +125,21 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
             // (Base stats are already reset)
             if (card.parsedEffects) {
                 card.parsedEffects.forEach((effect: any) => {
+                    // Win Condition Modification (Donald Duck - Flustered Sorcerer)
+                    // Placed here because type is 'modify_win_condition', not 'static'
+                    if (effect.type === 'modify_win_condition' && effect.loreRequired) {
+                        const loreRequired = effect.loreRequired;
+                        // Apply to opponents
+                        Object.values(turnManager.game.state.players).forEach(p => {
+                            if (p.id !== player.id) {
+                                if (p.loreGoal < loreRequired) {
+                                    p.loreGoal = loreRequired;
+                                    turnManager.logger.debug(`[Recalc] ${p.name}'s lore goal set to ${loreRequired} by ${card.name}`);
+                                }
+                            }
+                        });
+                    }
+
                     if (effect.type === 'static') {
 
                         // Apply Simple Stat Buffs (Simba etc)
@@ -441,6 +457,7 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
                                 else if (statType === 'willpower') card.willpower = (card.willpower || 0) + totalBuff;
                             }
                         }
+
                     }
                 });
             }

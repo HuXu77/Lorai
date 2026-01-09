@@ -1,23 +1,34 @@
+import React, { useRef } from 'react';
+
 interface GameStatePanelProps {
-    playerName: string
-    lore: number
-    deckSize: number
-    isActive: boolean
-    deckRef?: React.RefObject<HTMLDivElement>
+    playerName: string;
+    lore: number;
+    loreGoal: number;
+    deckSize: number;
+    handSize: number;
+    isActive: boolean;
+    hasPriority: boolean;
 }
 
-export default function GameStatePanel({
+export const GameStatePanel: React.FC<GameStatePanelProps> = ({
     playerName,
     lore,
+    loreGoal,
     deckSize,
+    handSize,
     isActive,
-    deckRef
-}: GameStatePanelProps) {
+    hasPriority
+}) => {
+    const deckRef = useRef<HTMLDivElement>(null);
+
     return (
         <div className={`
-      p-4 rounded-lg border-2
-      ${isActive ? 'border-yellow-400 bg-yellow-900 bg-opacity-20' : 'border-gray-700 bg-gray-900 bg-opacity-40'}
-    `}>
+            rounded-xl p-4 transition-all duration-300 backdrop-blur-md border border-white/10 relative overflow-hidden group
+            ${isActive
+                ? 'bg-gradient-to-br from-indigo-900/90 to-purple-900/90 shadow-[0_0_25px_rgba(99,102,241,0.3)] border-indigo-400/30'
+                : 'bg-black/60 hover:bg-black/70'
+            }
+        `}>
             {/* Player Name */}
             <div className="flex items-center justify-between mb-3">
                 <h3 className={`font-bold text-lg ${isActive ? 'text-yellow-300' : 'text-white'}`}>
@@ -27,27 +38,27 @@ export default function GameStatePanel({
             </div>
 
             {/* Lore Progress */}
-            <div className="mb-3">
-                <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-300">Lore</span>
-                    <span className="text-yellow-300 font bold">{lore} / 20</span>
+            <div className="mb-4">
+                <div className="flex justify-between items-end mb-2">
+                    <span className="text-gray-400 text-sm uppercase tracking-wider font-semibold">Lore</span>
+                    <span className="text-yellow-400 font-extrabold text-4xl drop-shadow-md">{lore} <span className="text-lg text-yellow-600 font-normal">/ {loreGoal}</span></span>
                 </div>
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-3 bg-gray-800 rounded-full overflow-hidden border border-gray-700 shadow-inner">
                     <div
-                        className="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-500"
-                        style={{ width: `${(lore / 20) * 100}%` }}
+                        className="h-full bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-200 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(250,204,21,0.5)]"
+                        style={{ width: `${Math.min((lore / loreGoal) * 100, 100)}%` }}
                     />
                 </div>
             </div>
 
             {/* Stats */}
-            <div className="flex justify-center">
+            <div className="flex justify-end">
                 <div
                     ref={deckRef}
-                    className="bg-gray-800 p-3 rounded w-24 relative"
+                    className="flex items-center gap-2 text-gray-300 opacity-80 hover:opacity-100 transition-opacity"
                 >
-                    <div className="text-gray-400 text-xs text-center">Deck</div>
-                    <div className="text-white font-bold text-2xl text-center">{deckSize}</div>
+                    <div className="text-xs uppercase tracking-wide">Deck</div>
+                    <div className="font-mono font-bold text-sm">{deckSize}</div>
                 </div>
             </div>
         </div>

@@ -546,7 +546,7 @@ export class TurnManager {
      * Checks if a player has met the victory condition (>= 20 Lore)
      */
     public checkWinCondition(player: PlayerState): boolean {
-        if (player.lore >= 20) {
+        if (player.lore >= player.loreGoal) {
             this.logger.info(`[${player.name}] WINS THE GAME!`);
             this.game.state.winnerId = player.id;
             return true;

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Card from '../../components/Card'
 import PlayerHand from '../../components/PlayerHand'
 import PlayArea from '../../components/PlayArea'
-import GameStatePanel from '../../components/GameStatePanel'
+import { GameStatePanel } from '../../components/GameStatePanel'
 import InkPile from '../../components/InkPile'
 import DiscardPile from '../../components/DiscardPile'
 import DiscardPileModal from '../../components/DiscardPileModal'
@@ -1269,10 +1269,13 @@ function GamePageInner() {
                 {/* Left Sidebar - Opponent Stats & Ink */}
                 <div className="w-64 p-4 bg-black bg-opacity-20 flex flex-col gap-4 overflow-y-auto">
                     <GameStatePanel
-                        playerName="Bot"
+                        playerName={opponent?.name || 'Bot'}
                         lore={opponent?.lore || 0}
+                        loreGoal={opponent?.loreGoal || 20}
                         deckSize={opponent?.deck.length || 0}
+                        handSize={opponent?.hand.length || 0}
                         isActive={!isYourTurn}
+                        hasPriority={false}
                     />
                     <InkPile cards={opponent?.inkwell || []} label="Opponent Ink" />
                     <DiscardPile
@@ -1372,11 +1375,13 @@ function GamePageInner() {
                 {/* Right Sidebar - Player Stats & Ink */}
                 <div className="w-64 p-4 bg-black bg-opacity-20 flex flex-col gap-4 overflow-y-auto">
                     <GameStatePanel
-                        playerName="You"
+                        playerName={yourPlayer?.name || 'You'}
                         lore={yourPlayer?.lore || 0}
+                        loreGoal={yourPlayer?.loreGoal || 20}
                         deckSize={yourPlayer?.deck.length || 0}
+                        handSize={yourPlayer?.hand.length || 0}
                         isActive={isYourTurn}
-                        deckRef={deckRef as any}
+                        hasPriority={isYourTurn}
                     />
                     <InkPile cards={yourPlayer?.inkwell || []} label="Your Ink" />
                     {/* Active Effects Panel */}
