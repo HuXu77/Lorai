@@ -63,7 +63,7 @@ export default function PlayAreaActionMenu({
     const hasBoostUsedThisTurn = card.meta?.usedAbilities?.boost === currentTurn;
     const canBoost = boostCost !== null && isYourTurn && availableInk >= boostCost && !hasBoostUsedThisTurn && onBoost;
 
-    if (showTargetSelection) {
+    if (showMoveSelection) {
         return (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
                 onClick={() => setShowMoveSelection(false)}
@@ -108,6 +108,54 @@ export default function PlayAreaActionMenu({
 
                     <button
                         onClick={() => setShowMoveSelection(false)}
+                        className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Challenge Target Selection Modal
+    if (showTargetSelection) {
+        return (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                onClick={() => setShowTargetSelection(false)}
+            >
+                <div
+                    className="bg-slate-900 border border-slate-600 rounded-xl p-6 shadow-2xl max-w-2xl w-full animate-in fade-in zoom-in duration-150"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <h3 className="text-xl font-bold text-white mb-4">
+                        Challenge with {card.name}...
+                    </h3>
+
+                    <div className="flex flex-wrap gap-4 justify-center mb-4">
+                        {challengeTargets.map((target) => (
+                            <div
+                                key={target.instanceId}
+                                className="cursor-pointer transition-transform hover:scale-105 rounded-lg hover:ring-2 hover:ring-red-500"
+                                onClick={() => {
+                                    onChallenge(target.instanceId);
+                                    setShowTargetSelection(false);
+                                }}
+                            >
+                                <ZoomableCard
+                                    card={target}
+                                    size="md"
+                                    zoomTrigger="none"
+                                />
+                                <div className="text-center text-sm mt-1 text-red-400 font-bold">
+                                    {target.strength}⚔️ / {target.willpower}❤️
+                                    {target.damage > 0 && <span className="ml-1 text-orange-400">({target.damage} dmg)</span>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => setShowTargetSelection(false)}
                         className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
                     >
                         Cancel
