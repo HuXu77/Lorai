@@ -229,12 +229,7 @@ function GamePageInner() {
         // Deduct ink
         setAvailableInk(prev => prev - card.cost);
 
-        // Log the play
-        addLogEntry({
-            category: LogCategory.CARD,
-            message: `You played ${card.fullName || card.name} for ${card.cost}◆`,
-            details: { card, cost: card.cost }
-        });
+        // Note: Logging is handled by the engine integration
 
         // TODO: Actually move card to play area when we have mutable state
         console.log('Card played:', card);
@@ -250,11 +245,7 @@ function GamePageInner() {
 
         const success = gameEngine.turnManager.inkCard(player as any, actionMenuCard.instanceId);
         if (success) {
-            addLogEntry({
-                category: LogCategory.CARD,
-                message: `You inked ${actionMenuCard.fullName || actionMenuCard.name}`,
-                details: { card: actionMenuCard }
-            });
+            // Note: Logging is handled by engine
             gameEngine.humanController.updateState(gameEngine.stateManager.state);
         } else {
             addLogEntry({
@@ -274,11 +265,7 @@ function GamePageInner() {
             const player = gameEngine.stateManager.getPlayer(gameEngine.humanController.id);
             gameEngine.turnManager.useAbility(player, playAreaMenuCard.instanceId, abilityIndex);
 
-            addLogEntry({
-                category: LogCategory.ABILITY,
-                message: `Used ability of ${playAreaMenuCard.name}`,
-                details: { card: playAreaMenuCard, abilityIndex }
-            });
+            // Note: Logging is handled by engine
             setEngineState({ ...gameEngine.stateManager.state });
         } catch (error) {
             console.error('Ability use failed:', error);
@@ -303,11 +290,7 @@ function GamePageInner() {
 
         try {
             await gameEngine.turnManager.playCard(player as any, cardToPlay.instanceId);
-            addLogEntry({
-                category: LogCategory.CARD,
-                message: `You played ${cardToPlay.fullName || cardToPlay.name}`,
-                details: { card: cardToPlay, cost: cardToPlay.cost }
-            });
+            // Note: Logging is handled by engine
             gameEngine.humanController.updateState(gameEngine.stateManager.state);
         } catch (error) {
             addLogEntry({
@@ -813,6 +796,34 @@ function GamePageInner() {
 
     const uiPhase = engineState ? phaseToTurnPhase[engineState.phase as Phase] : TurnPhase.MAIN;
     const isYourTurn = engineState && gameEngine ? engineState.turnPlayerId === gameEngine.humanController.id : true;
+
+    // Handle restart match
+    const handleRestart = () => {
+        console.log('[GamePage] Restarting match...');
+
+        // 1. Reset React State
+        setGameEngine(null);
+        setEngineState(null);
+        setGameInitialized(false);
+        setLogEntries([]);
+        setVictoryDismissed(false);
+        setMulliganOpen(false);
+        setAvailableInk(0);
+        setCurrentTurn(1);
+
+        // 2. Reset Refs
+        gameInitializedRef.current = false;
+        botIsActingRef.current = false;
+        lastHandSize.current = 0;
+
+        // 3. Re-open Deck Import (or auto-init if test mode)
+        if (isTestMode) {
+            console.log('[GamePage] Test mode restart - auto-init will trigger via useEffect');
+            // The existing useEffect([isTestMode]) will see gameInitializedRef.current is false and re-run!
+        } else {
+            setDeckImportModalOpen(true);
+        }
+    };
 
     // DEBUG: Log hand state on every render
     if (yourPlayer?.hand) {
@@ -1787,6 +1798,7 @@ function GamePageInner() {
                         setVictoryDismissed(true);
                         console.log('Victory overlay dismissed');
                     }}
+                    onRestart={handleRestart}
                 />
             )}
 

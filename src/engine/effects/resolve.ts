@@ -102,7 +102,8 @@ export async function executeResolveEffect(
                 player.addCardToZone(drawn, ZoneType.Hand);
             }
         }
-        turnManager.logger.effect(player.name, `Drew ${amount} card(s)`);
+        const sourceName = sourceCard ? sourceCard.name : player.name;
+        turnManager.logger.effect(sourceName, `Draw ${amount} card(s)`);
     }
 
     // Optional Draw (You May Draw)
@@ -147,7 +148,9 @@ export async function executeResolveEffect(
     else if (effect.action === 'gain_lore') {
         const amount = effect.amount || 1;
         player.lore += amount;
-        turnManager.logger.effect(player.name, `Gained ${amount} lore`);
+
+        const sourceName = sourceCard ? sourceCard.name : player.name;
+        turnManager.logger.effect(sourceName, `Gained ${amount} lore. Total: ${player.lore}`);
     }
 
     // Ready Character
@@ -278,7 +281,8 @@ export async function executeResolveEffect(
                 }
             }
 
-            turnManager.logger.effect(player.name, `Dealing ${damage} damage to ${target.name}`);
+            const sourceName = sourceCard ? sourceCard.name : player.name;
+            turnManager.logger.effect(sourceName, `Dealt ${damage} damage to ${target.name}`);
             turnManager.applyDamage(turnManager.game.getPlayer(target.ownerId), target, damage, sourceCard?.instanceId);
             turnManager.checkBanishment(turnManager.game.getPlayer(target.ownerId), target, sourceCard);
         }
@@ -319,7 +323,9 @@ export async function executeResolveEffect(
             const amount = effect.amount || 0;
             const actualHeal = Math.min(target.damage, amount);
             target.damage -= actualHeal;
-            turnManager.logger.effect(player.name, `Healed ${target.name} for ${actualHeal}`);
+
+            const sourceName = sourceCard ? sourceCard.name : player.name;
+            turnManager.logger.effect(sourceName, `Healed ${target.name} for ${actualHeal} damage`);
         } else {
             turnManager.logger.debug(`[${player.name}] No target for heal effect.`);
         }
@@ -344,7 +350,9 @@ export async function executeResolveEffect(
                 const opponent = turnManager.game.getPlayer(opponentId);
                 const lost = Math.min(opponent.lore, amount);
                 opponent.lore -= lost;
-                turnManager.logger.effect(opponent.name, `Lost ${lost} lore`);
+
+                const sourceName = sourceCard ? sourceCard.name : player.name;
+                turnManager.logger.effect(sourceName, `${opponent.name} lost ${lost} lore. Remaining: ${opponent.lore}`);
             }
         }
     }
@@ -599,7 +607,8 @@ export async function executeResolveEffect(
                 }
             }
 
-            turnManager.logger.effect(player.name, `Banished ${target.name}`);
+            const sourceName = sourceCard ? sourceCard.name : player.name;
+            turnManager.logger.effect(sourceName, `Banished ${target.name}`);
             banishCard(turnManager, turnManager.game.getPlayer(target.ownerId), target, sourceCard);
         }
     }

@@ -22,13 +22,18 @@ export function executeSetPhase(turnManager: TurnManager, player: PlayerState): 
 
     logger.debug(`[${player.name}] Set Phase.`);
 
-    // Emit TURN_START event
-    abilitySystem.emitEvent(GameEvent.TURN_START, {
-        player,
-        timestamp: Date.now()
+    // NEW: Locations gain lore at start of turn
+    player.play.forEach(card => {
+        if (card.type === 'Location') {
+            // Use card.lore directly as it is the source of truth after recalculateEffects
+            const lore = card.lore || 0;
+            if (lore > 0) {
+                player.lore += lore;
+                logger.action(player.name, `Gained ${lore} lore from location ${card.name}`);
+            }
+        }
     });
 
-    // Check for "At the start of your turn" effects
     player.play.forEach(card => {
         if (card.parsedEffects) {
             card.parsedEffects.forEach((effect, index) => {

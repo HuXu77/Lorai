@@ -132,6 +132,11 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
 
                         // Resolve Nested Effects (e.g. Conditional Buffs)
                         if (effect.effects) {
+                            // Check parent condition (Group Condition - e.g. "While X, gets Y and Z")
+                            if (effect.condition) {
+                                if (!evaluateCondition(player as any, effect.condition, card)) return;
+                            }
+
                             effect.effects.forEach((subEffect: any) => {
                                 if (subEffect.type === 'modify_stats') {
                                     const amount = subEffect.amount;
@@ -188,13 +193,17 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
                                         }
 
                                         // Apply stat modification if matches
-                                        if (matches && targetCard.type === CardType.Character) {
-                                            if (stat === 'strength') {
-                                                targetCard.strength = (targetCard.strength || 0) + amount;
-                                            } else if (stat === 'willpower') {
-                                                targetCard.willpower = (targetCard.willpower || 0) + amount;
-                                            } else if (stat === 'lore') {
-                                                targetCard.lore = (targetCard.lore || 0) + amount;
+                                        if (matches) {
+                                            // Allow Characters and Locations (for Lore/Willpower)
+                                            // Items/Actions don't usually have stats modified this way, but costs are handled elsewhere
+                                            if (targetCard.type === CardType.Character || targetCard.type === CardType.Location) {
+                                                if (stat === 'strength' && targetCard.type === CardType.Character) {
+                                                    targetCard.strength = (targetCard.strength || 0) + amount;
+                                                } else if (stat === 'willpower') {
+                                                    targetCard.willpower = (targetCard.willpower || 0) + amount;
+                                                } else if (stat === 'lore') {
+                                                    targetCard.lore = (targetCard.lore || 0) + amount;
+                                                }
                                             }
                                         }
                                     });
@@ -616,6 +625,11 @@ export function evaluateCondition(player: PlayerState, condition: any, sourceCar
                 });
             }
             return true; // No filter = always true
+
+        // FIXED: Support "While undamaged" condition
+        case 'no_damage':
+            if (!sourceCard) return false;
+            return !sourceCard.damage || sourceCard.damage === 0;
 
         default:
             return false;

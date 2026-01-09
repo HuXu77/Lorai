@@ -6,9 +6,10 @@ interface VictoryOverlayProps {
     winnerId: string;
     currentPlayerId: string;
     onDismiss?: () => void;
+    onRestart?: () => void;
 }
 
-export default function VictoryOverlay({ winnerId, currentPlayerId, onDismiss }: VictoryOverlayProps) {
+export default function VictoryOverlay({ winnerId, currentPlayerId, onDismiss, onRestart }: VictoryOverlayProps) {
     const isWinner = winnerId === currentPlayerId;
     const [showConfetti, setShowConfetti] = useState(false);
 
@@ -61,16 +62,30 @@ export default function VictoryOverlay({ winnerId, currentPlayerId, onDismiss }:
                         {isWinner ? 'Congratulations! You are a Lore Master!' : 'Better luck next time...'}
                     </p>
 
-                    {onDismiss && (
-                        <button
-                            onClick={onDismiss}
-                            className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/30 rounded-lg 
-                                     text-white font-bold tracking-wide transition-all duration-200 
-                                     hover:scale-105 active:scale-95 backdrop-blur-md"
-                        >
-                            Close
-                        </button>
-                    )}
+                    <div className="flex gap-4 justify-center">
+                        {onDismiss && (
+                            <button
+                                onClick={onDismiss}
+                                className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/30 rounded-lg 
+                                         text-white font-bold tracking-wide transition-all duration-200 
+                                         hover:scale-105 active:scale-95 backdrop-blur-md"
+                            >
+                                Close
+                            </button>
+                        )}
+
+                        {onRestart && (
+                            <button
+                                onClick={onRestart}
+                                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 
+                                         border border-blue-400/50 rounded-lg shadow-lg shadow-blue-900/50
+                                         text-white font-bold tracking-wide transition-all duration-200 
+                                         hover:scale-105 active:scale-95 backdrop-blur-md"
+                            >
+                                Restart Match
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 

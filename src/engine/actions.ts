@@ -343,18 +343,6 @@ export class TurnManager {
         // Reset turn flags
         player.inkedThisTurn = false;
 
-        // 1. Ready
-        this.readyPhase(player);
-
-        // 2. Set (Start of Turn effects)
-        this.setPhase(player);
-
-        // 3. Draw
-        this.drawPhase(player);
-
-        // 4. Main Phase
-        this.game.state.phase = Phase.Main;
-
         // Cleanup expired effects (until_source_next_start AND aliases)
         this.game.state.activeEffects = this.game.state.activeEffects.filter(e => {
             const isNextTurnEffect = e.duration === 'until_source_next_start' ||
@@ -382,6 +370,20 @@ export class TurnManager {
                 }
             });
         });
+
+        this.recalculateEffects();
+
+        // 1. Ready
+        this.readyPhase(player);
+
+        // 2. Set (Start of Turn effects)
+        this.setPhase(player);
+
+        // 3. Draw
+        this.drawPhase(player);
+
+        // 4. Main Phase
+        this.game.state.phase = Phase.Main;
     }
 
     private readyPhase(player: PlayerState) {

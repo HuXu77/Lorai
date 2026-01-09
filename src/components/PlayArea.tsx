@@ -32,12 +32,18 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
         // Card is drying if it was played this turn (can't act unless Rush)
         const isDrying = !isBanishing && currentTurn !== undefined && card.turnPlayed === currentTurn;
 
+        const isLocation = card.type === 'Location';
+        // Rotate if: 
+        // 1. Character/Item is exerted (!ready)
+        // 2. Location is ready (Locations are horizontal by default)
+        const shouldRotate = (!card.ready && !isLocation) || (card.ready && isLocation);
+
         return (
             <div
                 key={card.instanceId}
                 className={`
                     transition-all duration-700
-                    ${!card.ready && !isBanishing ? 'rotate-90 origin-center mx-4' : ''}
+                    ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-4' : ''}
                     ${isBanishing
                         ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
                         : 'opacity-100 scale-100'}

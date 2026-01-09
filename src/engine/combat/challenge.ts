@@ -29,9 +29,20 @@ export function canChallenge(attacker: CardInstance, target: CardInstance): bool
     if (target.ready && !canChallengeReady) return false;
 
     // Rule: Evasive - Only characters with Evasive can challenge Evasive
-    const targetIsEvasive = target.parsedEffects?.some(e => e.action === 'keyword_evasive');
+    // Rule: Evasive - Only characters with Evasive can challenge Evasive
+    const targetIsEvasive = target.parsedEffects?.some(e =>
+        e.action === 'keyword_evasive' ||
+        e.keyword === 'evasive' ||
+        (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+    ) || target.keywords?.includes('Evasive');
+
     if (targetIsEvasive) {
-        const attackerIsEvasive = attacker.parsedEffects?.some(e => e.action === 'keyword_evasive');
+        const attackerIsEvasive = attacker.parsedEffects?.some(e =>
+            e.action === 'keyword_evasive' ||
+            e.keyword === 'evasive' ||
+            (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+        ) || attacker.keywords?.includes('Evasive');
+
         if (!attackerIsEvasive) return false;
     }
 
@@ -76,9 +87,9 @@ export async function executeChallenge(
         return false;
     }
 
-    // CRITICAL RULE: Can only challenge characters, not items or locations
-    if (target.type !== 'Character') {
-        logger.warn(`[${player.name}] Cannot challenge ${target.type} "${target.name}" - only characters can be challenged.`);
+    // CRITICAL RULE: Can only challenge characters or locations
+    if (target.type !== 'Character' && target.type !== 'Location') {
+        logger.warn(`[${player.name}] Cannot challenge ${target.type} "${target.name}" - only characters and locations can be challenged.`);
         return false;
     }
 
@@ -103,9 +114,11 @@ export async function executeChallenge(
         return false;
     }
 
-    // Rule: Target must be exerted
+    // Rule: Target must be exerted (Locations can be challenged even if ready)
     const canChallengeReadyAbility = attacker.parsedEffects?.some(e => e.action === 'can_challenge_ready_characters');
-    if (target.ready && !canChallengeReadyAbility) {
+    const isLocation = target.type === 'Location';
+
+    if (target.ready && !isLocation && !canChallengeReadyAbility) {
         logger.debug(`${target.name} is ready and cannot be challenged.`);
         return false;
     }
@@ -133,9 +146,19 @@ export async function executeChallenge(
     }
 
     // Rule: Evasive
-    const targetIsEvasive = target.parsedEffects?.some(e => e.action === 'keyword_evasive');
+    const targetIsEvasive = target.parsedEffects?.some(e =>
+        e.action === 'keyword_evasive' ||
+        e.keyword === 'evasive' ||
+        (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+    ) || target.keywords?.includes('Evasive');
+
     if (targetIsEvasive) {
-        const attackerIsEvasive = attacker.parsedEffects?.some(e => e.action === 'keyword_evasive');
+        const attackerIsEvasive = attacker.parsedEffects?.some(e =>
+            e.action === 'keyword_evasive' ||
+            e.keyword === 'evasive' ||
+            (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+        ) || attacker.keywords?.includes('Evasive');
+
         if (!attackerIsEvasive) {
             logger.debug(`[${player.name}] ${target.name} has Evasive and can only be challenged by characters with Evasive.`);
             return false;
