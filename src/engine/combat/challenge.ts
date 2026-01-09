@@ -32,15 +32,15 @@ export function canChallenge(attacker: CardInstance, target: CardInstance): bool
     // Rule: Evasive - Only characters with Evasive can challenge Evasive
     const targetIsEvasive = target.parsedEffects?.some(e =>
         e.action === 'keyword_evasive' ||
-        e.keyword === 'evasive' ||
-        (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+        (e as any).keyword === 'evasive' ||
+        ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
     ) || target.keywords?.includes('Evasive');
 
     if (targetIsEvasive) {
         const attackerIsEvasive = attacker.parsedEffects?.some(e =>
             e.action === 'keyword_evasive' ||
-            e.keyword === 'evasive' ||
-            (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+            (e as any).keyword === 'evasive' ||
+            ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
         ) || attacker.keywords?.includes('Evasive');
 
         if (!attackerIsEvasive) return false;
@@ -148,15 +148,15 @@ export async function executeChallenge(
     // Rule: Evasive
     const targetIsEvasive = target.parsedEffects?.some(e =>
         e.action === 'keyword_evasive' ||
-        e.keyword === 'evasive' ||
-        (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+        (e as any).keyword === 'evasive' ||
+        ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
     ) || target.keywords?.includes('Evasive');
 
     if (targetIsEvasive) {
         const attackerIsEvasive = attacker.parsedEffects?.some(e =>
             e.action === 'keyword_evasive' ||
-            e.keyword === 'evasive' ||
-            (e.effects && e.effects.some((eff: any) => eff.type === 'evasive'))
+            (e as any).keyword === 'evasive' ||
+            ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
         ) || attacker.keywords?.includes('Evasive');
 
         if (!attackerIsEvasive) {

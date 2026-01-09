@@ -60,7 +60,8 @@ export type TargetAST =
     | { type: 'chosen_permanent', filter?: any }
     | { type: 'all_players' }
     | { type: 'each_player' }
-    | { type: 'all_opposing_cards', filter?: any };
+    | { type: 'all_opposing_cards', filter?: any }
+    | { type: 'same_target' };
 
 /**
  * Condition AST
