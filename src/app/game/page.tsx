@@ -1415,8 +1415,24 @@ function GamePageInner() {
                             ? yourPlayer.play.filter(c => {
                                 if (c.type !== 'Character') return false;
                                 if (!c.ready) return false;
-                                if (c.turnPlayed === engineState?.turnCount) return false; // Drying
+                                // Characters can't sing the turn they are played (unless they have Haste? No, singing uses Exert so drying applies)
+                                if (c.turnPlayed === engineState?.turnCount) return false;
 
+                                // Check for Sing Together
+                                const hasSingTogether = actionMenuCard.parsedEffects?.some((e: any) =>
+                                    e.keyword === 'Sing Together' ||
+                                    e.keyword === 'sing_together' ||
+                                    e.action === 'sing_together' ||
+                                    (e.fullText && e.fullText.includes('Sing Together'))
+                                );
+
+                                if (hasSingTogether) {
+                                    // For Sing Together, ANY ready/non-drying character can participate
+                                    // Total value is checked by engine or UI during selection (engine check is robust)
+                                    return true;
+                                }
+
+                                // Standard Singing: Individual cost/value check
                                 // Calculate singing value (max of cost or Singer ability)
                                 let singingValue = c.cost;
                                 if (c.parsedEffects) {
@@ -1467,24 +1483,44 @@ function GamePageInner() {
                             setActionMenuCard(null);
                         }
                     }}
-                    onSing={async (singerId) => {
+                    onSing={async (singerIdOrIds) => {
                         if (gameEngine && actionMenuCard) {
                             const songCard = actionMenuCard;
                             setActionMenuCard(null); // Dismiss first
 
                             try {
                                 const player = gameEngine.stateManager.getPlayer(gameEngine.humanController.id);
-                                const singer = yourPlayer.play.find(c => c.instanceId === singerId);
-                                console.log('[SING DEBUG] Song:', songCard.name, 'Singer:', singer?.name, 'SongId:', songCard.instanceId, 'SingerId:', singerId);
+
+                                // Handle single or multiple singers
+                                let singerId: string | undefined;
+                                let singerIds: string[] | undefined;
+
+                                if (Array.isArray(singerIdOrIds)) {
+                                    singerIds = singerIdOrIds;
+                                    // We don't set singerId for multiple (engine expects either)
+                                } else {
+                                    singerId = singerIdOrIds;
+                                }
+
+                                console.log('[SING DEBUG] Song:', songCard.name, 'Singer(s):', singerId || singerIds);
+
                                 await gameEngine.turnManager.playCard(
                                     player,
                                     songCard.instanceId,
-                                    singerId, // singerId - character will be exerted
-                                    undefined // shiftTargetId
+                                    singerId, // singerId (for single)
+                                    undefined, // shiftTargetId
+                                    undefined, // targetId
+                                    undefined, // payload
+                                    singerIds  // singerIds (for multiple)
                                 );
+
+                                const singerNames = Array.isArray(singerIdOrIds)
+                                    ? `${singerIdOrIds.length} characters`
+                                    : (yourPlayer.play.find(c => c.instanceId === singerIdOrIds)?.name || 'Character');
+
                                 addLogEntry({
                                     category: LogCategory.CARD,
-                                    message: `🎵 ${singer?.name || 'Character'} sang ${songCard.fullName || songCard.name}!`,
+                                    message: `🎵 ${singerNames} sang ${songCard.fullName || songCard.name}!`,
                                     details: {}
                                 });
                                 setEngineState({ ...gameEngine.stateManager.state });

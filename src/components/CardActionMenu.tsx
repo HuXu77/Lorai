@@ -27,7 +27,7 @@ interface CardActionMenuProps {
     onInk: () => void;
     onPlay: () => void;
     onShift?: (targetId: string) => void;
-    onSing?: (singerId: string) => void;
+    onSing?: (singerIds: string | string[]) => void;
     onCancel: () => void;
     /** Whether playing this card is blocked by game rules/effects */
     isBlocked?: { reason: string } | null;
@@ -65,6 +65,13 @@ export default function CardActionMenu({
 
     // Song-specific checks
     const isSongCard = isSong(card);
+    // Check for Sing Together keyword
+    const isSingTogether = card.parsedEffects?.some((e: any) =>
+        e.keyword === 'Sing Together' ||
+        e.keyword === 'sing_together' ||
+        e.action === 'sing_together' ||
+        (e.fullText && e.fullText.includes('Sing Together'))
+    );
     const canSing = isSongCard && eligibleSingers.length > 0 && isYourTurn && onSing && !isBlocked;
 
     // Show shift target selection
@@ -123,7 +130,9 @@ export default function CardActionMenu({
             id: 'singer-selection',
             type: 'target_character' as any,
             playerId: card.ownerId,
-            prompt: `🎵 Choose a character to sing "${card.name}"`,
+            prompt: isSingTogether
+                ? `🎵 Choose characters to sing "${card.name}" (Sing Together)`
+                : `🎵 Choose a character to sing "${card.name}"`,
             options: eligibleSingers.map(singer => ({
                 id: singer.instanceId,
                 display: `${singer.fullName || singer.name} (${singer.cost}⬡)`,
@@ -133,7 +142,7 @@ export default function CardActionMenu({
                 valid: true
             })),
             min: 1,
-            max: 1,
+            max: isSingTogether ? eligibleSingers.length : 1, // Allow multiple for Sing Together
             optional: true, // Can cancel
             source: {
                 card: card,
@@ -155,7 +164,8 @@ export default function CardActionMenu({
                             if (response.declined || response.selectedIds.length === 0) {
                                 setShowSingerSelection(false);
                             } else {
-                                onSing(response.selectedIds[0]);
+                                // For Sing Together we pass array, for normal sing we pass single ID or array (handler supports both)
+                                onSing(isSingTogether ? response.selectedIds : response.selectedIds[0]);
                                 setShowSingerSelection(false);
                             }
                         }}
