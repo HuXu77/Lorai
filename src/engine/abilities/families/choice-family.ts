@@ -543,6 +543,7 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 const options = opponent.hand.map((card: any) => ({
                     id: card.instanceId,
                     display: card.name, // Client should show full card details
+                    card: card, // Pass full card object for rendering
                     valid: finalEligible.some((c: any) => c.instanceId === card.instanceId),
                     // Pass extra data so UI knows why it's invalid if needed, or just relying on valid flag
                     // We can also pass 'card' object in a real implementation if the UI supports it, 

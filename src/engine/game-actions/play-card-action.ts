@@ -186,10 +186,18 @@ async function handleShift(
         type: 'shift'
     });
 
-    // Trigger "On Play" effects
+    // Emit CARD_PLAYED event (triggers abilities registered via event system)
+    await abilitySystem.emitEvent(GameEvent.CARD_PLAYED, {
+        card,
+        player,
+        wasShifted: true
+    });
+
+    // Trigger "On Play" effects (legacy support for `trigger: 'on_play'`)
     if (card.parsedEffects) {
         for (const effect of card.parsedEffects) {
-            if (effect.trigger === 'on_play') {
+            const e = effect as any;
+            if (e.trigger === 'on_play' || e.event === GameEvent.CARD_PLAYED) {
                 await turnManager.resolveEffect(player, effect, card, undefined, payload);
             }
         }
