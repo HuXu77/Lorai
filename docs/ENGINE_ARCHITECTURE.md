@@ -159,6 +159,7 @@ All game actions emit events for triggered abilities:
 #### `game-actions/` - Player Action Handlers
 - `ink-action.ts`: Move card from hand to inkwell
 - `quest-action.ts`: Quest with character (lore, Support, on_quest triggers)
+- `move-action.ts`: Move character to location (checks move cost, willpower)
 - *(planned)* `play-card.ts`: Play card from hand
 - *(planned)* `use-ability.ts`: Activated abilities
 

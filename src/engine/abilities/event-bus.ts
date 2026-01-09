@@ -88,6 +88,24 @@ export class EventBus {
                         // Handle case-insensitive comparison
                         if (card.type.toLowerCase() !== filter.type.toLowerCase()) return false;
                     }
+
+                    // ===== NEW: Check target owner (e.g., "whenever one of your characters is banished") =====
+                    if (filter.targetOwner) {
+                        // For card events (played, banished), context.card IS the target
+                        // For interaction events, context.targetCard might be used
+                        const targetCard = context.targetCard || context.card;
+
+                        if (targetCard && this.card.ownerId) {
+                            const isMyCard = targetCard.ownerId === this.card.ownerId;
+
+                            if (filter.targetOwner === 'self' && !isMyCard) {
+                                return false;
+                            }
+                            if (filter.targetOwner === 'opponent' && isMyCard) {
+                                return false;
+                            }
+                        }
+                    }
                 }
 
                 // ===== AUTOMATIC SELF-FILTER FOR COMMON PATTERNS =====

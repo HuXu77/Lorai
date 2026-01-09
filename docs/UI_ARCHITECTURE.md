@@ -95,21 +95,24 @@ Enabled by `useSearchParams()` hook with `Suspense` wrapper for SSR compatibilit
 | `DeckImportModal.tsx` | Deck import (text/URL) & persistent storage (tabs) |
 | `DiscardPileModal.tsx` | Full discard pile view |
 | `CardActionMenu.tsx` | Card action selection |
-| `ChoiceModal.tsx` | Generic choice prompts |
-| `CardPickerModal.tsx` | Search/filter cards from database (debug) |
+| `PlayerChoiceHandler.tsx` | **Main Choice Router**: Delegates to specific choice components |
+| `ChoiceContainer.tsx` | **Unified Wrapper**: Standardized header/footer/backdrop for all choices |
+| `ModalChoice.tsx` | Generic options (e.g., "Choose an effect") |
+| `CardSelectionChoice.tsx` | Card targeting/selection (e.g., "Choose a character") |
+| `OrderCardsChoice.tsx` | Card ordering (e.g., "Put on bottom of deck") |
 
 #### Debug Components
 | Component | Purpose |
 |-----------|--------|
-| `DebugPanel.tsx` | Main debug panel with Cards/State/Presets tabs |
-| `CardPickerModal.tsx` | Card search modal with filters |
+| `DebugPanel.tsx` | Main debug panel in Game Page |
+| `/debug/ui/page.tsx` | **UI Test Harness**: Isolated testing for choice components |
 
-**Location**: `src/debug/`
+**Location**: `src/debug/` & `src/app/debug/`
 | File | Purpose |
 |------|---------|
 | `DebugPresets.ts` | Pre-built test scenarios (9 included) |
 | `StateManipulator.ts` | Programmatic state manipulation API |
-| `index.ts` | Module exports |
+| `src/app/debug/ui` | Standalone page for testing UI components without game engine |
 
 #### State Display Components
 | Component | Purpose |

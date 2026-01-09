@@ -1,6 +1,6 @@
 import { BaseFamilyHandler } from './base-family-handler';
 import type { GameContext } from '../executor';
-import { ZoneType } from '../../models';
+import { ZoneType, ChoiceType } from '../../models';
 
 /**
  * Deck Manipulation Family Handler
@@ -669,7 +669,7 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
                             card.ready = false;
                         }
 
-                        this.turnManager.logger.info(`[DeckManipulation] Put ${card.name} into inkwell (exerted: ${!!exerted}).`);
+                        this.turnManager.logger.info(`🖌️ Put ${card.name} into inkwell${exerted ? ' (exerted)' : ''}`);
                     });
                 }
                 break;
@@ -765,14 +765,121 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
 
                 // Process Remaining Cards (Rest Destination)
                 if (cardsRemaining.length > 0) {
+                    // Logic to order cards if multiple
+                    if (cardsRemaining.length > 1 && (restDestination === 'bottom' || restDestination === 'top') && this.turnManager?.requestChoice) {
+                        const options = cardsRemaining.map((c: any) => ({
+                            id: c.instanceId,
+                            display: c.name,
+                            valid: true,
+                            card: c
+                        }));
+
+                        const response = await this.turnManager.requestChoice({
+                            id: `order-rest-${Date.now()}`,
+                            playerId: player.id,
+                            type: ChoiceType.ORDER_CARDS,
+                            prompt: `Order ${cardsRemaining.length} cards to put on ${restDestination} of your deck.`,
+                            options: options,
+                            min: cardsRemaining.length,
+                            max: cardsRemaining.length,
+                            timestamp: Date.now()
+                        });
+
+                        if (response.selectedIds && response.selectedIds.length > 0) {
+                            // Reorder cardsRemaining based on selection
+                            // Note: Frontend usually returns top-to-bottom order
+                            // For 'bottom', we usually want the LAST card in the list to be the deepest? 
+                            // Or does the user order them such that selectedIds[0] is the "first" to go in?
+                            // Convention: ORDER_CARDS returns [top-most, ..., bottom-most] visual order.
+                            // If putting on BOTTOM:
+                            // We typically want the "top-most" of the stack to be the one *closest* to the deck body?
+                            // Or does order matter for bottom? Yes.
+                            // Let's assume returned order is the stack order.
+
+                            const ordered: any[] = [];
+                            response.selectedIds.forEach((id: string) => {
+                                const c = cardsRemaining.find((card: any) => card.instanceId === id);
+                                if (c) ordered.push(c);
+                            });
+
+                            if (ordered.length === cardsRemaining.length) {
+                                cardsRemaining = ordered;
+                            }
+                        }
+                    }
+
                     if (restDestination === 'bottom') {
-                        // Ordering logic omitted for brevity/safety - pushing to bottom
+                        // For bottom: Unshift puts them at the start of the array.
+                        // If cardsRemaining is [A, B, C] (where A is top of this stack, C is bottom)
+                        // Deck: [Existing Bottom ... Existing Top] (index 0 is bottom)
+                        // If we unshift(A, B, C), it becomes [A, B, C, Existing...] ? No.
+                        // Array.unshift(A, B, C) adds them to the beginning. 
+                        // If we want A to be the "top" of the bottom stack (closest to deck), and C to be the absolute bottom:
+                        // We should ensure the order is correct.
+                        // Lorai deck convention: index 0 is BOTTOM, index N is TOP.
+                        // So to put on bottom, we unshift.
+                        // If we have stack [A, B, C] where A is 'top' relative to B and C.
+                        // We want deck to look like [C, B, A, Existing...].
+                        // So we should unshift them in reverse order?
+                        // Or just unshift(...cardsRemaining)?
+                        // MDN: arr.unshift(1, 2) -> [1, 2, arr...]
+                        // So if we unshift(A, B, C), A is at index 0 (bottom-most), B at 1, C at 2.
+                        // This means A becomes the absolute bottom card.
+                        // If the user ordered them [A, B, C], they likely expect A to be "top" of this packet?
+                        // Usually "Order cards" means "First one you click is top"? Or "First one is top"?
+                        // Let's assume the user orders Top -> Bottom.
+                        // So A is top, C is bottom.
+                        // We want C at index 0, A at index 2.
+                        // So we should unshift(C, B, A).
+                        // Which is cardsRemaining.reverse().
+
+                        // BUT: Let's verify standard behavior.
+                        // If I order [1, 2], 1 is top.
+                        // Deck should be [2, 1, Existing...].
+                        // unshift(2, 1) -> [2, 1, ...]
+                        // So we need to reverse the list if unshifting multiple items to preserve "Top->Bottom" semantic of the list.
+                        // Actually, if we use unshift(...items), items[0] becomes the first element.
+                        // So unshift(A, B) -> [A, B, ...]
+                        // If A is Top, B is Bottom.
+                        // Result: [A, B, ...] -> A is index 0 (Bottom-most).
+                        // This contradicts "A is Top".
+                        // Use case: Put on bottom.
+                        // User orders [A, B]. A is Top, B is Bottom.
+                        // We want Deck: [B, A, Existing...].
+                        // arr.unshift(B, A) -> [B, A, ...]
+                        // So we need to reverse the order before unshifting if the input list is Top->Bottom.
+
+                        // Let's assume selectedIds is [Top, ..., Bottom].
+                        // So we reverse it to [Bottom, ..., Top].
+                        // Then unshift(...[Bottom, ..., Top]) -> [Bottom, ..., Top, Existing...]
+                        // Which is correct (Top is close to Existing).
+
+                        if (cardsRemaining.length > 1) {
+                            cardsRemaining.reverse();
+                        }
+
                         player.deck.unshift(...cardsRemaining);
                     } else if (restDestination === 'top') {
+                        // For top: Push adds to end.
+                        // List [A, B] (A Top, B Bottom).
+                        // We want [Existing..., B, A].
+                        // Deck.push(B, A) -> [..., B, A].
+                        // So we need to reverse here too?
+                        // Wait. If Deck is [Bottom...Top].
+                        // And we add [A, B] on Top.
+                        // User orders A (Top), B (Bottom).
+                        // Result should be [..., B, A].
+                        // push(B, A).
+                        // So yes, reverse here too.
+
+                        if (cardsRemaining.length > 1) {
+                            cardsRemaining.reverse();
+                        }
                         player.deck.push(...cardsRemaining);
                     } else if (restDestination === 'deck') {
                         // Shuffle?
                         player.deck.push(...cardsRemaining);
+                        this.shuffleArray(player.deck);
                     }
                 }
                 break;

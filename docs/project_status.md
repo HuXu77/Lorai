@@ -1,6 +1,6 @@
 # Lorai Engine - Project Status
 
-**Last Updated:** December 30, 2025
+**Last Updated:** January 9, 2026
 
 ## 🎯 Overall Progress
 
@@ -56,6 +56,25 @@
 **Phase 5: Advanced Abilities**
 - `opponent-interaction.test.ts` (5 tests)
 - Opponent discard, lore manipulation, for-each, area effects
+
+### Item & Location Mechanics (January 2026) 🎉
+
+**Location Mechanics**
+- Implemented `Move` action type for characters to move to locations.
+- Added `getModifiedMoveCost` for dynamic move cost calculation.
+- Verified UI interaction for moving characters.
+
+**Item Mechanics**
+- Verified Item interactions (play, activated abilities).
+- Fixed "drying sickness" bug (Items can now act immediately).
+- Wired up `onCardClick` in UI for Item/Location zones.
+
+### UI Architecture Refactor (January 2026) 🛠️
+
+**Unified Choice System**
+- Created `ChoiceContainer` for consistent modal UI.
+- Refactored `ModalChoice`, `CardSelectionChoice`, and `OrderCardsChoice` to use the new container.
+- Implemented **UI Debug Harness** (`/debug/ui`) for isolated component testing.
 
 ### Bug Fixes (December 20-21, 2025)
 - ✅ Megara Boost Quest: `has_card_under` lore bonus

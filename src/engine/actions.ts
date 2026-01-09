@@ -5,7 +5,7 @@ import { AbilitySystemManager } from './abilities/ability-system';
 import type { ILogger } from './logger';
 import { executeReadyPhase, executeSetPhase, executeDrawPhase, drawCards as drawCardsHelper } from './phases';
 import { executeRecalculateEffects, evaluateCondition, executeResolveEffect } from './effects';
-import { executeInkCard, executeQuest, executePlayCard, executeUseAbility, executeSingSong, getSingingValue as getSingingValueHelper, canCharacterSingSong as canCharacterSingSongHelper } from './game-actions';
+import { executeInkCard, executeQuest, executePlayCard, executeUseAbility, executeSingSong, executeMove, getSingingValue as getSingingValueHelper, canCharacterSingSong as canCharacterSingSongHelper } from './game-actions';
 import { getValidActions as getValidActionsHelper } from './ai/valid-actions';
 import { executeChallenge, canChallenge as canChallengeHelper, checkBanishment as checkBanishmentHelper, banishCard as banishCardHelper, triggerBanishEffects as triggerBanishEffectsHelper } from './combat';
 
@@ -478,6 +478,11 @@ export class TurnManager {
 
             case ActionType.SingSong:
                 result = await this.singSong(player, action.cardId!, action.singerId!, action.payload);
+                break;
+
+            case ActionType.Move:
+                result = await executeMove(this, player, action.cardId!, action.destinationId!);
+                break;
                 break;
 
             case ActionType.Concede:

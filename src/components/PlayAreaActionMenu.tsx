@@ -22,6 +22,8 @@ interface PlayAreaActionMenuProps {
     onChallenge: (targetId: string) => void;
     onBoost?: () => void;
     onUseAbility?: (abilityIndex: number) => void;
+    onMove?: (locationId: string) => void;
+    moveTargets?: Array<{ card: CardInstance, cost: number }>;
     onCancel: () => void;
 }
 
@@ -36,9 +38,12 @@ export default function PlayAreaActionMenu({
     onChallenge,
     onBoost,
     onUseAbility,
+    onMove,
+    moveTargets = [],
     onCancel,
 }: PlayAreaActionMenuProps) {
     const [showTargetSelection, setShowTargetSelection] = useState(false);
+    const [showMoveSelection, setShowMoveSelection] = useState(false);
 
     const isCharacter = card.type === 'Character';
     const isReady = card.ready;
@@ -58,44 +63,51 @@ export default function PlayAreaActionMenu({
     const hasBoostUsedThisTurn = card.meta?.usedAbilities?.boost === currentTurn;
     const canBoost = boostCost !== null && isYourTurn && availableInk >= boostCost && !hasBoostUsedThisTurn && onBoost;
 
-    // If showing target selection for challenge
     if (showTargetSelection) {
         return (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-                onClick={() => setShowTargetSelection(false)}
+                onClick={() => setShowMoveSelection(false)}
             >
                 <div
                     className="bg-slate-900 border border-slate-600 rounded-xl p-6 shadow-2xl max-w-2xl w-full animate-in fade-in zoom-in duration-150"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <h3 className="text-xl font-bold text-white mb-4">
-                        Choose Target for {card.fullName || card.name}
+                        Move {card.name} to...
                     </h3>
 
                     <div className="flex flex-wrap gap-4 justify-center mb-4">
-                        {challengeTargets.map((target) => (
-                            <div
-                                key={target.instanceId}
-                                className="cursor-pointer transition-transform hover:scale-105 hover:ring-2 hover:ring-red-500 rounded-lg"
-                                onClick={() => {
-                                    onChallenge(target.instanceId);
-                                    setShowTargetSelection(false);
-                                }}
-                            >
-                                <ZoomableCard
-                                    card={target}
-                                    size="md"
-                                    zoomTrigger="none"
-                                />
-                                <div className="text-center text-sm text-gray-400 mt-1">
-                                    {target.strength}⚔️ / {target.willpower}❤️
+                        {moveTargets.map(({ card: location, cost }) => {
+                            const canAfford = availableInk >= cost;
+                            return (
+                                <div
+                                    key={location.instanceId}
+                                    className={`
+                                    cursor-pointer transition-transform hover:scale-105 rounded-lg
+                                    ${canAfford ? 'hover:ring-2 hover:ring-cyan-500' : 'opacity-50 grayscale'}
+                                `}
+                                    onClick={() => {
+                                        if (canAfford) {
+                                            onMove && onMove(location.instanceId);
+                                            setShowMoveSelection(false);
+                                        }
+                                    }}
+                                >
+                                    <ZoomableCard
+                                        card={location}
+                                        size="md"
+                                        zoomTrigger="none"
+                                    />
+                                    <div className={`text-center text-sm mt-1 font-bold ${canAfford ? 'text-cyan-400' : 'text-red-500'}`}>
+                                        Move Cost: {cost}⬡
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     <button
-                        onClick={() => setShowTargetSelection(false)}
+                        onClick={() => setShowMoveSelection(false)}
                         className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
                     >
                         Cancel
@@ -257,6 +269,17 @@ export default function PlayAreaActionMenu({
                                     </button>
                                 );
                             })}
+
+                            {/* Move Action */}
+                            {isCharacter && moveTargets.length > 0 && (
+                                <button
+                                    onClick={() => setShowMoveSelection(true)}
+                                    className="w-full px-4 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <span className="text-xl">🏰</span>
+                                    Move to Location
+                                </button>
+                            )}
 
                             {/* Cancel */}
                             <button

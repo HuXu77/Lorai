@@ -56,6 +56,16 @@ export async function executeUseAbility(
     // Validate Costs
     const cost: ActivationCost = effect.cost || {};
 
+    // BACKWARD COMPATIBILITY: Map 'costs' array (from new parser) to ActivationCost object
+    if ((effect as any).costs && Array.isArray((effect as any).costs)) {
+        (effect as any).costs.forEach((c: any) => {
+            if (c.type === 'exert') cost.exert = true;
+            if (c.type === 'ink') cost.ink = (cost.ink || 0) + (c.amount || 0);
+            if (c.type === 'discard') cost.discard = (cost.discard || 0) + (c.amount || 0);
+            if (c.type === 'banish') cost.banish = true;
+        });
+    }
+
     // 1. Exert Cost
     if (cost.exert) {
         if (!card.ready) {
@@ -63,7 +73,8 @@ export async function executeUseAbility(
             return false;
         }
         // Check drying (activated abilities requiring exert usually require drying)
-        if (card.turnPlayed === turnManager.game.state.turnCount) {
+        // Only Characters have drying sickness (summoning sickness)
+        if (card.type === 'Character' && card.turnPlayed === turnManager.game.state.turnCount) {
             // Exception: Rush (if ability is an attack? No, Rush is for challenging)
             turnManager.logger.debug(`[${player.name}] ${card.name} is drying and cannot use exert ability.`);
             return false;

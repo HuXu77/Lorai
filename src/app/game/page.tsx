@@ -1327,10 +1327,18 @@ function GamePageInner() {
                                 (yourPlayer?.play.filter(c => c.type === 'Item').length || 0) > 0) && (
                                     <div className="grid grid-cols-2 gap-2">
                                         {(yourPlayer?.play.filter(c => c.type === 'Location').length || 0) > 0 && (
-                                            <GameZone cards={yourPlayer?.play.filter(c => c.type === 'Location') || []} label="🏰 Your Locations" />
+                                            <GameZone
+                                                cards={yourPlayer?.play.filter(c => c.type === 'Location') || []}
+                                                label="🏰 Your Locations"
+                                                onCardClick={(card) => handlePlayAreaCardClick(card, { x: 0, y: 0 })}
+                                            />
                                         )}
                                         {(yourPlayer?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
-                                            <GameZone cards={yourPlayer?.play.filter(c => c.type === 'Item') || []} label="🎯 Your Items" />
+                                            <GameZone
+                                                cards={yourPlayer?.play.filter(c => c.type === 'Item') || []}
+                                                label="🎯 Your Items"
+                                                onCardClick={(card) => handlePlayAreaCardClick(card, { x: 0, y: 0 })}
+                                            />
                                         )}
                                     </div>
                                 )}
@@ -1557,6 +1565,33 @@ function GamePageInner() {
                         c.type === 'Character' &&
                         (gameEngine?.turnManager?.canChallenge(playAreaMenuCard, c) ?? true)
                     )}
+                    moveTargets={yourPlayer.play
+                        .filter(c => c.type === 'Location')
+                        .map(location => ({
+                            card: location,
+                            cost: gameEngine?.turnManager?.abilitySystem
+                                ? gameEngine.turnManager.abilitySystem.getModifiedMoveCost(playAreaMenuCard, location)
+                                : (location.moveCost || 0)
+                        }))}
+                    onMove={async (locationId) => {
+                        if (gameEngine) {
+                            const mover = playAreaMenuCard;
+                            const location = yourPlayer.play.find(c => c.instanceId === locationId);
+                            setPlayAreaMenuCard(null); // Dismiss first
+
+                            try {
+                                await gameEngine.turnManager.resolveAction({
+                                    type: ActionType.Move,
+                                    playerId: gameEngine.humanController.id,
+                                    cardId: mover.instanceId,
+                                    destinationId: locationId
+                                });
+                                setEngineState({ ...gameEngine.stateManager.state });
+                            } catch (error) {
+                                console.error('Move failed:', error);
+                            }
+                        }
+                    }}
                     onQuest={async () => {
                         if (gameEngine && playAreaMenuCard.ready) {
                             const quester = playAreaMenuCard;

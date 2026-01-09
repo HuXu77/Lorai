@@ -111,7 +111,8 @@ export enum ActionType {
     PassTurn = 'PassTurn',
     InkCard = 'InkCard',
     SingSong = 'SingSong',
-    Concede = 'Concede'
+    Concede = 'Concede',
+    Move = 'Move'
 }
 
 // [Legacy Choice Interfaces Removed - merged into Unified Choice System below]
@@ -127,6 +128,7 @@ export interface GameAction {
     shiftTargetId?: string;
     payload?: any;
     modalChoice?: number; // For modal effects ("Choose one:")
+    destinationId?: string; // For Move actions (Location ID)
 }
 
 export interface Card {

@@ -1157,7 +1157,8 @@ export class EffectExecutor {
             }
         });
 
-        this.turnManager.logger.info(`💥 Dealt ${amount} damage to ${targets.length} target(s)`, {
+        const targetNames = targets.map((t: any) => t.name).join(', ');
+        this.turnManager.logger.info(`💥 Dealt ${amount} damage to ${targetNames}`, {
             amount,
             targets: targets.map((t: any) => t.name)
         });
@@ -1248,7 +1249,8 @@ export class EffectExecutor {
             this.turnManager.banishCard(targetPlayer, target);
         });
 
-        this.turnManager.logger.info(`🗑️  Banished ${targets.length} card(s)`, {
+        const targetNames = targets.map((t: any) => t.name).join(', ');
+        this.turnManager.logger.info(`🗑️  Banished ${targetNames}`, {
             targets: targets.map((t: any) => t.name)
         });
 
@@ -1282,8 +1284,9 @@ export class EffectExecutor {
         });
 
         if (this.turnManager) {
+            const targetNames = targets.map((t: any) => t.name).join(', ');
             const source = context.abilityName ? ` (Source: ${context.abilityName})` : '';
-            this.turnManager.logger.info(`[EffectExecutor] Returned ${targets.length} card(s) to hand${source}`);
+            this.turnManager.logger.info(`↩️ Returned ${targetNames} to hand${source}`);
         }
     }
 
@@ -3618,7 +3621,7 @@ export class EffectExecutor {
 
         // Add to inkwell via TurnManager
         this.turnManager.game.addCardToZone(player, cardToInk, 'inkwell');
-        this.turnManager.logger.info(`[EffectExecutor] ${player.name} put ${cardToInk.name} from hand into inkwell`);
+        this.turnManager.logger.info(`🖌️ ${player.name} put ${cardToInk.name} into their inkwell`);
         this.turnManager.trackZoneChange(cardToInk, originalZone, 'inkwell');
     }
 
@@ -5314,11 +5317,13 @@ export class EffectExecutor {
         targets.forEach((target: any) => {
             if (target.ready) {
                 target.ready = false;
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${target.name} exerts`);
-                }
             }
         });
+
+        if (this.turnManager && targets.length > 0) {
+            const targetNames = targets.map((t: any) => t.name).join(', ');
+            this.turnManager.logger.info(`⤵️ Exerted ${targetNames}`);
+        }
 
         return true;
     }

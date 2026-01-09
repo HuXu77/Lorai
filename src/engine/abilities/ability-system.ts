@@ -232,13 +232,29 @@ export class AbilitySystemManager {
             }
         }
 
-        // Convert AbilityDefinition format to EffectAST format for executor
-        const effects = this.convertToEffectAST(triggeredAbility.effects || []);
-
         // CRITICAL FIX: The player in gameContext should be the CARD OWNER (controller)
         // not eventContext.player (which is who triggered the event).
         // This ensures that optional prompts (like Bobby's "may draw") go to the card's owner.
         const cardOwner = this.turnManager.game.getPlayer(card.ownerId);
+
+        // ===== OPTIONAL COST CHECK =====
+        // If ability has a cost and is optional, skip if player can't pay
+        // Example: "You may pay 2 ⬡ to..." - if only 1 ⬡, don't ask
+        if (triggeredAbility.cost && triggeredAbility.optional) {
+            const player = cardOwner || eventContext.player;
+
+            if (triggeredAbility.cost.ink) {
+                const readyInk = player.inkwell.filter((c: any) => !c.exerted).length;
+                if (readyInk < triggeredAbility.cost.ink) {
+                    this.turnManager.logger.info(`   [Cost] Skipping optional ability for ${card.name}: Insufficient ink (${readyInk}/${triggeredAbility.cost.ink})`);
+                    return;
+                }
+            }
+            // Add other cost checks (exert, discard) here if needed
+        }
+
+        // Convert AbilityDefinition format to EffectAST format for executor
+        const effects = this.convertToEffectAST(triggeredAbility.effects || []);
 
         // Build game context
         const gameContext: GameContext = {
@@ -660,6 +676,76 @@ export class AbilitySystemManager {
         }
 
         return Math.max(0, baseShiftCost + modification);
+    }
+
+    /**
+     * Calculate modified move cost for a character moving to a location
+     */
+    getModifiedMoveCost(character: any, location: any): number {
+        const baseMoveCost = location.moveCost || 0;
+        let modification = 0;
+
+        const player = this.turnManager.game.getPlayer(character.ownerId);
+
+        // 1. Check Active Effects (Global)
+        // e.g. "Your characters move for free"
+        if (this.turnManager.game.state.activeEffects) {
+            this.turnManager.game.state.activeEffects.forEach((effect: any) => {
+                if (effect.move_cost_reduction) {
+                    // Check target filter
+                    if (this.cardMatchesFilter(character, effect.target)) {
+                        modification -= effect.move_cost_reduction;
+                    }
+                }
+                // Handle new 'move_cost_modifier' type
+                if (effect.type === 'move_cost_modifier' || effect.type === 'move_cost_reduction') {
+                    // TODO: Robust target checking (is it modifying THIS character?)
+                    // For now assuming simplistic global or character-specific match
+                }
+            });
+        }
+
+        // 2. Check Static Abilities on the Location itself
+        // e.g. "Characters move here for free" (The Queen's Castle)
+        if (this.staticAbilities.has(location)) {
+            const abilities = this.staticAbilities.get(location) || [];
+            abilities.forEach(ability => {
+                if (ability.type === 'static' && ability.effects) {
+                    (ability.effects as any[]).forEach(effect => {
+                        if (effect.type === 'move_cost_reduction' || effect.type === 'move_cost_modifier') {
+                            // Check if it applies to the moving character
+                            // Usually "Characters move to this location for free" implies NO target filter on the character, just the location context
+                            const amount = (effect as any).amount;
+                            if (amount === 'free' || amount === 99) {
+                                modification = -999; // Make it free
+                            } else if (typeof amount === 'number') {
+                                modification -= amount;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // 3. Check Static Abilities on the Character
+        // e.g. "This character moves for 1 less"
+        if (this.staticAbilities.has(character)) {
+            const abilities = this.staticAbilities.get(character) || [];
+            abilities.forEach(ability => {
+                if (ability.type === 'static' && ability.effects) {
+                    ability.effects.forEach(effect => {
+                        if (effect.type === 'move_cost_reduction' && (effect as any).target === 'self') {
+                            const amount = (effect as any).amount;
+                            if (typeof amount === 'number') {
+                                modification -= amount;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        return Math.max(0, baseMoveCost + modification);
     }
 
     /**
@@ -1175,6 +1261,15 @@ export class AbilitySystemManager {
 
                 this.turnManager.logger.debug(`   [EventCondition] during_your_turn: current=${currentTurnPlayer}, owner=${cardOwner}, result=${isYourTurn}`);
                 return isYourTurn;
+
+            case 'opponents_turn':
+                // Check if it's NOT the card owner's turn (i.e., opponent's turn)
+                const currentPlayer = this.turnManager.game.state.turnPlayerId;
+                const owner = card.ownerId;
+                const isOpponentsTurn = currentPlayer !== owner;
+
+                this.turnManager.logger.debug(`   [EventCondition] opponents_turn: current=${currentPlayer}, owner=${owner}, result=${isOpponentsTurn}`);
+                return isOpponentsTurn;
 
             case 'while_here':
                 // Check if target card is at the same location as source
