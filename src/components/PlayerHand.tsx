@@ -126,11 +126,7 @@ export default function PlayerHand({
                                     )}
 
                                     {!canPlay && reason && (
-                                        <div className="absolute inset-0 bg-black bg-opacity-60 rounded-lg flex items-center justify-center pointer-events-none z-10">
-                                            <div className="text-red-400 text-[10px] font-semibold text-center px-1">
-                                                ⚠️ {reason}
-                                            </div>
-                                        </div>
+                                        <div className="absolute inset-0 bg-black bg-opacity-60 rounded-lg pointer-events-none z-10" />
                                     )}
                                 </>
                             )}
