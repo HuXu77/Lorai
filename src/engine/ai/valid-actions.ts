@@ -158,8 +158,11 @@ export function getValidActions(manager: TurnManager, playerId: string): GameAct
                 c.parsedEffects?.some((e: any) => e.keyword === 'rush' || e.type === 'rush');
             return isDry || hasRush;
         });
-        // CRITICAL: Only characters can be challenged, not items or locations
-        const exertedTargets = opponent.play.filter(c => !c.ready && c.type === 'Character');
+        // CRITICAL: Characters must be exerted to be challenged. Locations can be challenged regardless of state.
+        const exertedTargets = opponent.play.filter(c =>
+            (!c.ready && c.type === 'Character') ||
+            c.type === CardType.Location
+        );
 
         readyAttackers.forEach(attacker => {
             exertedTargets.forEach(target => {

@@ -136,11 +136,6 @@ export class AbilitySystemManager {
     registerAbility(card: any, ability: AbilityDefinition): void {
         if (ability.type === 'triggered' && (ability as TriggeredAbility).event) {
             const triggeredAbility = ability as TriggeredAbility;
-            console.log(`📝 [REGISTRATION] Registering ${card.name}:`, JSON.stringify({
-                event: triggeredAbility.event,
-                triggerFilter: (ability as any).triggerFilter,
-                rawText: ability.rawText?.substring(0, 50)
-            }));
 
             this.eventBus.register(ability, card);
             this.registeredCards.add(card); // Ensure card is marked as having registered abilities
@@ -1115,7 +1110,25 @@ export class AbilitySystemManager {
 
         // Check subtypes/classifications
         if (filter.subtype) {
-            if (!card.classifications || !card.classifications.includes(filter.subtype)) {
+            let targetSubtype = filter.subtype;
+            const lowerSubtype = targetSubtype.toLowerCase();
+
+            // Handle "exerted" prefix
+            if (lowerSubtype.startsWith('exerted ')) {
+                if (card.ready) return false;
+                targetSubtype = targetSubtype.substring(8);
+            }
+
+            // Handle "ready" prefix
+            else if (lowerSubtype.startsWith('ready ')) {
+                if (!card.ready) return false;
+                targetSubtype = targetSubtype.substring(6);
+            }
+
+            // Check if card has the subtype (case-sensitive check as per existing logic, or loose?)
+            // Existing logic used .includes(filter.subtype).
+            // We'll stick to that but use the stripped subtype.
+            if (!card.classifications || !card.classifications.some((c: string) => c === targetSubtype || c.toLowerCase() === targetSubtype.toLowerCase())) {
                 return false;
             }
         }
@@ -1227,6 +1240,33 @@ export class AbilitySystemManager {
             case 'in_discard':
                 // "if this card is in your discard"
                 return card.zone === ZoneType.Discard;
+
+            case 'has_character':
+                // "if you have a [filter] character in play"
+                const hasCharacterOwner = this.turnManager.game.getPlayer(card.ownerId);
+                if (!hasCharacterOwner || !condition.filter) return false;
+
+                return hasCharacterOwner.play.some((c: any) => {
+                    const filter = condition.filter;
+                    if (filter.name && c.name !== filter.name && c.fullName !== filter.name) return false;
+
+                    if (filter.classifications && Array.isArray(filter.classifications)) {
+                        const subtypes = c.subtypes || c.classifications || [];
+                        const hasClassification = filter.classifications.some((cls: string) =>
+                            subtypes.some((s: string) => s.toLowerCase() === cls.toLowerCase())
+                        );
+                        if (!hasClassification) return false;
+                    }
+
+                    if (filter.subtype) {
+                        const subtypes = c.subtypes || c.classifications || [];
+                        if (!subtypes.some((s: string) => s.toLowerCase() === filter.subtype.toLowerCase())) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
 
             // Add more condition types as needed
             default:
@@ -1430,7 +1470,8 @@ export class AbilitySystemManager {
 
         // Log cleanup summary
         if (listenersRemoved > 0) {
-            console.log(`♻️  Cleanup: Removed ${listenersRemoved} temporary ability listener(s)`);
+            if (listenersRemoved > 0) {
+            }
         }
 
         this.turnManager.logger.debug('[AbilitySystem] Cleaned up temporary abilities from ' + cardsToReparse.length + ' card(s)');

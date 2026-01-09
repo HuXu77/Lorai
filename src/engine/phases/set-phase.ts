@@ -22,6 +22,13 @@ export function executeSetPhase(turnManager: TurnManager, player: PlayerState): 
 
     logger.debug(`[${player.name}] Set Phase.`);
 
+    // Emit TURN_START event for triggered abilities (New System)
+    abilitySystem.emitEvent(GameEvent.TURN_START, {
+        player,
+        event: GameEvent.TURN_START,
+        timestamp: Date.now()
+    });
+
     // NEW: Locations gain lore at start of turn
     player.play.forEach(card => {
         if (card.type === 'Location') {

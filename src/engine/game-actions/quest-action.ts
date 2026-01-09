@@ -34,7 +34,9 @@ export async function executeQuest(
     const abilitySystem = turnManager.abilitySystem;
 
     const card = player.play.find(c => c.instanceId === cardId);
-    if (!card) return false;
+    if (!card) {
+        return false;
+    }
 
     // Rule: Character must be ready
     if (!card.ready) {
@@ -82,6 +84,7 @@ export async function executeQuest(
     await abilitySystem.emitEvent(GameEvent.CARD_QUESTED, {
         event: GameEvent.CARD_QUESTED,
         player: player,
+        card: card,
         sourceCard: card,
         timestamp: Date.now()
     });

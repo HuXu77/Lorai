@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+// import { describe, it, expect } from 'vitest';
 import { TestHarness } from '../engine-test-utils';
 import { CardType } from '../../engine/models';
 
@@ -37,19 +37,19 @@ describe('Effect Duration Bug', () => {
         });
 
         // Verify effect is active immediately (P1 Turn 1)
-        expect(card.keywords, 'Should have Ward immediately').toContain('Ward');
+        expect(card.keywords).toContain('Ward');
 
         // Pass Turn -> P2 Turn 1
         testHarness.turnManager.passTurn(p1.id);
 
         // Verify effect is still active during opponent's turn
-        expect(card.keywords, 'Should still have Ward during opponent\'s turn').toContain('Ward');
+        expect(card.keywords).toContain('Ward');
 
         // Pass Turn -> P1 Turn 2 (Start of next turn)
         testHarness.turnManager.passTurn(testHarness.p2Id);
 
         // Verify effect has EXPIRED at start of P1's next turn
-        expect(card.keywords, 'Should NOT have Ward after start of next turn').not.toContain('Ward');
+        expect(card.keywords).not.toContain('Ward');
     });
 
     it('should expire "until end of turn" effects correctly', async () => {
@@ -85,6 +85,6 @@ describe('Effect Duration Bug', () => {
         // Pass Turn -> P2 Turn 1
         testHarness.turnManager.passTurn(p1.id);
 
-        expect(card.strength, 'Boost should expire at end of turn').toBe(1);
+        expect(card.strength).toBe(1);
     });
 });

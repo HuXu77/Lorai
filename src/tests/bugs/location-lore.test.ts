@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+// import { describe, it, expect, beforeEach } from 'vitest';
 import { TestHarness } from '../engine-test-utils';
 import { ZoneType } from '../../engine/models';
 
@@ -40,7 +40,7 @@ describe('Location Lore Mechanics', () => {
         testHarness.turnManager.startTurn(p1.id);
 
         // Verify lore gain
-        expect(p1.lore, 'Should have gained 1 lore from location').toBe(1);
+        expect(p1.lore).toBe(1);
 
         // Verify log (optional, but good for debugging)
         // expect(testHarness.logger.logs).toContain... 
@@ -80,6 +80,6 @@ describe('Location Lore Mechanics', () => {
         testHarness.turnManager.startTurn(p1.id);
 
         // Verify lore gain (1 base + 1 buff = 2)
-        expect(p1.lore, 'Should have gained 2 modified lore from location').toBe(2);
+        expect(p1.lore).toBe(2);
     });
 });

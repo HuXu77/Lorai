@@ -628,6 +628,7 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
 
                 // 2. Generic target support
                 const inkTargets = await this.executor.resolveTargets(effect.target, context);
+
                 if (inkTargets.length > 0) {
                     inkTargets.forEach((card: any) => {
                         // Determine owner

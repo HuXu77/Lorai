@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+// import { describe, it, expect, beforeEach } from 'vitest';
 import { TestHarness } from '../engine-test-utils';
 import { CardInstance, ZoneType } from '../../engine/models';
 
@@ -41,20 +41,20 @@ describe('Undamaged Condition Bug', () => {
         testHarness.turnManager.recalculateEffects();
 
         // Verify initial strength (2 base + 4 buff = 6)
-        expect(beast.strength, 'Should have +4 strength initially (undamaged)').toBe(6);
+        expect(beast.strength).toBe(6);
 
         // Apply 1 damage
         testHarness.turnManager.applyDamage(p1, beast, 1, 'test-source');
         testHarness.turnManager.recalculateEffects();
 
         // Verify strength reverts to base (2)
-        expect(beast.strength, 'Should lose buff when damaged').toBe(2);
+        expect(beast.strength).toBe(2);
 
         // Heal the damage
         beast.damage = 0;
         testHarness.turnManager.recalculateEffects();
 
         // Verify strength returns (6)
-        expect(beast.strength, 'Should regain buff when healed').toBe(6);
+        expect(beast.strength).toBe(6);
     });
 });

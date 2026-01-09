@@ -55,7 +55,8 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
         player.play.forEach(card => {
             // Apply active effect modifications (e.g., Granted Keywords, Stat Buffs)
             turnManager.game.state.activeEffects.forEach(effect => {
-                const effectAny = effect as any; // Support both ContinuousEffect and stat modification formats
+                const effectAny = effect as any;
+                // console.log(`[Recalc] Checking effect ${effect.id} (${effect.type}) against ${card.name}`);
 
                 // Apply stat modifications (NEW: from executor's executeModifyStats)
                 if (effectAny.type === 'modify_strength' && effectAny.targetCardId === card.instanceId) {
@@ -576,9 +577,14 @@ export function evaluateCondition(player: PlayerState, condition: any, sourceCar
             return player.hand.length >= condition.threshold;
 
         case 'characters_with_subtype_in_play':
-            const count = player.play.filter((c: CardInstance) =>
-                c.subtypes && c.subtypes.includes(condition.subtype)
-            ).length;
+            const count = player.play.filter((c: CardInstance) => {
+                const subtypes = c.subtypes || [];
+                if (condition.subtypes && Array.isArray(condition.subtypes)) {
+                    // Match ANY of the subtypes
+                    return condition.subtypes.some((s: string) => subtypes.includes(s));
+                }
+                return subtypes.includes(condition.subtype);
+            }).length;
             return count >= condition.threshold;
 
         case 'self_stat_greater_than_or_equal':
@@ -592,12 +598,20 @@ export function evaluateCondition(player: PlayerState, condition: any, sourceCar
             return !!(cardsUnder && cardsUnder.length > 0);
 
         case 'filter':
+        case 'has_character':
             if (condition.filter) {
                 const filter = condition.filter;
                 return player.play.some(c => {
                     if (filter.name && c.name !== filter.name) return false;
                     if (filter.subtype && (!c.subtypes || !c.subtypes.includes(filter.subtype))) return false;
+                    if (filter.classifications && Array.isArray(filter.classifications)) {
+                        // Check if card has ANY of the classifications
+                        const hasAny = filter.classifications.some((cls: string) => c.subtypes && c.subtypes.includes(cls));
+                        if (!hasAny) return false;
+                    }
                     if (filter.type && c.type !== filter.type) return false;
+
+                    // Support 'exclude_self' or similar if needed, but 'has_character' usually implies any.
                     return true;
                 });
             }

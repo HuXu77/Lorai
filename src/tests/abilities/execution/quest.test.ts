@@ -245,12 +245,6 @@ describe('Quest Effect Execution', () => {
                 payload: { targetId: mickey.instanceId } // Just in case
             });
 
-            // Verify lore increased
-            console.log('\n--- DEBUG LORE TEST ---');
-            console.log('Mickey Lore:', mickey.lore);
-            console.log('Active Effects:', JSON.stringify(harness.game.state.activeEffects, null, 2));
-            console.log('Mickey Parsed Effects:', JSON.stringify(mickey.parsedEffects, null, 2));
-
             expect(mickey.lore).toBe(initialLore + 1);
 
             // Quest to verify lore gain

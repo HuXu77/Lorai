@@ -59,14 +59,14 @@ describe('Boost Usage Limits Reproduction', () => {
         game.state.turnCount = 1; // Initialize turn count for ability tracking
 
         // Execute Boost First Time (ability index 0)
-        const result1 = turnManager.useAbility(player1, 'ariel-1', 0);
+        const result1 = await turnManager.useAbility(player1, 'ariel-1', 0);
 
         expect(result1).toBe(true);
         expect(player1.inkwell.filter(c => c.ready).length).toBe(9); // 10 - 1
         expect(ariel.meta?.usedAbilities?.['boost']).toBe(1); // Used on turn 1
 
         // Execute Boost Second Time (Should Fail)
-        const result2 = turnManager.useAbility(player1, 'ariel-1', 0);
+        const result2 = await turnManager.useAbility(player1, 'ariel-1', 0);
 
         expect(result2).toBe(false);
         expect(player1.inkwell.filter(c => c.ready).length).toBe(9); // Should NOT decrease again

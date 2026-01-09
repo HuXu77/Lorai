@@ -7,13 +7,13 @@ import { GameEvent, EventContext } from '../abilities';
 /**
  * Activate a card's ability during the player's turn
  */
-export function executeUseAbility(
+export async function executeUseAbility(
     turnManager: TurnManager,
     player: PlayerState,
     cardId: string,
     abilityIndex: number,
     payload?: any
-): boolean {
+): Promise<boolean> {
     const card = player.play.find(c => c.instanceId === cardId);
     if (!card) return false;
 
@@ -159,7 +159,7 @@ export function executeUseAbility(
     }
 
     // Execute Effect
-    executeResolveEffect(turnManager, player, effect, card, targetCard, payload);
+    await executeResolveEffect(turnManager, player, effect, card, targetCard, payload);
 
     return true;
 }

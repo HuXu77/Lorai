@@ -473,7 +473,7 @@ export class TurnManager {
                     action.payload = action.payload || {};
                     action.payload.targetId = action.targetId;
                 }
-                result = this.useAbility(player, action.cardId!, action.abilityIndex!, action.payload);
+                result = await this.useAbility(player, action.cardId!, action.abilityIndex!, action.payload);
                 break;
 
             case ActionType.SingSong:
@@ -594,8 +594,8 @@ export class TurnManager {
      * @param payload - Optional: Additional data (discard choices, targets, etc.)
      * @returns True if ability was successfully activated, false if invalid or costs couldn't be paid
      */
-    public useAbility(player: PlayerState, cardId: string, abilityIndex: number, payload?: any): boolean {
-        return executeUseAbility(this, player, cardId, abilityIndex, payload);
+    public async useAbility(player: PlayerState, cardId: string, abilityIndex: number, payload?: any): Promise<boolean> {
+        return await executeUseAbility(this, player, cardId, abilityIndex, payload);
     }
     /*
         const card = player.play.find(c => c.instanceId === cardId);

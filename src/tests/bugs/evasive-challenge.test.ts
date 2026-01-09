@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+// import { describe, it, expect, beforeEach } from 'vitest';
 import { TestHarness } from '../engine-test-utils';
 import { ZoneType, CardType } from '../../engine/models';
 import { canChallenge } from '../../engine/combat';
@@ -61,7 +61,7 @@ describe('Evasive Challenge Logic', () => {
         // Attempt challenge
         const isValid = canChallenge(normalAttacker, evasiveTarget);
 
-        expect(isValid, 'Non-evasive attacker should be REJECTED attacking evasive target').toBe(false);
+        expect(isValid).toBe(false);
     });
 
     it('should allow Evasive character to challenge Evasive character', () => {

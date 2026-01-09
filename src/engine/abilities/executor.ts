@@ -1951,6 +1951,31 @@ export class EffectExecutor {
             }
         }
 
+        // Check subtype (singular - complex parsing e.g. "exerted Princess")
+        if (filter.subtype) {
+            let targetSubtype = filter.subtype.toLowerCase();
+            let checkReady = false;
+
+            // Handle "exerted X" pattern
+            if (targetSubtype.startsWith('exerted ')) {
+                if (card.ready) return false;
+                targetSubtype = targetSubtype.substring(8);
+            }
+            // Handle "ready X" pattern
+            else if (targetSubtype.startsWith('ready ')) {
+                if (!card.ready) return false;
+                targetSubtype = targetSubtype.substring(6);
+            }
+
+            // Check if card has this subtype
+            // Check if card has this subtype
+            const matches = card.subtypes && card.subtypes.some((c: string) => c.toLowerCase() === targetSubtype);
+
+            if (!matches) {
+                return false;
+            }
+        }
+
         // Check stats
         if (filter.stats) {
             const statName = filter.stats.stat;
@@ -2826,14 +2851,53 @@ export class EffectExecutor {
      * @returns Array of CardInstance objects that match the target specification
      */
     private async resolveTargets(target: TargetAST | undefined, context: GameContext): Promise<any[]> {
-        console.log(`[Executor] resolveTargets called with ${JSON.stringify(target)}`);
         if (!target) return [];
 
+        // Handle same_target
+        if (target.type === 'same_target') {
+            const lastTargets = (context as any).lastResolvedTargets || [];
+            if (this.turnManager) {
+                this.turnManager.logger.debug(`[Executor] Resolving same_target. Found ${lastTargets.length} targets.`);
+            }
+            return lastTargets;
+        }
+
+        // Resolve new targets
+        const targets = await this._resolveTargetsInternal(target, context);
+
+        // Cache them (only if not empty? or always? always is safer to clear old targets if new lookup fails? No, if new lookup finds 0, same_target should be 0)
+        // Only cache if target type is NOT 'same_target' (handled above)
+        // And maybe exclude 'self'? No, self is a valid target.
+        (context as any).lastResolvedTargets = targets;
+
+        return targets;
+    }
+
+    private async _resolveTargetsInternal(target: TargetAST, context: GameContext): Promise<any[]> {
+        if (!target) return [];
+
+        // Handle same_target (UNIMPLEMENTED PREVIOUSLY)
+        if (target.type === 'same_target') {
+            const lastTargets = (context as any).lastResolvedTargets || [];
+            if (this.turnManager) {
+                this.turnManager.logger.debug(`[Executor] Resolving same_target. Found ${lastTargets.length} targets.`);
+            }
+            return lastTargets;
+        }
+
+        let resolvedTargets: any[] = [];
+
+        // Wrap the switch to capture result
         switch (target.type) {
             case 'self':
-                return [context.card];
+                resolvedTargets = [context.card];
+                break;
             case 'card_in_discard':
             case 'chosen_card_in_discard':
+                // ... existing logic needs to assign to resolvedTargets instead of return
+                // This requires refactoring the whole switch or wrapping it.
+                // Wrapping seems safer.
+
                 // Check if target provided in context
                 if (context.eventContext.targetCard) {
                     const targetCard = context.eventContext.targetCard;
@@ -2902,12 +2966,7 @@ export class EffectExecutor {
                         return [targetCard];
                     }
                     if (this.turnManager) {
-                        console.log(`[DEBUG FORCE] Target ${targetCard.name} (${targetCard.instanceId}) logic check.`);
-                        console.log(`[DEBUG FORCE] CheckFilter Result: ${this.checkFilter(targetCard, effectiveFilter, context)}`);
-                        console.log(`[DEBUG FORCE] Filter: ${JSON.stringify(effectiveFilter)}`);
-                        console.log(`[DEBUG FORCE] Context Player: ${context.player.id}, Card Owner: ${targetCard.ownerId}`);
-
-                        this.turnManager.logger.warn(`[EffectExecutor] Target ${targetCard.name} (${targetCard.instanceId}) does not match filter. Filter: ${JSON.stringify(effectiveFilter)}`);
+                        this.turnManager.logger.warn(`[EffectExecutor] Target ${targetCard.name} (${targetCard.instanceId}) logic check.`);
                     }
                     return [];
                 }
@@ -3023,6 +3082,9 @@ export class EffectExecutor {
                         if (target.filter.damaged === true) {
                             allChars = allChars.filter(c => c.damage > 0);
                         }
+
+                        // Apply generic filter checks (subtypes, stats, etc.)
+                        allChars = allChars.filter(c => this.checkFilter(c, target.filter, context));
                     }
                     return allChars;
                 }
@@ -3177,6 +3239,8 @@ export class EffectExecutor {
             default:
                 return [];
         }
+
+        return resolvedTargets;
     }
 
     /**

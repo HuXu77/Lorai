@@ -81,7 +81,7 @@ describe('Challenge Rules', () => {
             expect(challengeActions[0].targetId).not.toBe(item.instanceId);
         });
 
-        test('should only allow challenging exerted characters, not locations', () => {
+        test('should allow challenging locations', () => {
             const player1 = game.getPlayer('player1');
             const player2 = game.getPlayer('player2');
 
@@ -124,8 +124,9 @@ describe('Challenge Rules', () => {
             const actions = turnManager.getValidActions('player1');
             const challengeActions = actions.filter(a => a.type === ActionType.Challenge);
 
-            // Should have NO challenge actions (can't challenge locations)
-            expect(challengeActions).toHaveLength(0);
+            // Should have exactly 1 challenge action (against the location)
+            expect(challengeActions).toHaveLength(1);
+            expect(challengeActions[0].targetId).toBe(location.instanceId);
         });
 
         test('should allow challenging exerted characters only', () => {
@@ -292,7 +293,7 @@ describe('Challenge Rules', () => {
             expect(attacker.ready).toBe(true);
         });
 
-        test('should fail to execute challenge against a location', async () => {
+        test('should successfully execute challenge against a location', async () => {
             const player1 = game.getPlayer('player1');
             const player2 = game.getPlayer('player2');
 
@@ -331,17 +332,18 @@ describe('Challenge Rules', () => {
             game.state.turnCount = 1;
             game.state.turnPlayerId = 'player1';
 
-            // Attempt to challenge the location (should fail validation)
+            // Attempt to challenge the location (should succeed)
             const result = await turnManager.challenge(player1, attacker.instanceId, location.instanceId);
 
-            // Should return false (invalid challenge)
-            expect(result).toBe(false);
+            // Should return true (valid challenge)
+            expect(result).toBe(true);
 
-            // Location should still be in play
+            // Location should still be in play (5 willpower - 3 damage = 2 remaining)
             expect(player2.play).toContain(location);
+            expect(location.damage).toBe(3);
 
-            // Attacker should still be ready (challenge didn't happen)
-            expect(attacker.ready).toBe(true);
+            // Attacker should be exerted
+            expect(attacker.ready).toBe(false);
         });
     });
 });
