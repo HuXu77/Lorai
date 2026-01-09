@@ -1668,7 +1668,7 @@ function GamePageInner() {
                     }}
                     availableInk={yourPlayer.inkwell?.filter(c => c.ready).length || 0}
                     currentTurn={engineState?.turnCount || 0}
-                    onBoost={() => {
+                    onBoost={async () => {
                         if (gameEngine && playAreaMenuCard) {
                             const booster = playAreaMenuCard;
                             setPlayAreaMenuCard(null); // Dismiss first
@@ -1682,7 +1682,7 @@ function GamePageInner() {
                                 ) ?? -1;
 
                                 if (boostAbilityIndex >= 0) {
-                                    const success = gameEngine.turnManager.useAbility(
+                                    const success = await gameEngine.turnManager.useAbility(
                                         player,
                                         booster.instanceId,
                                         boostAbilityIndex
