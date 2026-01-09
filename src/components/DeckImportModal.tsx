@@ -180,7 +180,7 @@ export default function DeckImportModal({ isOpen, onClose, onImport }: DeckImpor
                                     <h3 className="text-lg font-semibold text-blue-300">Player 1 (You)</h3>
                                     <div className="flex bg-slate-700 rounded p-1 text-xs">
                                         <button onClick={() => setDeck1Type('text')} className={`px-3 py-1 rounded ${deck1Type === 'text' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>Text</button>
-                                        <button onClick={() => setDeck1Type('url')} className={`px-3 py-1 rounded ${deck1Type === 'url' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>URL</button>
+                                        <button disabled title="Temporarily disabled due to blocking" className={`px-3 py-1 rounded opacity-50 cursor-not-allowed ${deck1Type === 'url' ? 'bg-indigo-600 text-white' : 'text-gray-400'}`}>URL (Disabled)</button>
                                     </div>
                                 </div>
 
@@ -222,7 +222,7 @@ export default function DeckImportModal({ isOpen, onClose, onImport }: DeckImpor
                                     <h3 className="text-lg font-semibold text-purple-300">Player 2 (Bot)</h3>
                                     <div className="flex bg-slate-700 rounded p-1 text-xs">
                                         <button onClick={() => setDeck2Type('text')} className={`px-3 py-1 rounded ${deck2Type === 'text' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>Text</button>
-                                        <button onClick={() => setDeck2Type('url')} className={`px-3 py-1 rounded ${deck2Type === 'url' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>URL</button>
+                                        <button disabled title="Temporarily disabled due to blocking" className={`px-3 py-1 rounded opacity-50 cursor-not-allowed ${deck2Type === 'url' ? 'bg-indigo-600 text-white' : 'text-gray-400'}`}>URL (Disabled)</button>
                                     </div>
                                 </div>
 
