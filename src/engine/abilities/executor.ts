@@ -5184,8 +5184,48 @@ export class EffectExecutor {
                 }
             }
         } else {
+            // No valid targets, but we should still show the revealed hand to the player
             if (this.turnManager) {
-                this.turnManager.logger.info(`${opponent.name} has no matching cards to discard`);
+                this.turnManager.logger.info(`${opponent.name} has no matching cards to discard, but hand is revealed`);
+            }
+
+            // Show a "reveal only" modal so the player can see the hand even with no valid targets
+            if (this.turnManager.requestChoice && opponent.hand.length > 0) {
+                // Build options showing all cards (but none are valid to discard)
+                const revealOptions = opponent.hand.map((card: any) => ({
+                    id: card.instanceId,
+                    display: `${card.fullName || card.name} (${card.type}, Cost ${card.cost || 0})`,
+                    card: card,
+                    valid: false, // Not selectable
+                    invalidReason: effect.filter?.excludeCardType
+                        ? `${card.type} cards cannot be discarded`
+                        : 'Does not match filter'
+                }));
+
+                const choiceRequest = {
+                    id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    type: 'reveal_hand' as any,
+                    playerId: context.player.id,
+                    prompt: `Opponent's hand revealed - No valid cards to discard`,
+                    options: revealOptions,
+                    source: {
+                        card: context.card,
+                        abilityName: context.abilityName || 'Reveal Hand',
+                        player: context.player
+                    },
+                    context: {
+                        revealedCards: opponent.hand,
+                        opponentHand: opponent.hand,
+                        infoOnly: true // Signal to UI that this is view-only
+                    },
+                    min: 0, // No selection required
+                    max: 0,
+                    optional: true,
+                    timestamp: Date.now()
+                };
+
+                // Wait for player to acknowledge/dismiss the reveal
+                await this.turnManager.requestChoice(choiceRequest);
             }
         }
     }
