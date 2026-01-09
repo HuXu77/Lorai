@@ -61,8 +61,13 @@ import { DrawLoreFamilyHandler } from './families/draw-lore-family';
 import { hasAbilityKeyword } from '../../utils/ability-helpers';
 import { StaticEffectFamilyHandler } from './families/static-effect-family';
 import { PreventionFamilyHandler } from './families/prevention-family';
+import { ChoiceFamilyHandler } from './families/choice-family';
+import { matchesCardFilter } from './filters';
 import { UtilityFamilyHandler } from './families/utility-family';
 import { SpecializedEffectsFamilyHandler } from './families/specialized-effects-family';
+import { ConditionEvaluator } from './condition-evaluator';
+import { StatFamilyHandler } from './families/stat-family';
+import { ZoneFamilyHandler } from './families/zone-family';
 
 /**
  * Game execution context passed to all effect handlers
@@ -94,6 +99,7 @@ export interface GameContext {
 export class EffectExecutor {
     private turnManager: any = null; // TurnManager reference for game methods
     private familyHandlers: Map<string, any> = new Map();
+    public conditionEvaluator: ConditionEvaluator | null = null;
 
     // Choice handling
     private pendingChoice: ChoiceRequest | null = null;
@@ -104,9 +110,13 @@ export class EffectExecutor {
 
         // Initialize family handlers
         if (turnManager) {
-            this.familyHandlers.set('cost', new CostFamilyHandler(turnManager));
-            this.familyHandlers.set('damage', new DamageFamilyHandler(turnManager));
-            this.familyHandlers.set('ready_exert', new ReadyExertFamilyHandler(turnManager));
+            this.familyHandlers.set('cost', new CostFamilyHandler(this));
+            this.familyHandlers.set('damage', new DamageFamilyHandler(this));
+            this.familyHandlers.set('zone', new ZoneFamilyHandler(this));
+            this.familyHandlers.set('prevention', new PreventionFamilyHandler(this));
+            this.familyHandlers.set('choice', new ChoiceFamilyHandler(this));
+
+            this.familyHandlers.set('ready_exert', new ReadyExertFamilyHandler(this));
             this.familyHandlers.set('deck_manipulation', new DeckManipulationFamilyHandler(this));
             this.familyHandlers.set('opponent_interaction', new OpponentInteractionFamilyHandler(this));
             // Batch 8: Location 
@@ -118,16 +128,25 @@ export class EffectExecutor {
             // Batch 12: Static Effects
             this.familyHandlers.set('static_effect', new StaticEffectFamilyHandler(this));
             // Batch 14: Prevention
-            this.familyHandlers.set('prevention', new PreventionFamilyHandler(this));
+            // this.familyHandlers.set('prevention', new PreventionFamilyHandler(this)); // Moved up
             // Batch 16: Utility
             this.familyHandlers.set('utility', new UtilityFamilyHandler(this));
             // Batch 17: Specialized Effects (100% Coverage)
             this.familyHandlers.set('specialized', new SpecializedEffectsFamilyHandler(this));
-
+            // Phase 1 Refactor: Stat modification family
+            this.familyHandlers.set('stat', new StatFamilyHandler(this));
+            // Phase 2 Refactor: Zone transfer family
+            // this.familyHandlers.set('zone', new ZoneFamilyHandler(this)); // Moved up
 
             // Ensure all handlers have turn manager
             this.familyHandlers.forEach(handler => handler.setTurnManager(turnManager));
         }
+
+        // Initialize condition evaluator with bound checkFilter
+        this.conditionEvaluator = new ConditionEvaluator(
+            turnManager || null,
+            this.checkFilter.bind(this)
+        );
     }
 
     /**
@@ -135,35 +154,22 @@ export class EffectExecutor {
      */
     setTurnManager(turnManager: any) {
         this.turnManager = turnManager;
+        if (this.conditionEvaluator) {
+            this.conditionEvaluator.setTurnManager(turnManager);
+        }
+        // Also update family handlers?
+        this.familyHandlers.forEach(handler => handler.setTurnManager(turnManager));
     }
 
+
+
+
     /**
-     * Helper: Filter cards by type and/or subtype
-     * Handles special cases like "song" (Action + Song subtype)
+     * Evaluate a condition using the ConditionEvaluator
+     * Wrapper for test compatibility and convenient access
      */
-    private matchesCardFilter(card: any, filter: { cardType?: string; subtype?: string }): boolean {
-        if (!filter) return true;
-
-        // Check card type
-        if (filter.cardType) {
-            if (filter.cardType === 'song') {
-                // Songs are Action cards with Song subtype
-                if (card.type !== 'Action' || !card.subtypes?.includes('Song')) {
-                    return false;
-                }
-            } else if (card.type?.toLowerCase() !== filter.cardType.toLowerCase()) {
-                return false;
-            }
-        }
-
-        // Check subtype
-        if (filter.subtype) {
-            if (!card.subtypes || !card.subtypes.includes(filter.subtype)) {
-                return false;
-            }
-        }
-
-        return true;
+    evaluateCondition(condition: any, context: GameContext): boolean {
+        return this.conditionEvaluator?.evaluateCondition(condition, context) || false;
     }
 
     /**
@@ -225,26 +231,48 @@ export class EffectExecutor {
                     }
                 }
                 break;
+            // === ZONE FAMILY === (Routing to zone-family.ts)
             case 'banish':
-                return await this.executeBanish(effect, context);
             case 'return_self':
-                await this.executeReturnToHand(effect, context, true);
-                break;
             case 'return_to_hand':
-                await this.executeReturnToHand(effect, context);
+            case 'return_from_discard':
+            case 'bounce_all':
+            case 'exile':
+            case 'return_from_exile':
+            case 'return_multiple_with_cost_filter':
+                // Note: put_into_inkwell is handled by deck_manipulation family
+                {
+                    const handler = this.familyHandlers.get('zone');
+                    if (handler) {
+                        await handler.execute(effect, context);
+                    } else {
+                        this.turnManager?.logger.warn(`Zone family handler not initialized`);
+                    }
+                }
                 break;
 
             case 'discard':
                 await this.executeDiscard(effect, context);
                 break;
+            // === STAT FAMILY === (Routing to stat-family.ts)
             case 'modify_stats':
-                await this.executeModifyStats(effect, context);
-                break;
             case 'grant_keyword':
-                await this.executeGrantKeyword(effect, context);
-                break;
             case 'grant_ability':
-                await this.executeGrantAbility(effect as any, context);
+            case 'permanent_buff':
+            case 'temporary_buff':
+            case 'copy_stats':
+            case 'set_cost':
+            case 'double_lore':
+            case 'lose_all_abilities':
+            case 'transform':
+                {
+                    const handler = this.familyHandlers.get('stat');
+                    if (handler) {
+                        await handler.execute(effect, context);
+                    } else {
+                        this.turnManager?.logger.warn(`Stat family handler not initialized`);
+                    }
+                }
                 break;
             case 'gain_lore':
                 await this.executeGainLore(effect, context);
@@ -279,7 +307,16 @@ export class EffectExecutor {
                 break;
 
             case 'opponent_choice':
-                await this.executeOpponentChoice(effect as any, context);
+                // This is a generic opponent choice, not necessarily a discard choice.
+                // It should be routed to the opponent_interaction family.
+                {
+                    const handler = this.familyHandlers.get('opponent_interaction');
+                    if (handler) {
+                        await handler.execute(effect, context);
+                    } else {
+                        this.turnManager?.logger.warn(`Opponent Interaction family handler not initialized`);
+                    }
+                }
                 break;
             case 'look_at_top_deck':
                 {
@@ -355,9 +392,7 @@ export class EffectExecutor {
             case 'area_effect':
                 await this.executeAreaEffect(effect, context);
                 break;
-            case 'return_multiple_with_cost_filter':
-                await this.executeReturnMultipleWithCostFilter(effect, context);
-                break;
+
             case 'put_top_card_under':
                 await this.executePutTopCardUnder(effect, context);
                 break;
@@ -387,7 +422,15 @@ export class EffectExecutor {
                 await this.executeDiscardChosen(effect as any, context);
                 break;
             case 'choose_and_discard':
-                await this.executeChooseAndDiscard(effect, context);
+                // This is a choice, route to choice family
+                {
+                    const handler = this.familyHandlers.get('choice');
+                    if (handler) {
+                        await handler.execute(effect, context);
+                    } else {
+                        this.turnManager?.logger.warn(`Choice family handler not initialized`);
+                    }
+                }
                 break;
             case 'ink_from_hand':
                 await this.executeInkFromHand(effect as any, context);
@@ -397,15 +440,8 @@ export class EffectExecutor {
             case 'prevent_next_damage':
                 await this.executePreventNextDamage(effect as any, context);
                 break;
-            case 'cant_quest':
-                await this.executeCantQuest(effect as any, context);
-                break;
             case 'cant_ready':
                 await this.executeCantReady(effect as any, context);
-                break;
-
-            case 'restriction':
-                await this.executeRestriction(effect, context);
                 break;
             case 'cost_reduction':
                 if (this.familyHandlers.has('cost')) {
@@ -414,59 +450,51 @@ export class EffectExecutor {
                     if (this.turnManager) this.turnManager.logger.warn(`[EffectExecutor] No cost handler for ${effect.type}`);
                 }
                 break;
+            // case 'move_damage': // Already handled above
+            //     await this.executeMoveDamage(effect as any, context);
+            //     break;
             case 'prevent_damage':
-            case 'prevent_next_damage':
-                await this.executePreventNextDamage(effect as any, context);
-                break;
-            case 'prevent_damage_from_source':
-                await this.executePreventDamageFromSource(effect as any, context);
-                break;
-            case 'move_damage':
-                await this.executeMoveDamage(effect as any, context);
-                break;
-            case 'cant_challenge':
-                await this.executeCantChallenge(effect as any, context);
-                break;
-            case 'must_challenge':
-                await this.executeMustChallenge(effect as any, context);
-                break;
-            case 'unexertable':
-                await this.executeUnexertable(effect as any, context);
-                break;
-            case 'hexproof':
-                await this.executeHexproof(effect as any, context);
-                break;
-            case 'lose_all_abilities':
-                await this.executeLoseAllAbilities(effect as any, context);
-                break;
-            case 'double_lore':
-                await this.executeDoubleLore(effect as any, context);
-                break;
-            case 'for_each':
-                await this.executeForEach(effect as any, context);
-                break;
-            case 'copy_stats':
-                await this.executeCopyStats(effect as any, context);
-                break;
-            case 'set_cost':
-                await this.executeSetCost(effect as any, context);
-                break;
-            case 'permanent_buff':
-                await this.executePermanentBuff(effect as any, context);
-                break;
-            case 'temporary_buff':
-                await this.executeTemporaryBuff(effect as any, context);
+                // case 'prevent_next_damage': // Already handled above
+                if (this.familyHandlers.has('prevention')) {
+                    await this.familyHandlers.get('prevention').execute(effect, context);
+                }
                 break;
 
-            // ====== TIER 3: COMPLEX MECHANICS ======
-            case 'transform':
-                await this.executeTransform(effect as any, context);
+            case 'opponent_choose_and_discard':
+            case 'choose_card_from_discard':
+            case 'choose_to_play_for_free':
+            case 'look_and_choose':
+            case 'reveal_and_choose':
+            case 'choose_target_effect':
+            case 'distribute_damage_choice':
+            case 'choose_keyword_to_grant':
+            case 'optional_trigger':
+            case 'choose_zone_target':
+            case 'opponent_discard_choice':
+            case 'opponent_reveal_and_discard':
+                // case 'choose_and_discard': // Already handled above
+                if (this.familyHandlers.has('choice')) {
+                    await this.familyHandlers.get('choice').execute(effect, context);
+                }
                 break;
+            // ====== PREVENTION & RESTRICTION FAMILY ======
+            case 'restriction':
+            case 'cant_quest':
+            case 'cant_challenge':
+            case 'must_challenge':
+            case 'unexertable':
+            case 'hexproof':
+            case 'prevent_damage_from_source':
+                if (this.familyHandlers.has('prevention')) {
+                    await this.familyHandlers.get('prevention').execute(effect, context);
+                }
+                break;
+            // case 'for_each': // Already handled above
+            //     await this.executeForEach(effect as any, context);
+            //     break;
+            // ====== TIER 3: COMPLEX MECHANICS ======
             case 'create_copy':
                 await this.executeCreateCopy(effect as any, context);
-                break;
-            case 'bounce_all':
-                await this.executeBounceAll(effect as any, context);
                 break;
             case 'counter_ability':
                 await this.executeCounterAbility(effect as any, context);
@@ -474,12 +502,7 @@ export class EffectExecutor {
             case 'cascade':
                 await this.executeCascade(effect as any, context);
                 break;
-            case 'exile':
-                await this.executeExile(effect as any, context);
-                break;
-            case 'return_from_exile':
-                await this.executeReturnFromExile(effect as any, context);
-                break;
+
             case 'flashback':
                 await this.executeFlashback(effect as any, context);
                 break;
@@ -509,49 +532,48 @@ export class EffectExecutor {
                 break;
 
             // ====== CHOICE-BASED EFFECTS ======
-            case 'choose_card_from_discard':
-                await this.executeChooseCardFromDiscard(effect as any, context);
-                break;
-            case 'choose_to_play_for_free':
-                await this.executeChooseToPlayForFree(effect as any, context);
-                break;
-            case 'opponent_choose_and_discard':
-                await this.executeOpponentChooseAndDiscard(effect as any, context);
-                break;
-            case 'look_and_choose':
-                await this.executeLookAndChoose(effect as any, context);
-                break;
-            case 'reveal_and_choose':
-                await this.executeRevealAndChoose(effect as any, context);
-                break;
-            case 'choose_target_effect':
-                await this.executeChooseTargetEffect(effect as any, context);
-                break;
-            case 'distribute_damage_choice':
-                await this.executeDistributeDamageChoice(effect as any, context);
-                break;
-            case 'choose_keyword_to_grant':
-                await this.executeChooseKeywordToGrant(effect as any, context);
-                break;
-            case 'optional_trigger':
-                await this.executeOptionalTrigger(effect as any, context);
-                break;
-            case 'choose_zone_target':
-                await this.executeChooseZoneTarget(effect as any, context);
-                break;
-            case 'opponent_reveal_and_discard':
-                await this.executeOpponentRevealAndDiscard(effect as any, context);
-                break;
-            case 'opponent_discard_choice':
-                await this.executeOpponentDiscardChoice(effect as any, context);
-                break;
+            // These are now routed to ChoiceFamilyHandler
+            // case 'choose_card_from_discard':
+            //     await this.executeChooseCardFromDiscard(effect as any, context);
+            //     break;
+            // case 'choose_to_play_for_free':
+            //     await this.executeChooseToPlayForFree(effect as any, context);
+            //     break;
+            // case 'opponent_choose_and_discard':
+            //     await this.executeOpponentChooseAndDiscard(effect as any, context);
+            //     break;
+            // case 'look_and_choose':
+            //     await this.executeLookAndChoose(effect as any, context);
+            //     break;
+            // case 'reveal_and_choose':
+            //     await this.executeRevealAndChoose(effect as any, context);
+            //     break;
+            // case 'choose_target_effect':
+            //     await this.executeChooseTargetEffect(effect as any, context);
+            //     break;
+            // case 'distribute_damage_choice':
+            //     await this.executeDistributeDamageChoice(effect as any, context);
+            //     break;
+            // case 'choose_keyword_to_grant':
+            //     await this.executeChooseKeywordToGrant(effect as any, context);
+            //     break;
+            // case 'optional_trigger':
+            //     await this.executeOptionalTrigger(effect as any, context);
+            //     break;
+            // case 'choose_zone_target':
+            //     await this.executeChooseZoneTarget(effect as any, context);
+            //     break;
+            // case 'opponent_reveal_and_discard':
+            //     await this.executeOpponentRevealAndDiscard(effect as any, context);
+            //     break;
+            // case 'opponent_discard_choice':
+            //     await this.executeOpponentDiscardChoice(effect as any, context);
+            //     break;
 
             case 'vanish':
                 await this.executeVanish(effect as any, context);
                 break;
-            case 'restriction':
-                await this.executeRestriction(effect as any, context);
-                break;
+
 
             // === COST FAMILY === (7 types) - routed to family handler
             case 'cost_reduction':
@@ -654,9 +676,9 @@ export class EffectExecutor {
             case 'search_deck':
             case 'reveal_top_card':
             case 'reveal_top_deck':
-            case 'look_and_choose':
+            // case 'look_and_choose': // Now routed to choice family
             case 'look_at_cards':
-            case 'tutor_specific':
+            // case 'tutor_specific': // Now handled by its own method
             case 'look_at_top_of_deck':
 
             // Merged cases from Block 1
@@ -672,7 +694,7 @@ export class EffectExecutor {
 
             case 'look_and_move':
             case 'look_at_top_and_choose_placement':
-            case 'return_from_discard':
+            // case 'return_from_discard': // Now routed to zone family
             case 'put_from_discard':
             case 'play_from_discard':
             case 'play_action_from_discard_then_bottom_deck':
@@ -703,7 +725,7 @@ export class EffectExecutor {
 
             // === OPPONENT INTERACTION FAMILY === (13 types) - routed to family handler
             case 'opponent_discard':
-            case 'opponent_choice_discard':
+            // case 'opponent_choice_discard': // Now routed to choice family
             case 'opponent_play_reveal_and_discard':
             case 'opponent_choice_banish':
             case 'opponent_discard_from_hand':
@@ -1109,7 +1131,7 @@ export class EffectExecutor {
      * @returns false if optional and declined, true/undefined otherwise
      */
     private async executeDraw(effect: Extract<EffectAST, { type: 'draw' }>, context: GameContext): Promise<boolean | void> {
-        const amount = this.evaluateExpression(effect.amount, context);
+        const amount = this.conditionEvaluator!.evaluateExpression(effect.amount, context);
         const player = context.player;
 
         if (!this.turnManager) return;
@@ -1138,7 +1160,7 @@ export class EffectExecutor {
      */
     private async executeDamage(effect: Extract<EffectAST, { type: 'damage' }>, context: GameContext): Promise<boolean | void> {
         const targets = await this.resolveTargets(effect.target, context);
-        const amount = this.evaluateExpression(effect.amount, context);
+        const amount = this.conditionEvaluator!.evaluateExpression(effect.amount, context);
 
         if (!this.turnManager) return;
 
@@ -1171,7 +1193,7 @@ export class EffectExecutor {
      */
     private async executeHeal(effect: any, context: GameContext): Promise<void> {
         const targets = await this.resolveTargets(effect.target, context);
-        const amount = this.evaluateExpression(effect.amount, context);
+        const amount = this.conditionEvaluator!.evaluateExpression(effect.amount, context);
 
         targets.forEach((target: any) => {
             target.damage = Math.max(0, (target.damage || 0) - amount);
@@ -1206,31 +1228,7 @@ export class EffectExecutor {
         this.turnManager.logger.info(`[EffectExecutor] ${card.name} vanished (banished itself)${source}`);
     }
 
-    /**
-     * Apply restriction (e.g. Can't Quest)
-     */
-    private async executeRestriction(effect: any, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-        const duration = effect.duration || 'turn';
 
-        if (!this.turnManager) return;
-
-        targets.forEach(target => {
-            const activeEffect: any = {
-                type: 'restriction',
-                restrictionType: effect.restriction,
-                targetCardIds: target.instanceId ? [target.instanceId] : undefined,
-                targetPlayerIds: target.instanceId ? undefined : [target.id],
-                duration,
-                sourceCardId: context.card?.instanceId,
-                sourcePlayerId: context.player.id,
-                params: effect.params
-            };
-            this.turnManager.addActiveEffect(activeEffect);
-        });
-
-        this.turnManager.logger.info(`[EffectExecutor] Applied restriction ${effect.restriction} to ${targets.length} targets`);
-    }
 
     /**
      * Banish card
@@ -1287,69 +1285,6 @@ export class EffectExecutor {
             const targetNames = targets.map((t: any) => t.name).join(', ');
             const source = context.abilityName ? ` (Source: ${context.abilityName})` : '';
             this.turnManager.logger.info(`↩️ Returned ${targetNames} to hand${source}`);
-        }
-    }
-
-    /**
-     * Choose and discard cards from hand
-     */
-    private async executeChooseAndDiscard(effect: any, context: GameContext): Promise<void> {
-        const player = context.player;
-        const amount = effect.amount || 1;
-
-        if (this.turnManager) {
-            this.turnManager.logger.debug(`[executeChooseAndDiscard] Called for ${player.name}, amount: ${amount}, hand size: ${player.hand.length}`);
-        }
-
-        if (player.hand.length === 0) {
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${player.name} has no cards to discard`);
-            }
-            return;
-        }
-
-        const toDiscard = Math.min(amount, player.hand.length);
-
-        for (let i = 0; i < toDiscard; i++) {
-            if (player.hand.length === 0) break;
-
-            // Use choice system to let player select card
-            const options = player.hand.map((card: any) => ({
-                id: card.instanceId,
-                display: `${card.name} (${card.cost}💧)`,
-                label: card.name,
-                card: card,
-                valid: true
-            }));
-
-            const choices = await this.requestTargetChoice({
-                type: 'discard_from_hand',
-                prompt: `Choose a card to discard (${i + 1}/${toDiscard})`,
-                options
-            }, context);
-
-            if (choices.length === 0) {
-                // No choice made - pick random as fallback
-                const randomIndex = Math.floor(Math.random() * player.hand.length);
-                const card = player.hand.splice(randomIndex, 1)[0];
-                card.zone = 'discard';
-                player.discard.push(card);
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${player.name} discarded ${card.name} (random)`);
-                }
-            } else {
-                // Player chose card
-                const chosenCard = choices[0].card;
-                const index = player.hand.findIndex((c: any) => c.instanceId === chosenCard.instanceId);
-                if (index >= 0) {
-                    const card = player.hand.splice(index, 1)[0];
-                    card.zone = 'discard';
-                    player.discard.push(card);
-                    if (this.turnManager) {
-                        this.turnManager.logger.info(`${player.name} discarded ${card.name}`);
-                    }
-                }
-            }
         }
     }
 
@@ -1529,7 +1464,7 @@ export class EffectExecutor {
      * Gain lore
      */
     private async executeGainLore(effect: Extract<EffectAST, { type: 'gain_lore' }>, context: GameContext): Promise<void> {
-        const amount = this.evaluateExpression(effect.amount, context);
+        const amount = this.conditionEvaluator!.evaluateExpression(effect.amount, context);
         const player = context.player;
 
         // Add lore to player
@@ -1575,7 +1510,7 @@ export class EffectExecutor {
      * Execute conditional effect
      */
     private async executeConditional(effect: Extract<EffectAST, { type: 'conditional' }>, context: GameContext): Promise<void> {
-        const condition = this.evaluateCondition(effect.condition, context);
+        const condition = this.conditionEvaluator!.evaluateCondition(effect.condition, context);
 
         if (condition) {
             await this.execute(effect.effect, context);
@@ -1591,7 +1526,7 @@ export class EffectExecutor {
         effect: { type: 'conditional_action', base_action: EffectAST, condition: ConditionAST, replacement_action: EffectAST },
         context: GameContext
     ): Promise<void> {
-        const conditionMet = this.evaluateCondition(effect.condition, context);
+        const conditionMet = this.conditionEvaluator!.evaluateCondition(effect.condition, context);
 
         if (conditionMet) {
             // Execute replacement action if condition is met
@@ -1654,106 +1589,7 @@ export class EffectExecutor {
 
 
 
-    /**
-     * Evaluate an expression to a number
-     */
-    private evaluateExpression(expr: number | Expression, context: GameContext): number {
-        if (typeof expr === 'number') {
-            return expr;
-        }
 
-        switch (expr.type) {
-            case 'constant':
-                return expr.value;
-            case 'attribute_of_self':
-                if (context.card) {
-                    return (context.card as any)[expr.attribute] || 0;
-                }
-                return 0;
-            case 'variable':
-                // Look up variable in context
-                if (context.variables && expr.name in context.variables) {
-                    const value = context.variables[expr.name];
-                    // If the variable value is itself an expression, evaluate it
-                    if (typeof value === 'object' && value.type) {
-                        return this.evaluateExpression(value, context);
-                    }
-                    return value;
-                }
-                // Variable not found in context
-                this.turnManager?.logger.warn(`[Executor] Variable '${expr.name}' not found in context`);
-                return 0;
-            case 'count':
-                if (!this.turnManager) return 0;
-
-                // Handle semantic count types (e.g., "damaged_opponent_characters")
-                if (expr.count) {
-                    const countType = expr.count;
-                    // ... (keep existing logic)
-                    if (countType === 'damaged_opponent_characters') {
-                        let count = 0;
-                        Object.values(this.turnManager.game.state.players).forEach((p: any) => {
-                            if (p.id !== context.player.id) {
-                                count += p.play.filter((c: any) =>
-                                    c.type === 'Character' && (c.damage || 0) > 0
-                                ).length;
-                            }
-                        });
-                        return count;
-                    }
-                    return 0;
-                }
-
-                const targetPlayer = (expr.owner === 'opponent')
-                    ? this.turnManager.game.getOpponent(context.player.id)
-                    : context.player;
-
-                if (!targetPlayer) {
-                    this.turnManager.logger.warn(`[Executor] Count target player not found: ${expr.owner}`);
-                    return 0;
-                }
-
-                let cards: any[] = [];
-                if (expr.source === 'hand') {
-                    cards = targetPlayer.hand;
-                } else if (expr.source === 'play') {
-                    cards = targetPlayer.play;
-                } else if (expr.source === 'discard') {
-                    cards = targetPlayer.discard;
-                }
-
-                // DEBUG LOG
-                this.turnManager.logger.debug(`[Executor] Count: Source=${expr.source} Owner=${expr.owner} Cards=${cards?.length} Filter=${JSON.stringify(expr.filter)}`);
-
-                if (expr.filter) {
-                    const filtered = cards.filter(card => {
-                        // Filter by type (character, item, etc)
-                        if (expr.filter.type && expr.filter.type !== 'card') {
-                            if (!card.type || card.type.toLowerCase() !== expr.filter.type.toLowerCase()) return false;
-                        }
-
-                        // Filter by name
-                        if (expr.filter.name) {
-                            if (card.name !== expr.filter.name) return false;
-                        }
-
-                        // Filter by subtype
-                        if (expr.filter.subtype) {
-                            if (!card.subtypes || !card.subtypes.includes(expr.filter.subtype)) return false;
-                        }
-
-                        return true;
-                    });
-
-                    this.turnManager.logger.debug(`[Executor] Count Result: ${filtered.length}`);
-                    return filtered.length;
-                }
-
-                return cards.length;
-            default:
-                return 0;
-        }
-    }
 
     /**
      * Reveal hand
@@ -1919,13 +1755,16 @@ export class EffectExecutor {
                     return false;
                 }
             } else if ((card.type || '').toLowerCase() !== filter.type.toLowerCase()) {
+                if (this.turnManager) this.turnManager.logger.debug(`[DEBUG] checkFilter failed: singular type check. Expected: ${filter.type.toLowerCase()}, Got: ${card.type}`);
                 return false;
             }
         }
 
         // Check owner (opposing/mine/owner property)
         if (filter.opposing || filter.owner === 'opponent') {
-            if (card.ownerId === context.player.id) return false;
+            if (card.ownerId === context.player.id) {
+                return false;
+            }
         }
         if (filter.mine || filter.owner === 'self') {
             if (card.ownerId !== context.player.id) {
@@ -2351,7 +2190,7 @@ export class EffectExecutor {
      */
     private async executeSetStrength(effect: any, context: GameContext): Promise<void> {
         const targets = await this.resolveTargets(effect.target, context);
-        const value = this.evaluateExpression(effect.value, context);
+        const value = this.conditionEvaluator!.evaluateExpression(effect.value, context);
 
         targets.forEach(target => {
             if (target.strength !== undefined) {
@@ -2369,7 +2208,7 @@ export class EffectExecutor {
      */
     private async executeSetWillpower(effect: any, context: GameContext): Promise<void> {
         const targets = await this.resolveTargets(effect.target, context);
-        const value = this.evaluateExpression(effect.value, context);
+        const value = this.conditionEvaluator!.evaluateExpression(effect.value, context);
 
         targets.forEach(target => {
             if (target.willpower !== undefined) {
@@ -2397,34 +2236,6 @@ export class EffectExecutor {
 
         if (this.turnManager) {
             this.turnManager.logger.info(`➕ Added ${amount} ${counterType} counter(s) to ${targets.length} target(s)`);
-        }
-    }
-
-    /**
-     * Opponent choice - opponent chooses and performs an action
-     * Generic implementation handles any action type
-     */
-    private async executeOpponentChoice(
-        effect: { type: 'opponent_choice', target: TargetAST, action: EffectAST },
-        context: GameContext
-    ): Promise<void> {
-        // Resolve opponents
-        const opponents = await this.resolveTargets(effect.target, context);
-
-        if (this.turnManager) {
-            this.turnManager.logger.info(`[EffectExecutor] Opponent choice effect`);
-        }
-
-        // For each opponent, execute the action
-        for (const opp of opponents) {
-            // Create opponent context
-            const oppContext = {
-                ...context,
-                player: opp
-            };
-
-            // Execute the action from opponent's perspective
-            await this.execute(effect.action, oppContext);
         }
     }
 
@@ -2853,24 +2664,19 @@ export class EffectExecutor {
      * @param context - Game context for filtering and validation
      * @returns Array of CardInstance objects that match the target specification
      */
-    private async resolveTargets(target: TargetAST | undefined, context: GameContext): Promise<any[]> {
+    public async resolveTargets(target: TargetAST | undefined, context: GameContext): Promise<any[]> {
         if (!target) return [];
 
         // Handle same_target
         if (target.type === 'same_target') {
             const lastTargets = (context as any).lastResolvedTargets || [];
-            if (this.turnManager) {
-                this.turnManager.logger.debug(`[Executor] Resolving same_target. Found ${lastTargets.length} targets.`);
-            }
             return lastTargets;
         }
 
         // Resolve new targets
         const targets = await this._resolveTargetsInternal(target, context);
 
-        // Cache them (only if not empty? or always? always is safer to clear old targets if new lookup fails? No, if new lookup finds 0, same_target should be 0)
-        // Only cache if target type is NOT 'same_target' (handled above)
-        // And maybe exclude 'self'? No, self is a valid target.
+        // Cache them
         (context as any).lastResolvedTargets = targets;
 
         return targets;
@@ -2946,6 +2752,11 @@ export class EffectExecutor {
             case 'chosen_character_or_location':  // ADDED: For Emily Quackfaster's put_card_under effect
             case 'chosen_permanent':
             case 'chosen':
+                // Check payload first (UI/Test injection)
+                if ((context as any).payload && (context as any).payload.targets) {
+                    return (context as any).payload.targets;
+                }
+
                 // ===== INTERACTIVE TARGETING (SYNCHRONOUS) =====
                 // First check if target already provided (from event or test mock)
                 // IMPORTANT: Only use pre-set targetCard if it's NOT the source card itself.
@@ -3139,11 +2950,6 @@ export class EffectExecutor {
                 }
                 return [context.player];
             case 'all_opponents':
-                if (this.turnManager) {
-                    return Object.values(this.turnManager.game.state.players).filter((p: any) => p.id !== context.player.id);
-                }
-                return [];
-            case 'all_players':
             case 'each_player':
                 if (this.turnManager) {
                     return Object.values(this.turnManager.game.state.players);
@@ -3246,300 +3052,7 @@ export class EffectExecutor {
         return resolvedTargets;
     }
 
-    /**
-     * Evaluate a condition AST node
-     * 
-     * Tests whether a game state condition is true. Supports many condition types:
-     * - Card state (is_damaged, status, has_subtype)
-     * - Player state (my_turn, empty_hand, min_ink)
-     * - Context state (in_challenge, played_song_this_turn)
-     * - Presence checks (presence, unless_presence, while_here)
-     * 
-     * Used by conditional effects to determine if they should execute.
-     * 
-     * @param condition - The condition AST node to evaluate
-     * @param context - Game context providing state to check against
-     * @returns True if the condition is satisfied, false otherwise
-     * 
-     * @example
-     * ```typescript
-                    * const condition: ConditionAST = { type: 'is_damaged', target: 'self' };
-     * const isTrue = this.evaluateCondition(condition, context);
-     * ```
-     */
-    private evaluateCondition(condition: ConditionAST, context: GameContext): boolean {
-        switch (condition.type) {
-            case 'is_self':
-                return context.eventContext.card === condition.card;
-            case 'has_subtype':
-                if (context.card && context.card.subtypes) {
-                    return context.card.subtypes.some((s: string) => s.toLowerCase() === condition.subtype.toLowerCase());
-                }
-                return false;
-            case 'cost_less_than':
-                if (context.card && typeof context.card.cost === 'number') {
-                    return context.card.cost < condition.amount;
-                }
-                return false;
-            case 'min_ink':
-                if (context.player && context.player.inkwell) {
-                    return context.player.inkwell.length >= condition.amount;
-                }
-                return false;
-            case 'empty_hand':
-                if (context.player && context.player.hand) {
-                    return context.player.hand.length === 0;
-                }
-                return false;
-            case 'is_damaged':
-                if (condition.target === 'self' && context.card) {
-                    const damage = context.card.damage || 0;
-                    // console.log(`[DEBUG] evaluateCondition is_damaged: card = ${ context.card.name } damage = ${ damage } `);
-                    return damage > 0;
-                }
-                return false;
-            case 'check_revealed_card':
-                // Check if revealed card matches filter
-                const revealedCard = (context.eventContext as any).revealedCard;
-                if (!revealedCard) return false;
 
-                const filter = condition.filter;
-                if (filter.type) {
-                    // Check card type (e.g. 'character')
-                    if (revealedCard.type !== filter.type && !revealedCard.keywords?.includes(filter.type)) {
-                        return false;
-                    }
-                }
-                // Add more filter checks as needed
-                return true;
-            case 'status':
-                if (condition.status === 'exerted' && condition.target === 'self' && context.card) {
-                    // Check if card is exerted (ready === false)
-                    return context.card.ready === false;
-                }
-                if (condition.status === 'ready' && condition.target === 'self' && context.card) {
-                    return context.card.ready === true;
-                }
-                return false;
-            case 'my_turn':
-                if (context.player && this.turnManager) {
-                    return this.turnManager.game.state.activePlayerId === context.player.id;
-                }
-                return false;
-            case 'in_challenge':
-                return context.eventContext.inChallenge === true;
-            case 'has_cards_in_hand':
-                // Check if player has at least the required number of cards in hand
-                const handSize = context.player.hand?.length || 0;
-                const requiredCards = (condition as any).amount || 1;
-                return handSize >= requiredCards;
-            case 'self_exerted':
-                // Check if the source card is exerted
-                if (context.card) {
-                    return context.card.ready === false;
-                }
-                return false;
-            case 'played_song_this_turn':
-                // Check if any songs were played this turn
-                if (context.gameState && context.gameState.songsPlayedThisTurn) {
-                    return context.gameState.songsPlayedThisTurn > 0;
-                }
-                return false;
-            case 'target_has_subtype':
-                // Check if the target card has a specific subtype
-                const targetCard = context.eventContext.targetCard;
-                if (targetCard && targetCard.subtypes) {
-                    return targetCard.subtypes.some((s: string) =>
-                        s.toLowerCase() === condition.subtype.toLowerCase()
-                    );
-                }
-                return false;
-            case 'during_your_turn':
-                // Same as my_turn - check if it's the player's active turn
-                if (context.player && this.turnManager) {
-                    return this.turnManager.game.state.activePlayerId === context.player.id;
-                }
-                return false;
-            case 'unless_presence':
-                // Unless condition - TRUE when character/card is NOT present
-                if (context.player && condition.filter) {
-                    const hasMatch = context.player.play.some((card: any) => this.checkFilter(card, condition.filter, context));
-                    return !hasMatch; // Return true if NO match (unless)
-                }
-                return true;
-            case 'unless_location':
-                // Unless at location - TRUE when card is NOT at a location
-                if (context.card) {
-                    return !context.card.atLocation;
-                }
-                return true;
-            case 'while_here':
-                // While at location - TRUE when card IS at a location
-                if (context.card) {
-                    return context.card.atLocation === true;
-                }
-                return false;
-            case 'presence':
-                // Presence condition - TRUE when matching card exists
-                if (context.player && condition.filter) {
-                    return context.player.play.some((card: any) => this.checkFilter(card, condition.filter, context));
-                }
-                return false;
-            case 'while_here_exerted':
-                // Check if there's an exerted character at this location
-                if (context.card && context.player) {
-                    const locationId = condition.location || context.card.instanceId;
-                    return context.player.play.some((card: any) =>
-                        card.atLocation === locationId && card.ready === false
-                    );
-                }
-                return false;
-            case 'event_occurred':
-                // Check if an event occurred (check eventHistory)
-                if (context.gameState && context.gameState.eventHistory) {
-                    const currentTurn = context.gameState.turnCount;
-                    return context.gameState.eventHistory.some((e: any) =>
-                        e.event === condition.event &&
-                        (condition.turn === 'this_turn' ? e.turn === currentTurn : true)
-                    );
-                }
-                return false;
-            case 'ink_count':
-                // Check ink count with comparison
-                if (context.player && context.player.inkwell) {
-                    const inkCount = context.player.inkwell.length;
-                    const amount = condition.amount;
-
-                    switch (condition.comparison) {
-                        case 'less_or_equal': return inkCount <= amount;
-                        case 'greater_or_equal': return inkCount >= amount;
-                        case 'less_than': return inkCount < amount;
-                        case 'greater_than': return inkCount > amount;
-                        case 'equal': return inkCount === amount;
-                        default: return false;
-                    }
-                }
-                return false;
-            case 'count_check':
-                // Check if count of cards matching filter meets operator check
-                if (context.player) {
-                    const matchingCards = context.player.play.filter((card: any) => this.checkFilter(card, condition.filter, context));
-                    const count = matchingCards.length;
-                    const targetAmount = condition.amount;
-                    const operator = condition.operator || 'gte';
-
-                    switch (operator) {
-                        case 'gte': return count >= targetAmount;
-                        case 'lte': return count <= targetAmount;
-                        case 'gt': return count > targetAmount;
-                        case 'lt': return count < targetAmount;
-                        case 'eq': return count === targetAmount;
-                        default: return false;
-                    }
-                }
-                return false;
-            case 'min_other_characters':
-                // "if you have X or more other characters in play"
-                if (context.player) {
-                    const otherCharacters = context.player.play.filter((c: any) =>
-                        c.type === 'Character' && c.instanceId !== context.card?.instanceId
-                    );
-                    const required = condition.amount || 2;
-                    const actual = otherCharacters.length;
-                    this.turnManager?.logger.debug(`   [Condition] min_other_characters: need ${required}, have ${actual}`);
-                    return actual >= required;
-                }
-                return false;
-            case 'count_check':
-                if (context.player) {
-                    const matches = context.player.play.filter((card: any) => this.checkFilter(card, condition.filter, context));
-                    const count = matches.length;
-                    const required = condition.amount;
-
-                    if (condition.operator === 'gte') return count >= required;
-                    if (condition.operator === 'lte') return count <= required;
-                    if (condition.operator === 'eq') return count === required;
-                    return count >= required;
-                }
-                return false;
-
-            case 'opponent_lore_check':
-                if (this.turnManager) {
-                    // getOpponent helper logic
-                    const currentPlayerId = context.player?.id;
-                    const opponentId = Object.keys(context.gameState.state.players).find(id => id !== currentPlayerId);
-                    const opponent = opponentId ? context.gameState.state.players[opponentId] : null;
-
-                    if (opponent) {
-                        const opLore = opponent.lore;
-                        const req = condition.amount;
-                        if (condition.operator === 'gte') return opLore >= req;
-                        if (condition.operator === 'lte') return opLore <= req;
-                        if (condition.operator === 'eq') return opLore === req;
-                        return opLore >= req;
-                    }
-                }
-                return false;
-
-            case 'self_stat_check':
-                if (context.card) {
-                    const val = (condition.stat === 'strength') ? (context.card.strength || 0) : (context.card.willpower || 0);
-                    const req = condition.value;
-                    if (condition.operator === 'gte') return val >= req;
-                    if (condition.operator === 'lte') return val <= req;
-                    if (condition.operator === 'eq') return val === req;
-                    return val >= req;
-                }
-                return false;
-
-            case 'control_character':
-            case 'has_character_in_play':
-                if (context.player) {
-                    const condAny = condition as any;
-                    const name = condAny.name || condAny.subtype;
-                    if (!name) return false;
-
-                    return context.player.play.some((c: any) =>
-                        c.name === name ||
-                        (c.subtypes && c.subtypes.includes(name))
-                    );
-                }
-                return false;
-
-            case 'ink_count':
-            case 'ink_available':
-                if (context.player && context.player.inkwell) {
-                    const count = context.player.inkwell.length;
-                    const required = condition.amount;
-                    const comparison = (condition as any).comparison || 'gte';
-
-                    if (comparison === 'less_than') return count < required;
-                    if (comparison === 'greater_than') return count > required;
-                    if (comparison === 'equal') return count === required;
-                    return count >= required;
-                }
-                return false;
-
-            case 'at_location':
-            case 'at_any_location':
-                if (context.card) {
-                    return !!context.card.atLocation;
-                }
-                return false;
-
-            case 'has_damaged_character_at_location':
-                if (context.player) {
-                    return context.player.play.some((c: any) => c.damage > 0 && c.atLocation);
-                }
-                return false;
-
-            case 'deck_building':
-                return true;
-
-            default:
-                return false;
-        }
-    }
 
     /**
         opponent.discard.push(cardToDiscard);
@@ -3583,9 +3096,6 @@ export class EffectExecutor {
         delete context.variables[variableName];
     }
 
-    /**
-     * Put card into inkwell
-     */
 
 
     /**
@@ -3644,76 +3154,7 @@ export class EffectExecutor {
     /**
      * Return multiple cards with cost filter
      */
-    private async executeReturnMultipleWithCostFilter(effect: Extract<EffectAST, { type: 'return_multiple_with_cost_filter' }>, context: GameContext): Promise<void> {
-        // Log: { type: 'return_multiple_with_cost_filter', amount: 2, maxCost: 2, filter: { cardType: 'character' } }
-        // This typically targets "chosen" cards, but the effect structure implies a selection process.
-        // If no target is specified, it usually means "choose X cards matching Y".
 
-        if (!this.turnManager) return;
-
-        const player = context.player;
-        const amount = effect.amount;
-        const maxCost = effect.maxCost;
-        const filter = effect.filter;
-
-        // Find all valid targets in play (usually opponent's characters, or own? Context needed.
-        // "Return up to 2 characters with cost 2 or less to their players' hands" usually implies ANY characters.
-        // Let's assume all characters in play for now, or check if it targets opponents.
-        // Given the log doesn't show a target, it's likely "choose" from board.
-
-        // Gather all characters in play
-        let allCharacters: any[] = [];
-        Object.values(this.turnManager.game.state.players).forEach((p: any) => {
-            allCharacters = allCharacters.concat(p.play);
-        });
-
-        // Filter by cost and type
-        const validTargets = allCharacters.filter(c => {
-            if (filter && filter.cardType && c.type !== filter.cardType && !c.keywords?.includes(filter.cardType)) {
-                // Basic type check - in reality need robust type checking
-                // For now assume 'character' check passes if it's in play array (mostly characters/items)
-                // But we should check 'type' property if available.
-            }
-            return c.cost <= maxCost;
-        });
-
-        if (validTargets.length === 0) {
-            if (this.turnManager) {
-                this.turnManager.logger.info(`[EffectExecutor] No valid targets found for return_multiple_with_cost_filter (Max Cost: ${maxCost})`);
-            }
-            return;
-        }
-
-        // Bot Logic: Choose best targets to return.
-        // Heuristic: Return opponent's cards first, then none if optional? Or own if beneficial?
-        // Usually this effect is "up to", so it's optional.
-        // Let's prioritize returning opponent's cards.
-
-        const opponentTargets = validTargets.filter(c => c.ownerId !== player.id);
-
-        let returnedCount = 0;
-
-        // Return opponent cards
-        for (const target of opponentTargets) {
-            if (returnedCount >= amount) break;
-
-            const owner = this.turnManager.game.getPlayer(target.ownerId);
-            owner.play = owner.play.filter((c: any) => c.instanceId !== target.instanceId);
-            target.zone = 'hand';
-            owner.hand.push(target);
-            if (this.turnManager) {
-                this.turnManager.logger.info(`[EffectExecutor] Returned ${target.name} to ${owner.name}'s hand`);
-            }
-
-            if (this.turnManager) {
-                this.turnManager.trackZoneChange(target, 'play', 'hand');
-            }
-            returnedCount++;
-        }
-
-        // If we still have quota and MUST return (unlikely if it's "up to"), we might return own.
-        // But usually these are "up to", so stopping after opponents is safe for a basic bot.
-    }
 
     /**
      * Put top card of deck under target
@@ -3777,7 +3218,7 @@ export class EffectExecutor {
         // Filter eligible cards from hand using shared helper
         const eligibleCards = player.hand.filter((c: any) => {
             // Use shared filter helper for type/subtype matching
-            if (!this.matchesCardFilter(c, filter)) {
+            if (!matchesCardFilter(c, filter)) {
                 return false;
             }
 
@@ -4032,26 +3473,7 @@ export class EffectExecutor {
         });
     }
 
-    /**
-     * Prevent damage from specific source
-     */
-    private async executePreventDamageFromSource(effect: { type: 'prevent_damage_from_source', source: string }, context: GameContext): Promise<void> {
-        const card = context.card;
-        if (!card.damageShields) {
-            card.damageShields = [];
-        }
 
-        card.damageShields.push({
-            amount: 'all',
-            duration: 'until_end_of_turn',
-            usage: 'always',
-            sourceType: effect.source // e.g. 'challenge'
-        });
-
-        if (this.turnManager) {
-            this.turnManager.logger.info(`${card.name} prevents damage from ${effect.source}`);
-        }
-    }
 
     /**
      * Move damage from one character to another
@@ -4090,313 +3512,10 @@ export class EffectExecutor {
         }
     }
 
-    /**
-     * Prevent target from questing
-     */
-    private async executeCantQuest(effect: { type: 'cant_quest', target: TargetAST, duration?: string }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
 
-        targets.forEach((target: any) => {
-            if (!target.restrictions) {
-                target.restrictions = [];
-            }
 
-            target.restrictions.push({
-                type: 'cant_quest',
-                duration: effect.duration || 'until_end_of_turn',
-                sourceId: context.card?.instanceId
-            });
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} cannot quest`);
-            }
-        });
-    }
-
-    /**
-     * Prevent target from challenging
-     */
-    private async executeCantChallenge(effect: { type: 'cant_challenge', target: TargetAST, duration?: string }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-        const duration = effect.duration || 'turn';
-
-        if (!this.turnManager) return;
-
-        targets.forEach(target => {
-            this.turnManager.addActiveEffect({
-                type: 'cant_challenge',
-                targetCardIds: [target.instanceId],
-                duration,
-                sourceCardId: context.card?.instanceId
-            });
-        });
-
-        this.turnManager.logger.info(`[EffectExecutor] Applied cant_challenge to ${targets.length} card(s)`);
-    }
-
-    /**
-     * Force target to challenge if able
-     */
-    private async executeMustChallenge(effect: { type: 'must_challenge', target: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (!target.restrictions) {
-                target.restrictions = [];
-            }
-
-            target.restrictions.push({
-                type: 'must_challenge',
-                duration: 'until_end_of_turn',
-                sourceId: context.card?.instanceId
-            });
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} must challenge if able`);
-            }
-        });
-    }
-
-    /**
-     * Target cannot be exerted
-     */
-    private async executeUnexertable(effect: { type: 'unexertable', target: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (!target.keywords) {
-                target.keywords = [];
-            }
-
-            if (!target.keywords.includes('Unexertable')) {
-                target.keywords.push('Unexertable');
-            }
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} gains Unexertable`);
-            }
-        });
-    }
-
-    /**
-     * Target cannot be targeted by opponent
-     */
-    private async executeHexproof(effect: { type: 'hexproof', target: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (!target.keywords) {
-                target.keywords = [];
-            }
-
-            if (!target.keywords.includes('Hexproof')) {
-                target.keywords.push('Hexproof');
-            }
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} gains Hexproof`);
-            }
-        });
-    }
-
-    /**
-     * Remove all abilities from target
-     */
-    private async executeLoseAllAbilities(effect: { type: 'lose_all_abilities', target: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (target.parsedEffects) {
-                target.parsedEffects = [];
-            }
-            if (target.keywords) {
-                target.keywords = [];
-            }
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} loses all abilities`);
-            }
-        });
-    }
-
-    /**
-     * Double target's lore value
-     */
-    private async executeDoubleLore(effect: { type: 'double_lore', target: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (target.lore) {
-                const originalLore = target.lore;
-                target.lore = originalLore * 2;
-
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${target.name} lore doubled: ${originalLore} → ${target.lore}`);
-                }
-            }
-        });
-    }
-
-    /**
-     * Copy stats from source to target
-     */
-    private async executeCopyStats(effect: { type: 'copy_stats', target: TargetAST, source: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-        const sources = await this.resolveTargets(effect.source, context);
-
-        if (sources.length === 0) return;
-        const source = sources[0];
-
-        targets.forEach((target: any) => {
-            if (source.strength !== undefined) {
-                target.strength = source.strength;
-            }
-            if (source.willpower !== undefined) {
-                target.willpower = source.willpower;
-            }
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} copies stats from ${source.name}: ${source.strength}/${source.willpower}`);
-            }
-        });
-    }
-
-    /**
-     * Set target's cost
-     */
-    private async executeSetCost(effect: { type: 'set_cost', target: TargetAST, value: number }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            const originalCost = target.cost;
-            target.cost = effect.value;
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} cost changed: ${originalCost} → ${effect.value}`);
-            }
-        });
-    }
-
-    /**
-     * Apply permanent stat buff
-     */
-    private async executePermanentBuff(effect: { type: 'permanent_buff', target: TargetAST, strength?: number, willpower?: number }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (!this.turnManager?.game?.state?.activeEffects) {
-                if (!this.turnManager?.game?.state) return;
-                this.turnManager.game.state.activeEffects = [];
-            }
-
-            // Create permanent effects
-            if (effect.strength !== undefined) {
-                this.turnManager.addActiveEffect({
-                    id: `perm_str_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    sourceCardId: context.card?.instanceId || 'unknown',
-                    targetCardId: target.instanceId,
-                    type: 'modify_strength',
-                    value: effect.strength,
-                    duration: 'permanent',
-                    timestamp: Date.now()
-                } as any);
-            }
-
-            if (effect.willpower !== undefined) {
-                this.turnManager.addActiveEffect({
-                    id: `perm_wil_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    sourceCardId: context.card?.instanceId || 'unknown',
-                    targetCardId: target.instanceId,
-                    type: 'modify_willpower',
-                    value: effect.willpower,
-                    duration: 'permanent',
-                    timestamp: Date.now()
-                } as any);
-            }
-
-            if (this.turnManager) {
-                const buffStr = [
-                    effect.strength ? `+${effect.strength} STR` : '',
-                    effect.willpower ? `+${effect.willpower} WIL` : ''
-                ].filter(Boolean).join(', ');
-                this.turnManager.logger.info(`${target.name} gains permanent buff: ${buffStr}`);
-            }
-        });
-    }
-
-    /**
-     * Apply temporary stat buff with duration
-     */
-    private async executeTemporaryBuff(effect: { type: 'temporary_buff', target: TargetAST, strength?: number, willpower?: number, duration: string }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (!this.turnManager?.game?.state?.activeEffects) {
-                if (!this.turnManager?.game?.state) return;
-                this.turnManager.game.state.activeEffects = [];
-            }
-
-            // Create effects instead of mutating card
-            if (effect.strength !== undefined) {
-                this.turnManager.addActiveEffect({
-                    id: `temp_str_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    sourceCardId: context.card?.instanceId || 'unknown',
-                    targetCardId: target.instanceId,
-                    type: 'modify_strength',
-                    value: effect.strength,
-                    duration: effect.duration as any,
-                    timestamp: Date.now()
-                } as any);
-            }
-
-            if (effect.willpower !== undefined) {
-                this.turnManager.addActiveEffect({
-                    id: `temp_wil_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    sourceCardId: context.card?.instanceId || 'unknown',
-                    targetCardId: target.instanceId,
-                    type: 'modify_willpower',
-                    value: effect.willpower,
-                    duration: effect.duration as any,
-                    timestamp: Date.now()
-                } as any);
-            }
-
-            if (this.turnManager) {
-                const buffStr = [
-                    effect.strength ? `+${effect.strength} STR` : '',
-                    effect.willpower ? `+${effect.willpower} WIL` : ''
-                ].filter(Boolean).join(', ');
-                this.turnManager.logger.info(`${target.name} gains temporary buff: ${buffStr} (${effect.duration})`);
-            }
-        });
-    }
 
     // ====== TIER 3: COMPLEX MECHANICS ======
-
-    /**
-     * Transform target into different card type/stats
-     */
-    private async executeTransform(effect: { type: 'transform', target: TargetAST, cardType?: string, strength?: number, willpower?: number }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        targets.forEach((target: any) => {
-            if (effect.cardType) {
-                target.type = effect.cardType;
-            }
-            if (effect.strength !== undefined) {
-                target.strength = effect.strength;
-                target.baseStrength = effect.strength;
-            }
-            if (effect.willpower !== undefined) {
-                target.willpower = effect.willpower;
-                target.baseWillpower = effect.willpower;
-            }
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} transforms!`);
-            }
-        });
-    }
 
     /**
      * Create a copy of target card
@@ -4426,42 +3545,7 @@ export class EffectExecutor {
         });
     }
 
-    /**
-     * Return all matching cards to hand
-     */
-    private async executeBounceAll(effect: { type: 'bounce_all', filter?: any }, context: GameContext): Promise<void> {
-        if (!this.turnManager) return;
 
-        const allPlayers = Object.values(this.turnManager.game.state.players);
-
-        allPlayers.forEach((player: any) => {
-            const cardsToBouce = player.play.filter((card: any) => {
-                if (!effect.filter) return true;
-
-                // Apply filter
-                if (effect.filter.type && card.type !== effect.filter.type) return false;
-                if (effect.filter.damaged && card.damage === 0) return false;
-
-                return true;
-            });
-
-            cardsToBouce.forEach((card: any) => {
-                // Remove from play
-                const index = player.play.indexOf(card);
-                if (index !== -1) {
-                    player.play.splice(index, 1);
-                }
-
-                // Add to hand
-                card.zone = 'hand';
-                card.ready = true;
-                card.damage = 0;
-                player.hand.push(card);
-
-                this.turnManager!.logger.info(`${card.name} returned to ${player.name}'s hand`);
-            });
-        });
-    }
 
     /**
      * Counter/cancel an ability
@@ -4483,67 +3567,7 @@ export class EffectExecutor {
         }
     }
 
-    /**
-     * Move target to exile zone
-     */
-    private async executeExile(effect: { type: 'exile', target: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
 
-        targets.forEach((target: any) => {
-            // Find owner
-            const owner = Object.values(this.turnManager?.game?.state?.players || {}).find((p: any) =>
-                p.play.includes(target) || p.hand.includes(target) || p.discard.includes(target)
-            ) as any;
-
-            if (owner) {
-                // Remove from current zone
-                owner.play = owner.play.filter((c: any) => c !== target);
-                owner.hand = owner.hand.filter((c: any) => c !== target);
-                owner.discard = owner.discard.filter((c: any) => c !== target);
-
-                // Add to exile (if it exists, otherwise use discard as fallback)
-                if (!owner.exile) owner.exile = [];
-                target.zone = 'exile';
-                owner.exile.push(target);
-
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${target.name} exiled`);
-                }
-            }
-        });
-    }
-
-    /**
-     * Return card from exile
-     */
-    private async executeReturnFromExile(effect: { type: 'return_from_exile', filter?: any }, context: GameContext): Promise<void> {
-        const player = context.player;
-
-        if (!player.exile || player.exile.length === 0) {
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${player.name} has no exiled cards`);
-            }
-            return;
-        }
-
-        // Find matching card
-        const card = player.exile.find((c: any) => {
-            if (!effect.filter) return true;
-            if (effect.filter.name && c.name !== effect.filter.name) return false;
-            if (effect.filter.type && c.type !== effect.filter.type) return false;
-            return true;
-        });
-
-        if (card) {
-            player.exile = player.exile.filter((c: any) => c !== card);
-            card.zone = 'hand';
-            player.hand.push(card);
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${card.name} returned from exile to hand`);
-            }
-        }
-    }
 
     /**
      * Play card from graveyard (one-time)
@@ -4750,572 +3774,7 @@ export class EffectExecutor {
 
     // ====== CHOICE-BASED EFFECTS ======
 
-    /**
-     * Choose a card from discard pile
-     */
-    private async executeChooseCardFromDiscard(effect: { type: 'choose_card_from_discard', filter?: any }, context: GameContext): Promise<void> {
-        const player = context.player;
 
-        if (player.discard.length === 0) {
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${player.name} has no cards in discard`);
-            }
-            return;
-        }
-
-        // Filter eligible cards
-        const eligibleCards = player.discard.filter((card: any) => {
-            if (!effect.filter) return true;
-            if (effect.filter.type && card.type !== effect.filter.type) return false;
-            if (effect.filter.name && card.name !== effect.filter.name) return false;
-            return true;
-        });
-
-        if (eligibleCards.length > 0) {
-            // For now: random selection (bot integration would make strategic choice)
-            const chosen = eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
-
-            player.discard = player.discard.filter((c: any) => c !== chosen);
-            chosen.zone = 'hand';
-            player.hand.push(chosen);
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${player.name} chose ${chosen.name} from discard`);
-            }
-        }
-    }
-
-    /**
-     * Choose a card to play for free
-     */
-    private async executeChooseToPlayForFree(effect: { type: 'choose_to_play_for_free', filter?: any }, context: GameContext): Promise<void> {
-        const player = context.player;
-
-        // Filter eligible cards
-        const eligibleCards = player.hand.filter((card: any) => {
-            if (!effect.filter) return true;
-            if (effect.filter.type && card.type !== effect.filter.type) return false;
-            if (effect.filter.cost && card.cost > effect.filter.cost) return false;
-            return true;
-        });
-
-        if (eligibleCards.length > 0) {
-            // Random selection for simulation
-            const chosen = eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${player.name} may play ${chosen.name} for free`);
-                // Mark for free play (would be handled by play action)
-                chosen.freePlayToken = true;
-            }
-        }
-    }
-
-    /**
-     * Opponent chooses cards to discard
-     */
-    private async executeOpponentChooseAndDiscard(effect: { type: 'opponent_choose_and_discard', amount: number }, context: GameContext): Promise<void> {
-        // Find opponent
-        const opponent = Object.values(this.turnManager?.game?.state?.players || {}).find(
-            (p: any) => p.id !== context.player.id
-        ) as any;
-
-        if (!opponent || opponent.hand.length === 0) return;
-
-        const toDiscard = Math.min(effect.amount, opponent.hand.length);
-
-        // Random discard for simulation
-        for (let i = 0; i < toDiscard; i++) {
-            const randomIndex = Math.floor(Math.random() * opponent.hand.length);
-            const card = opponent.hand.splice(randomIndex, 1)[0];
-
-            card.zone = 'discard';
-            opponent.discard.push(card);
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${opponent.name} discards ${card.name}`);
-            }
-        }
-    }
-
-    /**
-     * Look at top X, choose some
-     */
-    private async executeLookAndChoose(effect: { type: 'look_and_choose', amount: number, chooseAmount: number }, context: GameContext): Promise<void> {
-        const player = context.player;
-        const lookAmount = Math.min(effect.amount, player.deck.length);
-
-        if (lookAmount > 0) {
-            const topCards = player.deck.slice(-lookAmount);
-
-            // Random choice for simulation
-            const chosen = topCards.slice(0, Math.min(effect.chooseAmount, topCards.length));
-
-            chosen.forEach((card: any) => {
-                player.deck = player.deck.filter((c: any) => c !== card);
-                card.zone = 'hand';
-                player.hand.push(card);
-
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${player.name} chose ${card.name}`);
-                }
-            });
-        }
-    }
-
-    /**
-     * Reveal cards and choose one
-     */
-    private async executeRevealAndChoose(effect: { type: 'reveal_and_choose', amount: number }, context: GameContext): Promise<void> {
-        const player = context.player;
-        const revealAmount = Math.min(effect.amount, player.deck.length);
-
-        if (revealAmount > 0) {
-            const revealed = player.deck.slice(-revealAmount);
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${player.name} reveals: ${revealed.map((c: any) => c.name).join(', ')}`);
-            }
-
-            // Random choice
-            const chosen = revealed[Math.floor(Math.random() * revealed.length)];
-
-            player.deck = player.deck.filter((c: any) => c !== chosen);
-            chosen.zone = 'hand';
-            player.hand.push(chosen);
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${player.name} chose ${chosen.name}`);
-            }
-        }
-    }
-
-    /**
-     * Choose which target gets an effect
-     */
-    private async executeChooseTargetEffect(effect: { type: 'choose_target_effect', effects: EffectAST[] }, context: GameContext): Promise<void> {
-        // Random effect choice for simulation
-        if (effect.effects.length > 0) {
-            const chosen = effect.effects[Math.floor(Math.random() * effect.effects.length)];
-            await this.execute(chosen, context);
-        }
-    }
-
-    /**
-     * Distribute damage among targets (choice)
-     */
-    /**
-     * Distribute damage among targets (choice)
-     */
-    private async executeDistributeDamageChoice(effect: { type: 'distribute_damage_choice', totalDamage: number, targets: TargetAST }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.targets, context);
-
-        if (targets.length === 0) return;
-
-        // If only one target, no choice needed
-        if (targets.length === 1) {
-            targets[0].damage = (targets[0].damage || 0) + effect.totalDamage;
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${targets[0].name} takes ${effect.totalDamage} damage`);
-            }
-            return;
-        }
-
-        if (!this.turnManager) return;
-
-        // Create options for each target
-        const options: ChoiceOption[] = targets.map((t: any) => ({
-            id: t.instanceId,
-            display: t.name,
-            valid: true
-        }));
-
-        // Use new distribute_damage choice type
-        // Note: The UI for this needs to respond with selectedIds mapping to amounts or 
-        // return a payload. The standard ChoiceResponse uses selectedIds string array.
-        // For distribute damage, we can treat it as "Select target for 1 damage" N times?
-        // OR better: use a specialized choice type that returns distribution map.
-        // For now, let's assume we request it N times or use a specialized UI.
-        // Given current UI limits, we'll try to use the DISTRIBUTE_DAMAGE type we added.
-
-        const response = await this.turnManager.requestChoice({
-            id: 'distribute-damage-' + Date.now(),
-            type: 'distribute_damage' as any, // Cast as it might be missing in some enums
-            playerId: context.player.id,
-            prompt: `Distribute ${effect.totalDamage} damage among targets`,
-            options: options,
-            min: effect.totalDamage, // HACK: reusing min/max to convey total/remaining? 
-            max: effect.totalDamage,
-            optional: false,
-            source: {
-                card: context.card,
-                abilityName: context.abilityName || 'Distribute Damage',
-                player: context.player
-            },
-            timestamp: Date.now(),
-            context: {
-                totalDamage: effect.totalDamage || (effect as any).amount
-            }
-        });
-
-        if (response.declined) return;
-
-        // Parse response. For distribute damage, we need to know how much for each.
-        // If UI uses standard "selectedIds", it might be an array of IDs where 
-        // multiple occurrences = multiple damage.
-        // e.g. ['id1', 'id1', 'id2'] = 2 damage to id1, 1 to id2.
-
-        const distribution: Record<string, number> = {};
-        response.selectedIds.forEach((id: string) => {
-            distribution[id] = (distribution[id] || 0) + 1;
-        });
-
-        // Apply damage
-        targets.forEach((target: any) => {
-            const amount = distribution[target.instanceId] || 0;
-            if (amount > 0) {
-                target.damage = (target.damage || 0) + amount;
-                this.turnManager.logger.info(`${target.name} takes ${amount} damage`);
-            }
-        });
-    }
-
-    /**
-     * Choose which keyword to grant
-     */
-    private async executeChooseKeywordToGrant(effect: { type: 'choose_keyword_to_grant', target: TargetAST, keywords: string[] }, context: GameContext): Promise<void> {
-        const targets = await this.resolveTargets(effect.target, context);
-
-        if (effect.keywords.length === 0 || targets.length === 0) return;
-
-        // Random keyword choice
-        const chosenKeyword = effect.keywords[Math.floor(Math.random() * effect.keywords.length)];
-
-        targets.forEach((target: any) => {
-            if (!target.keywords) {
-                target.keywords = [];
-            }
-
-            if (!target.keywords.includes(chosenKeyword)) {
-                target.keywords.push(chosenKeyword);
-            }
-
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${target.name} gains ${chosenKeyword}`);
-            }
-        });
-    }
-
-    /**
-     * Optional trigger - choose whether to use
-     */
-    private async executeOptionalTrigger(effect: { type: 'optional_trigger', effect: EffectAST }, context: GameContext): Promise<void> {
-        if (!this.turnManager) return;
-
-        // Request choice
-        const response = await this.turnManager.requestChoice({
-            id: 'optional-trigger-' + Date.now(),
-            type: 'yes_no',
-            playerId: context.player.id,
-            prompt: `Do you want to use the ability of ${context.card?.name}?`,
-            options: [
-                { id: 'yes', display: 'Yes', valid: true },
-                { id: 'no', display: 'No', valid: true }
-            ],
-            min: 1,
-            max: 1,
-            optional: false, // Must choose yes or no
-            source: {
-                card: context.card,
-                abilityName: context.abilityName || 'Optional Ability',
-                player: context.player
-            },
-            timestamp: Date.now()
-        });
-
-        const choice = response.selectedIds[0];
-
-        if (choice === 'yes') {
-            await this.execute(effect.effect, context);
-        }
-    }
-
-
-    /**
-     * Choose which zone to target
-     */
-    private async executeChooseZoneTarget(effect: { type: 'choose_zone_target', zones: string[] }, context: GameContext): Promise<void> {
-        const player = context.player;
-
-        if (effect.zones.length === 0) return;
-
-        // Random zone choice
-        const chosenZone = effect.zones[Math.floor(Math.random() * effect.zones.length)];
-
-        if (this.turnManager) {
-            this.turnManager.logger.info(`${player.name} chooses to target ${chosenZone}`);
-        }
-
-        // Zone choice logged (would be used by subsequent effects if needed)
-    }
-
-    /**
-     * Opponent reveals hand and discards a card matching filter
-     */
-    private async executeOpponentRevealAndDiscard(effect: { type: 'opponent_reveal_and_discard', filter?: any }, context: GameContext): Promise<void> {
-        // Find opponent
-        const opponent = Object.values(this.turnManager?.game?.state?.players || {}).find(
-            (p: any) => p.id !== context.player.id
-        ) as any;
-
-        if (!opponent || opponent.hand.length === 0) {
-            if (this.turnManager) {
-                this.turnManager.logger.info(`Opponent has no cards to reveal/discard`);
-            }
-            return;
-        }
-
-        // Reveal hand
-        if (this.turnManager) {
-            const cardNames = opponent.hand.map((c: any) => c.name).join(', ');
-            this.turnManager.logger.info(`${opponent.name} reveals hand: ${cardNames}`);
-        }
-
-        // Filter cards matching the criteria
-        const eligibleCards = opponent.hand.filter((card: any) => {
-            if (!effect.filter) return true;
-
-            // Check card type
-            if (effect.filter.cardType) {
-                const filterType = effect.filter.cardType.toLowerCase();
-                const cardType = card.type?.toLowerCase() || '';
-
-                // Handle special cases
-                if (filterType === 'song') {
-                    // Songs are Action cards with Song subtype
-                    return cardType === 'action' &&
-                        card.subtypes?.some((s: string) => s.toLowerCase() === 'song');
-                }
-
-                if (filterType === 'character' && cardType !== 'character') return false;
-                if (filterType === 'action' && cardType !== 'action') return false;
-                if (filterType === 'item' && cardType !== 'item') return false;
-                if (filterType === 'location' && cardType !== 'location') return false;
-            }
-
-            // Check excludeCardType - filter OUT cards of this type ("non-character" cards)
-            if (effect.filter.excludeCardType) {
-                const excludeType = effect.filter.excludeCardType.toLowerCase();
-                const cardType = card.type?.toLowerCase() || '';
-
-                // If card matches excluded type, filter it out
-                if (cardType === excludeType) return false;
-            }
-
-            // Check subtypes if specified separately
-            if (effect.filter.subtype) {
-                const filterSubtype = effect.filter.subtype.toLowerCase();
-                const hasSubtype = card.subtypes?.some((s: string) =>
-                    s.toLowerCase() === filterSubtype
-                );
-                if (!hasSubtype) return false;
-            }
-
-            return true;
-        });
-
-        if (eligibleCards.length > 0) {
-            // Build choice options from eligible cards
-            const discardOptions = eligibleCards.map((card: any) => ({
-                id: card.instanceId,
-                display: `${card.fullName || card.name} (${card.type}, Cost ${card.cost || 0})`,
-                card: card,
-                valid: true
-            }));
-
-            // Request choice from CURRENT PLAYER (you choose what opponent discards)
-            if (this.turnManager.requestChoice) {
-                const choiceRequest = {
-                    id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    type: 'target_card_in_hand' as any,
-                    playerId: context.player.id, // Current player chooses
-                    prompt: `Choose a card from opponent's hand to discard`,
-                    options: discardOptions,
-                    source: {
-                        card: context.card,
-                        abilityName: context.abilityName || 'Reveal and Discard',
-                        player: context.player
-                    },
-                    // Include revealed cards in context for UI
-                    context: {
-                        revealedCards: eligibleCards,
-                        opponentHand: opponent.hand
-                    },
-                    min: 1,
-                    max: 1,
-                    timestamp: Date.now()
-                };
-
-                const response = await this.turnManager.requestChoice(choiceRequest);
-                if (response.selectedIds && response.selectedIds.length > 0) {
-                    const toDiscard = opponent.hand.find((c: any) => c.instanceId === response.selectedIds[0]);
-                    if (toDiscard) {
-                        // Remove from hand
-                        opponent.hand = opponent.hand.filter((c: any) => c.instanceId !== toDiscard.instanceId);
-
-                        // Add to discard
-                        toDiscard.zone = 'discard';
-                        opponent.discard.push(toDiscard);
-
-                        if (this.turnManager) {
-                            this.turnManager.logger.info(`${context.player.name} chose: ${opponent.name} discards ${toDiscard.name}`);
-                        }
-                    }
-                }
-            } else {
-                // Fallback: random choice (for tests without requestChoice)
-                const toDiscard = eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
-                opponent.hand = opponent.hand.filter((c: any) => c !== toDiscard);
-                toDiscard.zone = 'discard';
-                opponent.discard.push(toDiscard);
-
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${opponent.name} discards ${toDiscard.name} (random fallback)`);
-                }
-            }
-        } else {
-            // No valid targets, but we should still show the revealed hand to the player
-            if (this.turnManager) {
-                this.turnManager.logger.info(`${opponent.name} has no matching cards to discard, but hand is revealed`);
-            }
-
-            // Show a "reveal only" modal so the player can see the hand even with no valid targets
-            if (this.turnManager.requestChoice && opponent.hand.length > 0) {
-                // Build options showing all cards (but none are valid to discard)
-                const revealOptions = opponent.hand.map((card: any) => ({
-                    id: card.instanceId,
-                    display: `${card.fullName || card.name} (${card.type}, Cost ${card.cost || 0})`,
-                    card: card,
-                    valid: false, // Not selectable
-                    invalidReason: effect.filter?.excludeCardType
-                        ? `${card.type} cards cannot be discarded`
-                        : 'Does not match filter'
-                }));
-
-                const choiceRequest = {
-                    id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    type: 'reveal_hand' as any,
-                    playerId: context.player.id,
-                    prompt: `Opponent's hand revealed - No valid cards to discard`,
-                    options: revealOptions,
-                    source: {
-                        card: context.card,
-                        abilityName: context.abilityName || 'Reveal Hand',
-                        player: context.player
-                    },
-                    context: {
-                        revealedCards: opponent.hand,
-                        opponentHand: opponent.hand,
-                        infoOnly: true // Signal to UI that this is view-only
-                    },
-                    min: 0, // No selection required
-                    max: 0,
-                    optional: true,
-                    timestamp: Date.now()
-                };
-
-                // Wait for player to acknowledge/dismiss the reveal
-                await this.turnManager.requestChoice(choiceRequest);
-            }
-        }
-    }
-
-    /**
-     * Opponent makes a choice between multiple discard options
-     * Examples: "Discard 2 cards OR Discard a character"
-     * Also handles "each opponent chooses and discards a card"
-     */
-    private async executeOpponentDiscardChoice(effect: { type: 'opponent_discard_choice', amount?: number, target?: any, choices?: any[] }, context: GameContext): Promise<void> {
-        // Check if this affects each opponent
-        const affectsEachOpponent = effect.target?.type === 'each_opponent';
-
-        // Get opponents
-        const allPlayers = Object.values(this.turnManager?.game?.state?.players || {}) as any[];
-        const opponents = affectsEachOpponent
-            ? allPlayers.filter((p: any) => p.id !== context.player.id)
-            : [allPlayers.find((p: any) => p.id !== context.player.id)];
-
-        // Process each opponent
-        for (const opponent of opponents) {
-            if (!opponent || opponent.hand.length === 0) {
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${opponent?.name || 'Opponent'} has no cards to discard`);
-                }
-                continue;
-            }
-
-            // Handle simple "each opponent discards N cards" case
-            if (effect.amount && (!effect.choices || effect.choices.length === 0)) {
-                const toDiscard = Math.min(effect.amount, opponent.hand.length);
-
-                for (let i = 0; i < toDiscard; i++) {
-                    const randomIndex = Math.floor(Math.random() * opponent.hand.length);
-                    const card = opponent.hand.splice(randomIndex, 1)[0];
-                    card.zone = 'discard';
-                    opponent.discard.push(card);
-
-                    if (this.turnManager) {
-                        this.turnManager.logger.info(`[EffectExecutor] ${opponent.name} chose to discard ${card.name}`);
-                    }
-                }
-                continue;
-            }
-
-            // Handle choice-based discard
-            if (effect.choices && effect.choices.length > 0) {
-                const chosenOption = effect.choices[Math.floor(Math.random() * effect.choices.length)];
-
-                if (this.turnManager) {
-                    this.turnManager.logger.info(`${opponent.name} chooses option: ${JSON.stringify(chosenOption)}`);
-                }
-
-                if (chosenOption.type === 'discard') {
-                    const amount = chosenOption.amount || 1;
-                    const toDiscard = Math.min(amount, opponent.hand.length);
-
-                    for (let i = 0; i < toDiscard; i++) {
-                        const randomIndex = Math.floor(Math.random() * opponent.hand.length);
-                        const card = opponent.hand.splice(randomIndex, 1)[0];
-                        card.zone = 'discard';
-                        opponent.discard.push(card);
-
-                        if (this.turnManager) {
-                            this.turnManager.logger.info(`${opponent.name} discards ${card.name}`);
-                        }
-                    }
-                } else if (chosenOption.type === 'discard_card_type') {
-                    const eligibleCards = opponent.hand.filter((c: any) =>
-                        c.type?.toLowerCase() === chosenOption.cardType?.toLowerCase()
-                    );
-
-                    if (eligibleCards.length > 0) {
-                        const card = eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
-                        opponent.hand = opponent.hand.filter((c: any) => c !== card);
-                        card.zone = 'discard';
-                        opponent.discard.push(card);
-
-                        if (this.turnManager) {
-                            this.turnManager.logger.info(`${opponent.name} discards ${card.name} (${card.type})`);
-                        }
-                    } else {
-                        if (this.turnManager) {
-                            this.turnManager.logger.info(`${opponent.name} has no ${chosenOption.cardType} cards to discard`);
-                        }
-                    }
-                }
-            }
-        }
-    }
 
 
     /**

@@ -69,13 +69,10 @@ describe('TDD Batches 29-31: Opponent Choice & Conditions', () => {
                 // Generic opponent_choice effect
                 // The action will be executed from opponent's perspective
                 const effect = {
-                    type: 'opponent_choice',
-                    target: { type: 'opponent' },
-                    action: {
-                        type: 'damage',
-                        amount: 2,
-                        target: { type: 'chosen_character' } // Opponent chooses their own character
-                    }
+                    type: 'opponent_choice_action',
+                    action: 'damage',
+                    amount: 2,
+                    target: { type: 'chosen_character' } // Opponent chooses their own character
                 };
 
                 const context = {
@@ -131,7 +128,7 @@ describe('TDD Batches 29-31: Opponent Choice & Conditions', () => {
                 };
 
                 // Has exerted character at location
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(true);
 
                 // Make character ready
@@ -185,7 +182,7 @@ describe('TDD Batches 29-31: Opponent Choice & Conditions', () => {
                 };
 
                 // 5 <= 6 should be true
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(true);
 
                 // Add more ink

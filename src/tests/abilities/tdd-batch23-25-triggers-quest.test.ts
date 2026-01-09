@@ -220,7 +220,7 @@ describe('TDD Batches 23-25: Triggers & Quest Mechanics', () => {
 
                 // Player's turn
                 game.state.activePlayerId = 'p1';
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(true);
 
                 // Opponent's turn

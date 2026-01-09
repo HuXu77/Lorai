@@ -76,7 +76,7 @@ describe('TDD Batches 26-28: Unless, Locations & Search', () => {
                 };
 
                 // Has Seven Dwarfs - condition is false (not unless)
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(false);
 
                 // Remove dwarf - condition is true (unless met)
@@ -99,7 +99,7 @@ describe('TDD Batches 26-28: Unless, Locations & Search', () => {
                 };
 
                 // At location - condition is false
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(false);
 
                 // Not at location - condition is true
@@ -147,7 +147,7 @@ describe('TDD Batches 26-28: Unless, Locations & Search', () => {
                 };
 
                 // At location
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(true);
 
                 // Not at location
@@ -175,7 +175,7 @@ describe('TDD Batches 26-28: Unless, Locations & Search', () => {
                 };
 
                 // Has Elsa
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(true);
 
                 // No Elsa

@@ -69,7 +69,7 @@ describe('TDD Batches 32-34: While, Look, Reveal', () => {
 
                 // Empty hand
                 player.hand = [];
-                const result1 = (executor as any).evaluateCondition(condition, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
                 expect(result1).toBe(true);
 
                 // Has cards

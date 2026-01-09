@@ -71,7 +71,7 @@ describe('Executor: Quest, Draw, & Lore Mechanics', () => {
         // We need to mock executor.resolveTargets because we don't have full TargetResolver logic in this isolated test setup 
         // unless we import it, but cleaner to mock for unit testing logic.
         (executor as any).resolveTargets = jest.fn((target, context) => {
-            if (target && target.type === 'chosen_character') {
+            if (target && (target.type === 'chosen_character' || target.type === 'chosen')) {
                 // Return other card if available, or self?
                 // Let's assume testing "Quest debuff chosen".
                 // Return the only other card in play.

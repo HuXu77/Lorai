@@ -23,6 +23,13 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
         super(executor.turnManager);
     }
 
+    protected async resolveTargets(target: any, context: GameContext): Promise<any[]> {
+        if (this.executor?.resolveTargets) {
+            return this.executor.resolveTargets(target, context);
+        }
+        return super.resolveTargets(target, context);
+    }
+
     async execute(effect: any, context: GameContext): Promise<void> {
         const player = context.player;
         if (!player) return;

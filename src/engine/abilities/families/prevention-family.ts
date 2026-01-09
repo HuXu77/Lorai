@@ -7,6 +7,19 @@ import type { GameContext } from '../executor';
  * Optimization: Consolidates all "prevent_" effects to reduce code duplication
  */
 export class PreventionFamilyHandler extends BaseFamilyHandler {
+    private executor: any;
+
+    constructor(executor: any) {
+        super(executor.turnManager);
+        this.executor = executor;
+    }
+
+    protected async resolveTargets(target: any, context: GameContext): Promise<any[]> {
+        if (this.executor?.resolveTargets) {
+            return this.executor.resolveTargets(target, context);
+        }
+        return super.resolveTargets(target, context);
+    }
     async execute(effect: any, context: GameContext): Promise<void> {
         const player = context.player;
         const card = context.card;
@@ -121,6 +134,161 @@ export class PreventionFamilyHandler extends BaseFamilyHandler {
                     strength: effect.strength,
                     willpower: effect.willpower
                 });
+                break;
+
+            // ====== RESTRICTIONS ======
+            case 'restriction':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+                    const duration = effect.duration || 'turn';
+
+                    targets.forEach((target: any) => {
+                        const activeEffect: any = {
+                            type: 'restriction',
+                            restrictionType: effect.restriction,
+                            targetCardIds: target.instanceId ? [target.instanceId] : undefined,
+                            targetPlayerIds: target.instanceId ? undefined : [target.id],
+                            duration,
+                            sourceCardId: context.card?.instanceId,
+                            sourcePlayerId: context.player.id,
+                            params: effect.params
+                        };
+                        this.turnManager.addActiveEffect(activeEffect);
+                    });
+
+                    this.turnManager.logger.info(`[Prevention] 🚫 Applied restriction ${effect.restriction} to ${targets.length} targets`);
+                }
+                break;
+
+            case 'cant_quest':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+
+                    targets.forEach((target: any) => {
+                        if (!target.restrictions) {
+                            target.restrictions = [];
+                        }
+
+                        target.restrictions.push({
+                            type: 'cant_quest',
+                            duration: effect.duration || 'until_end_of_turn',
+                            sourceId: context.card?.instanceId
+                        });
+
+                        this.turnManager.logger.info(`[Prevention] 🚫 ${target.name} cannot quest`);
+                    });
+                }
+                break;
+
+            case 'cant_challenge':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+                    const duration = effect.duration || 'turn';
+
+                    targets.forEach((target: any) => {
+                        this.turnManager.addActiveEffect({
+                            type: 'cant_challenge',
+                            targetCardIds: [target.instanceId],
+                            duration,
+                            sourceCardId: context.card?.instanceId
+                        });
+                    });
+
+                    this.turnManager.logger.info(`[Prevention] 🚫 Applied cant_challenge to ${targets.length} card(s)`);
+                }
+                break;
+
+            case 'must_challenge':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+
+                    targets.forEach((target: any) => {
+                        if (!target.restrictions) {
+                            target.restrictions = [];
+                        }
+
+                        target.restrictions.push({
+                            type: 'must_challenge',
+                            duration: 'until_end_of_turn',
+                            sourceId: context.card?.instanceId
+                        });
+
+                        this.turnManager.logger.info(`[Prevention] ⚔️ ${target.name} must challenge if able`);
+                    });
+                }
+                break;
+
+            case 'unexertable':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+
+                    targets.forEach((target: any) => {
+                        if (!target.keywords) {
+                            target.keywords = [];
+                        }
+
+                        if (!target.keywords.includes('Unexertable')) {
+                            target.keywords.push('Unexertable');
+                        }
+
+                        this.turnManager.logger.info(`[Prevention] 🛡️ ${target.name} gains Unexertable`);
+                    });
+                }
+                break;
+
+            case 'hexproof':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+
+                    targets.forEach((target: any) => {
+                        if (!target.keywords) {
+                            target.keywords = [];
+                        }
+
+                        if (!target.keywords.includes('Hexproof')) {
+                            target.keywords.push('Hexproof');
+                        }
+
+                        this.turnManager.logger.info(`[Prevention] 🛡️ ${target.name} gains Hexproof`);
+                    });
+                }
+                break;
+
+            case 'prevent_damage_from_source':
+                {
+                    const card = context.card;
+                    if (!card.damageShields) {
+                        card.damageShields = [];
+                    }
+
+                    card.damageShields.push({
+                        amount: 'all',
+                        duration: 'until_end_of_turn',
+                        usage: 'always',
+                        sourceType: effect.source // e.g. 'challenge'
+                    });
+
+                    this.turnManager.logger.info(`[Prevention] 🛡️ ${card.name} prevents damage from ${effect.source}`);
+                }
+                break;
+
+            case 'prevent_damage':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+                    targets.forEach((target: any) => {
+                        if (!target.damageShields) {
+                            target.damageShields = [];
+                        }
+
+                        target.damageShields.push({
+                            amount: effect.amount || 1,
+                            duration: effect.duration || 'until_end_of_turn',
+                            usage: 'next_damage'
+                        });
+
+                        this.turnManager.logger.info(`[Prevention] 🛡️ ${target.name} prevents next ${effect.amount} damage`);
+                    });
+                }
                 break;
 
             default:

@@ -80,12 +80,12 @@ describe('TDD Batches 20-22: Static Complex & Conditional', () => {
 
                 // Test with exerted card
                 const condition1 = { type: 'self_exerted' };
-                const result1 = (executor as any).evaluateCondition(condition1, context);
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition1, context);
                 expect(result1).toBe(true);
 
                 // Test with ready card
                 context.card = readyCard;
-                const result2 = (executor as any).evaluateCondition(condition1, context);
+                const result2 = executor.conditionEvaluator!.evaluateCondition(condition1, context);
                 expect(result2).toBe(false);
             });
         });

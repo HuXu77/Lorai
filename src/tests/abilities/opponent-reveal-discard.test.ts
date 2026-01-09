@@ -72,7 +72,8 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
             logger: {
                 info: jest.fn(),
                 debug: jest.fn()
-            }
+            },
+            trackZoneChange: jest.fn()
         };
 
         executor = new EffectExecutor(mockTurnManager);
@@ -91,7 +92,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // Song should be discarded
             expect(player2.discard.length).toBe(1);
@@ -119,7 +120,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // Nothing should be discarded (no songs available)
             expect(player2.discard.length).toBe(0);
@@ -148,7 +149,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // Nothing should be discarded
             expect(player2.discard.length).toBe(0);
@@ -169,7 +170,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // One of the characters should be discarded
             expect(player2.discard.length).toBe(1);
@@ -191,7 +192,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // One action should be discarded (song or regular action)
             expect(player2.discard.length).toBe(1);
@@ -212,7 +213,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // Princess character should be discarded
             expect(player2.discard.length).toBe(1);
@@ -235,7 +236,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // One of the Hero characters should be discarded
             expect(player2.discard.length).toBe(1);
@@ -259,7 +260,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             expect(player2.discard.length).toBe(0);
             expect(mockTurnManager.logger.info).toHaveBeenCalledWith(
@@ -283,7 +284,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             expect(player2.discard.length).toBe(0);
             expect(player2.hand.length).toBe(1);
@@ -304,7 +305,7 @@ describe('opponent_reveal_and_discard - Subtype Filtering', () => {
                 source: null as any
             };
 
-            await (executor as any).executeOpponentRevealAndDiscard(effect, context);
+            await executor.execute(effect as any, context);
 
             // Should log the reveal
             expect(mockTurnManager.logger.info).toHaveBeenCalledWith(

@@ -6,6 +6,19 @@ import type { GameContext } from '../executor';
  * Handles conditional stat buffs and passive abilities that continuously evaluate game state
  */
 export class StaticEffectFamilyHandler extends BaseFamilyHandler {
+    private executor: any;
+
+    constructor(executor: any) {
+        super(executor.turnManager);
+        this.executor = executor;
+    }
+
+    protected async resolveTargets(target: any, context: GameContext): Promise<any[]> {
+        if (this.executor?.resolveTargets) {
+            return this.executor.resolveTargets(target, context);
+        }
+        return super.resolveTargets(target, context);
+    }
     async execute(effect: any, context: GameContext): Promise<void> {
         const player = context.player;
         const card = context.card;

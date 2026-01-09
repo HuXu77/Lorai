@@ -1091,7 +1091,7 @@ describe('EffectExecutor', () => {
 
                 // Mock evaluateCondition to return true
                 const executorAny = executor as any;
-                executorAny.evaluateCondition = jest.fn(() => true);
+                executorAny.conditionEvaluator.evaluateCondition = jest.fn(() => true);
 
                 await executor.execute(effect, context);
 

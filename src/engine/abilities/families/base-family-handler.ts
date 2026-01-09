@@ -22,6 +22,30 @@ export abstract class BaseFamilyHandler {
      * Shared utility for finding characters/cards that match criteria
      */
     protected async resolveTargets(target: any, context: GameContext): Promise<any[]> {
+        // Handle same_target
+        if (target && target.type === 'same_target') {
+            const lastTargets = (context as any).lastResolvedTargets || [];
+            if (this.turnManager) {
+                this.turnManager.logger.debug(`[FamilyHandler] Resolving same_target. Found ${lastTargets.length} targets.`);
+            }
+            return lastTargets;
+        }
+
+        const targets = await this._resolveTargetsInternal(target, context);
+
+        // Cache targets for same_target reference
+        // Note: We might want to filter this? 
+        // e.g. don't cache if target type is 'self'? 
+        // Logic from executor: cache unless it was same_target (handled above).
+
+        if (targets.length > 0 || (target && target.type !== 'same_target')) {
+            (context as any).lastResolvedTargets = targets;
+        }
+
+        return targets;
+    }
+
+    private async _resolveTargetsInternal(target: any, context: GameContext): Promise<any[]> {
         const player = context.player;
         const allPlayers = Object.values(this.turnManager.game.state.players);
 
@@ -99,9 +123,8 @@ export abstract class BaseFamilyHandler {
                     })),
                     source: {
                         card: context.card,
-                        abilityName: context.abilityName || 'Ability',
-                        abilityText: context.abilityText,
-                        player: player
+                        player: context.player,
+                        abilityName: context.abilityName
                     },
                     optional: target.optional || false,
                     timestamp: Date.now()

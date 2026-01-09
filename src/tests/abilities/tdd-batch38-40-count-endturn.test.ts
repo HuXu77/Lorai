@@ -160,8 +160,8 @@ describe('TDD Batches 38-40: Count, EndTurn, Global', () => {
                     eventContext: {} as any
                 };
 
-                const result = (executor as any).evaluateCondition(condition, context);
-                expect(result).toBe(true); // Has 1 Captain, >= 1
+                const result1 = executor.conditionEvaluator!.evaluateCondition(condition, context);
+                expect(result1).toBe(true); // Has 1 Captain, >= 1
             });
         });
     });

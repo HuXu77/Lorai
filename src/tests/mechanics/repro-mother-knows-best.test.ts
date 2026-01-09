@@ -62,8 +62,7 @@ describe('Mother Knows Best Reproduction', () => {
 
         // Manually create a context to execute the effect
         const { EffectExecutor } = require('../../engine/abilities/executor');
-        const executor = new EffectExecutor();
-        executor.setTurnManager(turnManager);
+        const executor = new EffectExecutor(turnManager);
 
         // Find return_to_hand effect
         const effectToExecute = parsedAbilities.find((e: any) =>
@@ -81,11 +80,15 @@ describe('Mother Knows Best Reproduction', () => {
         // Mock the choice response
         (turnManager as any).mockPendingChoice = ['opp-char-1'];
 
+        // Mock resolveTargets directly (like other executor tests)
+        (executor as any).resolveTargets = jest.fn().mockReturnValue([opponentChar]);
+
         const context = {
             player: player1,
             card: motherCard,
             abilityName: 'Mother Knows Best',
-            eventContext: {}
+            gameState: game.state,
+            eventContext: { targetCard: opponentChar }
         };
 
         await executor.execute(effectToExecute, context);

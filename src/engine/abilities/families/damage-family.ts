@@ -20,6 +20,19 @@ import { ChoiceType } from '../../models';
  * - location_damage_all_characters
  */
 export class DamageFamilyHandler extends BaseFamilyHandler {
+    private executor: any;
+
+    constructor(executor: any) {
+        super(executor.turnManager);
+        this.executor = executor;
+    }
+
+    protected async resolveTargets(target: any, context: GameContext): Promise<any[]> {
+        if (this.executor?.resolveTargets) {
+            return this.executor.resolveTargets(target, context);
+        }
+        return super.resolveTargets(target, context);
+    }
     private evaluateCountExpression(expr: any, context: any): number {
         if (!expr || typeof expr !== 'object') {
             return 0;

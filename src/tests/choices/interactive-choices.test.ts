@@ -69,7 +69,7 @@ describe('Interactive Choices Verification', () => {
 
             // Effect definition
             const effect = {
-                type: 'distribute_damage',
+                type: 'distribute_damage_choice',
                 target: { type: 'chosen' }, // Simplified
                 amount: 3
                 // totalDamage usually passed in effect or context
@@ -97,7 +97,7 @@ describe('Interactive Choices Verification', () => {
             // context.targets = [target1, target2];
             // await executor['executeDistributeDamageChoice'](effect, context);
             // Casting effect to any because test definition is loose object
-            await executor['executeDistributeDamageChoice'](effect as any, context);
+            await executor.execute(effect as any, context);
 
             // Verify request
             expect(mockTurnManager.requestChoice).toHaveBeenCalledWith(expect.objectContaining({

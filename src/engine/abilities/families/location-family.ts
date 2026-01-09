@@ -4,6 +4,19 @@ import { EffectAST } from '../effect-ast';
 import { ZoneType } from '../../models';
 
 export class LocationFamilyHandler extends BaseFamilyHandler {
+    private executor: any;
+
+    constructor(executor: any) {
+        super(executor.turnManager);
+        this.executor = executor;
+    }
+
+    protected async resolveTargets(target: any, context: GameContext): Promise<any[]> {
+        if (this.executor?.resolveTargets) {
+            return this.executor.resolveTargets(target, context);
+        }
+        return super.resolveTargets(target, context);
+    }
     async execute(effect: any, context: GameContext): Promise<void> {
         const player = context.player;
         if (!player) return;
