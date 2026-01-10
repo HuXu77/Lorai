@@ -875,7 +875,8 @@ function GamePageInner() {
                     // Update UI state
                     setEngineState({ ...gameEngine.stateManager.state });
 
-                    // Add log entry for bot actions
+                    // Add log entry for bot pass turn only
+                    // (Other actions are logged by engine via browserLogger.action)
                     if (action.type === ActionType.PassTurn) {
                         addLogEntry({
                             category: LogCategory.TURN,
@@ -883,58 +884,6 @@ function GamePageInner() {
                             details: {}
                         });
                         break;
-                    } else {
-                        // Format bot action message with card details
-                        let message = 'Bot: ';
-                        const botPlayer = Object.values(gameEngine.stateManager.state.players).find((p: any) => p.id === action.playerId);
-                        let card: any = null;
-
-                        // Find the card for the action
-                        if (action.cardId) {
-                            if (action.type === ActionType.PlayCard || action.type === ActionType.InkCard) {
-                                card = botPlayer?.hand.find((c: any) => c.instanceId === action.cardId);
-                            } else if (action.type === ActionType.Quest || action.type === ActionType.Challenge || action.type === ActionType.UseAbility || action.type === ActionType.SingSong) {
-                                card = botPlayer?.play.find((c: any) => c.instanceId === action.cardId);
-                            }
-                        }
-
-                        const cardName = card ? (card.fullName || card.name) : null;
-
-                        // Build detailed message based on action type
-                        switch (action.type) {
-                            case ActionType.PlayCard:
-                                message += cardName ? `played **${cardName}**` : 'played a card';
-                                break;
-                            case ActionType.InkCard:
-                                message += cardName ? `inked **${cardName}**` : 'inked a card';
-                                break;
-                            case ActionType.Quest:
-                                message += cardName ? `quested with **${cardName}**` : 'quested';
-                                break;
-                            case ActionType.Challenge:
-                                if (cardName) {
-                                    const targetCard = [...(Object.values(gameEngine.stateManager.state.players).find((p: any) => p.id === gameEngine.humanController.id)?.play || [])].find((c: any) => c.instanceId === action.targetId);
-                                    const targetName = targetCard ? (targetCard.fullName || targetCard.name) : 'a character';
-                                    message += `challenged **${targetName}** with **${cardName}**`;
-                                } else {
-                                    message += 'challenged';
-                                }
-                                break;
-                            case ActionType.UseAbility:
-                                message += cardName ? `activated **${cardName}**'s ability` : 'used an ability';
-                                break;
-                            case ActionType.SingSong:
-                                message += cardName ? `sang **${cardName}**` : 'sang a song';
-                                break;
-                            default:
-                                message += action.type;
-                        }
-
-                        addLogEntry({
-                            category: LogCategory.CARD,
-                            message,
-                            details: { action, card }
-                        });
                     }
 
                     // Small delay between actions for visual clarity
@@ -1285,57 +1234,66 @@ function GamePageInner() {
                         revealed={opponentHandRevealed}
                     />
 
-                    {/* Middle Section - Play Areas & Zones */}
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                        {/* Opponent Zones */}
-                        <div className="space-y-1">
-                            {/* Opponent Items and Locations */}
-                            {((opponent?.play.filter(c => c.type === 'Location').length || 0) > 0 ||
-                                (opponent?.play.filter(c => c.type === 'Item').length || 0) > 0) && (
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {(opponent?.play.filter(c => c.type === 'Location').length || 0) > 0 && (
-                                            <GameZone cards={opponent?.play.filter(c => c.type === 'Location') || []} label="🏰 Opponent Locations" />
-                                        )}
-                                        {(opponent?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
-                                            <GameZone cards={opponent?.play.filter(c => c.type === 'Item') || []} label="🎯 Opponent Items" />
-                                        )}
-                                    </div>
+                    {/* Middle Section - Play Areas & Zones - 2-Row Layout */}
+                    <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
+                        {/* Opponent Row: Characters + Items/Locations */}
+                        <div className="flex gap-2 flex-1 min-h-0">
+                            {/* Opponent Characters (expands) */}
+                            <div className="flex-1 min-w-0">
+                                <PlayArea
+                                    cards={opponentCharacters}
+                                    label="⚔️ Opponent Characters"
+                                    currentTurn={engineState?.turnCount}
+                                />
+                            </div>
+                            {/* Opponent Items & Locations (fixed width) */}
+                            <div className="w-52 flex flex-col gap-1">
+                                {(opponent?.play.filter(c => c.type === 'Location').length || 0) > 0 && (
+                                    <GameZone
+                                        cards={opponent?.play.filter(c => c.type === 'Location') || []}
+                                        label="🏰 Opp. Locations"
+                                    />
                                 )}
-                            <PlayArea
-                                cards={opponentCharacters}
-                                label="⚔️ Opponent Characters"
-                                currentTurn={engineState?.turnCount}
-                            />
+                                {(opponent?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
+                                    <GameZone
+                                        cards={opponent?.play.filter(c => c.type === 'Item') || []}
+                                        label="🎯 Opp. Items"
+                                    />
+                                )}
+                            </div>
                         </div>
 
-                        {/* Player Zones */}
-                        <div className="space-y-2">
-                            <PlayArea
-                                cards={yourCharacters}
-                                label="⚔️ Your Characters"
-                                currentTurn={engineState?.turnCount}
-                                onCardClick={handlePlayAreaCardClick}
-                            />
-                            {/* Items and Locations */}
-                            {((yourPlayer?.play.filter(c => c.type === 'Location').length || 0) > 0 ||
-                                (yourPlayer?.play.filter(c => c.type === 'Item').length || 0) > 0) && (
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {(yourPlayer?.play.filter(c => c.type === 'Location').length || 0) > 0 && (
-                                            <GameZone
-                                                cards={yourPlayer?.play.filter(c => c.type === 'Location') || []}
-                                                label="🏰 Your Locations"
-                                                onCardClick={(card) => handlePlayAreaCardClick(card, { x: 0, y: 0 })}
-                                            />
-                                        )}
-                                        {(yourPlayer?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
-                                            <GameZone
-                                                cards={yourPlayer?.play.filter(c => c.type === 'Item') || []}
-                                                label="🎯 Your Items"
-                                                onCardClick={(card) => handlePlayAreaCardClick(card, { x: 0, y: 0 })}
-                                            />
-                                        )}
-                                    </div>
+                        {/* Divider */}
+                        <div className="border-t border-gray-600 border-dashed opacity-50"></div>
+
+                        {/* Player Row: Characters + Items/Locations */}
+                        <div className="flex gap-2 flex-1 min-h-0">
+                            {/* Player Characters (expands) */}
+                            <div className="flex-1 min-w-0">
+                                <PlayArea
+                                    cards={yourCharacters}
+                                    label="⚔️ Your Characters"
+                                    currentTurn={engineState?.turnCount}
+                                    onCardClick={handlePlayAreaCardClick}
+                                />
+                            </div>
+                            {/* Player Items & Locations (fixed width) */}
+                            <div className="w-52 flex flex-col gap-1">
+                                {(yourPlayer?.play.filter(c => c.type === 'Location').length || 0) > 0 && (
+                                    <GameZone
+                                        cards={yourPlayer?.play.filter(c => c.type === 'Location') || []}
+                                        label="🏰 Your Locations"
+                                        onCardClick={(card) => handlePlayAreaCardClick(card, { x: 0, y: 0 })}
+                                    />
                                 )}
+                                {(yourPlayer?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
+                                    <GameZone
+                                        cards={yourPlayer?.play.filter(c => c.type === 'Item') || []}
+                                        label="🎯 Your Items"
+                                        onCardClick={(card) => handlePlayAreaCardClick(card, { x: 0, y: 0 })}
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
 

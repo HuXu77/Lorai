@@ -76,15 +76,15 @@ export default function PlayAreaActionMenu({
                         Move {card.name} to...
                     </h3>
 
-                    <div className="flex flex-wrap gap-4 justify-center mb-4">
+                    <div className="flex flex-wrap gap-8 justify-center mb-4">
                         {moveTargets.map(({ card: location, cost }) => {
                             const canAfford = availableInk >= cost;
                             return (
                                 <div
                                     key={location.instanceId}
                                     className={`
-                                    cursor-pointer transition-transform hover:scale-105 rounded-lg
-                                    ${canAfford ? 'hover:ring-2 hover:ring-cyan-500' : 'opacity-50 grayscale'}
+                                    cursor-pointer transition-transform hover:scale-105 flex flex-col items-center p-2
+                                    ${canAfford ? '' : 'opacity-50 grayscale'}
                                 `}
                                     onClick={() => {
                                         if (canAfford) {
@@ -93,12 +93,15 @@ export default function PlayAreaActionMenu({
                                         }
                                     }}
                                 >
-                                    <ZoomableCard
-                                        card={location}
-                                        size="md"
-                                        zoomTrigger="none"
-                                    />
-                                    <div className={`text-center text-sm mt-1 font-bold ${canAfford ? 'text-cyan-400' : 'text-red-500'}`}>
+                                    {/* Wrapper for rotated location card - rotate 90deg for horizontal display */}
+                                    <div className={`rotate-90 origin-center my-8 rounded-lg ${canAfford ? 'hover:ring-2 hover:ring-cyan-500' : ''}`}>
+                                        <ZoomableCard
+                                            card={location}
+                                            size="md"
+                                            zoomTrigger="hover"
+                                        />
+                                    </div>
+                                    <div className={`text-center text-sm font-bold ${canAfford ? 'text-cyan-400' : 'text-red-500'}`}>
                                         Move Cost: {cost}⬡
                                     </div>
                                 </div>

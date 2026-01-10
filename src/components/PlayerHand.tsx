@@ -81,7 +81,7 @@ export default function PlayerHand({
     return (
         <div
             ref={handRef}
-            className="flex justify-center items-end gap-1 px-4 py-1 h-40 overflow-visible"
+            className="flex justify-center items-end gap-0 px-4 py-1 h-28 overflow-visible"
         >
             {cards.length === 0 ? (
                 <div className="text-gray-500 text-xs italic py-2">
@@ -96,15 +96,15 @@ export default function PlayerHand({
                     return (
                         <div
                             key={card.instanceId || index}
-                            className="relative transition-transform duration-200 hover:-translate-y-4 hover:!z-50"
+                            className="relative transition-transform duration-200 hover:-translate-y-3 hover:!z-50"
                             style={{
-                                marginLeft: index > 0 ? '-40px' : '0',
+                                marginLeft: index > 0 ? '-30px' : '0',
                                 zIndex: index,
                             }}
                         >
                             <ZoomableCard
                                 card={card}
-                                size="md"
+                                size="sm"
                                 onClick={() => onCardClick?.(card)}
                             />
 

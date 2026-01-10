@@ -779,7 +779,7 @@ export class AbilitySystemManager {
                 for (const effect of ability.effects) {
                     // Check if effect modifies the requested stat
                     if (effect.type === 'modify_stats') {
-                        const amount = this.getStatModificationAmount(effect, stat);
+                        const amount = this.getStatModificationAmount(effect, stat, sourceCard);
                         if (amount === 0) continue;
 
 
@@ -1407,8 +1407,11 @@ export class AbilitySystemManager {
 
     /**
      * Get stat modification amount from effect
+     * @param effect The effect to evaluate
+     * @param stat The stat being modified
+     * @param sourceCard The card with the ability (for dynamic calculations)
      */
-    private getStatModificationAmount(effect: any, stat: string): number {
+    private getStatModificationAmount(effect: any, stat: string, sourceCard?: any): number {
         // Check if effect has modifiers map
         if (effect.modifiers && effect.modifiers[stat] !== undefined) {
             return effect.modifiers[stat];
@@ -1416,6 +1419,39 @@ export class AbilitySystemManager {
 
         // Check if effect specifies this stat
         if (effect.stat === stat && effect.amount !== undefined) {
+            // Handle dynamic per_character amount (e.g., Hades - King of Olympus)
+            // "This character gets +1 ◊ for each other Villain character you have in play."
+            if (typeof effect.amount === 'object' && effect.amount.type === 'per_character') {
+                const multiplier = effect.multiplier || 1;
+                const subtype = effect.amount.subtype;
+                const yours = effect.amount.yours !== false; // default true
+                const other = effect.amount.other !== false; // default true - exclude self
+
+                // Count matching characters in play
+                if (!sourceCard || !this.turnManager?.game?.state) return 0;
+
+                const ownerId = sourceCard.ownerId;
+                let count = 0;
+
+                for (const [playerId, player] of Object.entries(this.turnManager.game.state.players)) {
+                    if (yours && playerId === ownerId) {
+                        const playerState = player as any;
+                        for (const card of playerState.play || []) {
+                            if (card.type !== 'Character') continue;
+                            // Skip self if 'other' is true
+                            if (other && card.instanceId === sourceCard.instanceId) continue;
+                            // Check subtype match (classifications include subtype)
+                            const classifications = (card.classifications || []).map((c: string) => c.toLowerCase());
+                            if (subtype && !classifications.includes(subtype.toLowerCase())) continue;
+                            count++;
+                        }
+                    }
+                }
+
+                return count * multiplier;
+            }
+
+            // Static numeric amount
             return effect.amount;
         }
 
