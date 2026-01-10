@@ -72,6 +72,9 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
             case 'put_into_inkwell':
                 await this.executePutIntoInkwell(effect, context);
                 break;
+            case 'opponent_deck_to_inkwell':
+                await this.executeOpponentDeckToInkwell(effect, context);
+                break;
             case 'return_multiple_with_cost_filter':
                 await this.executeReturnMultipleWithCostFilter(effect, context);
                 break;
@@ -292,6 +295,65 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
                 this.turnManager.logger.info(`${card.name} put into inkwell${exerted ? ' (exerted)' : ''}`);
             }
         });
+    }
+
+    /**
+     * Opponent puts top card of their deck into inkwell (Sudden Scare chained effect)
+     * The "opponent" is determined by the target owner from the previous put_into_inkwell effect.
+     */
+    private async executeOpponentDeckToInkwell(effect: any, context: GameContext): Promise<void> {
+        if (!this.turnManager) return;
+
+        // Determine which player to affect
+        // For Sudden Scare, the target is the owner of the character that was just moved
+        // This is passed via the 'target_owner' target type, but we can also determine from context
+        // The context.targetCard should be set from the previous effect's target
+
+        let targetPlayerId: string | undefined;
+
+        // Try to get from context (the character that was moved belongs to this player)
+        const ctx = context as any;
+        if (ctx.targetCard) {
+            targetPlayerId = ctx.targetCard.ownerId;
+        }
+
+        // Fallback: If targeting is 'target_owner', use the opponent of the active player
+        if (!targetPlayerId && effect.target?.type === 'target_owner') {
+            // Find opponent of context.player
+            const allPlayers = Object.values(this.turnManager.game.state.players) as any[];
+            const opponent = allPlayers.find((p: any) => p.id !== context.player.id);
+            if (opponent) {
+                targetPlayerId = opponent.id;
+            }
+        }
+
+        if (!targetPlayerId) {
+            this.turnManager.logger.warn('[ZoneFamily] Could not determine target player for opponent_deck_to_inkwell');
+            return;
+        }
+
+        const targetPlayer = this.turnManager.game.getPlayer(targetPlayerId);
+        if (!targetPlayer || targetPlayer.deck.length === 0) {
+            this.turnManager.logger.info(`[ZoneFamily] ${targetPlayer?.name || 'Target player'} has no cards in deck`);
+            return;
+        }
+
+        const amount = effect.amount || 1;
+
+        for (let i = 0; i < amount; i++) {
+            if (targetPlayer.deck.length === 0) break;
+
+            // Take from top of deck (end of array)
+            const card = targetPlayer.deck.pop();
+            if (card) {
+                card.zone = 'inkwell';
+                card.ready = !effect.exerted; // Facedown is visual only; ready/exerted is functional
+                targetPlayer.inkwell.push(card);
+
+                this.turnManager.trackZoneChange(card, 'deck', 'inkwell');
+                this.turnManager.logger.info(`[ZoneFamily] ${targetPlayer.name} puts ${card.name} from deck into inkwell (facedown)`);
+            }
+        }
     }
 
     /**

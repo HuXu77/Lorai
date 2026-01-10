@@ -3593,6 +3593,7 @@ export function parseStaticEffects(text: string): any[] {
     // Put Chosen into Inkwell (Pleakley - Scientific Expert, Hades - King of Olympus)
     // "put chosen character of yours into your inkwell facedown and exerted"
     // "put chosen opposing character into their player's inkwell facedown"
+    // Sudden Scare: "Put chosen opposing character into their player's inkwell facedown. That player puts the top card of their deck into their inkwell facedown."
     const putChosenInkwellMatch2 = text.match(/put ((?:chosen|another) (?:[a-z]+ )?(?:character|item)(?: of yours)?) into (?:your|their player'?s?) inkwell/i);
     if (putChosenInkwellMatch2) {
         const targetText = putChosenInkwellMatch2[1];
@@ -3605,6 +3606,18 @@ export function parseStaticEffects(text: string): any[] {
             exerted: text.match(/exerted/i) ? true : false,
             optional: text.match(/you may/i) ? true : false
         });
+
+        // Check for chained effect: "That player puts the top card of their deck into their inkwell"
+        // This occurs in Sudden Scare where the opponent also adds a card from their deck
+        if (text.match(/that player puts the top card of their deck into their inkwell/i)) {
+            effects.push({
+                type: 'opponent_deck_to_inkwell',
+                target: { type: 'target_owner' }, // The owner of the character that was moved
+                amount: 1,
+                facedown: true
+            });
+        }
+
         return effects;
     }
 

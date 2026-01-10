@@ -474,6 +474,7 @@ export function parseMoveDamageAction(text: string, card: Card, abilities: Abili
 
 export function parsePutIntoInkwellAction(text: string, card: Card, abilities: AbilityDefinition[]): boolean {
     // "Put chosen item or location into its player's inkwell facedown and exerted."
+    // Sudden Scare: "Put chosen opposing character into their player's inkwell facedown. That player puts the top card of their deck into their inkwell facedown."
     if (!text.match(/put chosen (?:opposing )?(item|location|character|card).*into.*inkwell/i)) return false;
 
     const target: any = { type: 'chosen_card', filter: {} };
@@ -488,15 +489,28 @@ export function parsePutIntoInkwellAction(text: string, card: Card, abilities: A
         target.filter.type = 'character';
     }
 
+    const effects: any[] = [{
+        type: 'put_into_inkwell',
+        target
+    }];
+
+    // Check for chained effect: "That player puts the top card of their deck into their inkwell"
+    // This occurs in Sudden Scare where the opponent also adds a card from their deck
+    if (text.match(/that player puts the top card of their deck into their inkwell/i)) {
+        effects.push({
+            type: 'opponent_deck_to_inkwell',
+            target: { type: 'target_owner' }, // The owner of the character that was moved
+            amount: 1,
+            facedown: true
+        });
+    }
+
     abilities.push({
         id: generateAbilityId(),
         cardId: card.id.toString(),
         type: 'activated',
         costs: [],
-        effects: [{
-            type: 'put_into_inkwell',
-            target
-        }],
+        effects,
         rawText: text
     } as any);
 
