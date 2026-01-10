@@ -1664,8 +1664,8 @@ function GamePageInner() {
                                             x: defenderRect.left + defenderRect.width / 2,
                                             y: defenderRect.top + defenderRect.height / 2
                                         },
-                                        attackerDamage: defenderDmg,
-                                        defenderDamage: attackerDmg
+                                        attackerDamage: attackerDmg,
+                                        defenderDamage: defenderDmg
                                     });
 
                                     // Delay action resolution to let challenge animation play fully (1800ms),
