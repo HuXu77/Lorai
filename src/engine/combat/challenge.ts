@@ -24,9 +24,11 @@ export function canChallenge(attacker: CardInstance, target: CardInstance): bool
     // Rule: Attacker must be ready
     if (!attacker.ready) return false;
 
-    // Rule: Target must be exerted (unless attacker can challenge ready)
+    // Rule: Target must be exerted (unless attacker can challenge ready OR target is Location)
     const canChallengeReady = attacker.parsedEffects?.some(e => e.action === 'can_challenge_ready_characters');
-    if (target.ready && !canChallengeReady) return false;
+    const isLocation = target.type === 'Location';
+
+    if (target.ready && !isLocation && !canChallengeReady) return false;
 
     // Rule: Evasive - Only characters with Evasive can challenge Evasive
     // Rule: Evasive - Only characters with Evasive can challenge Evasive

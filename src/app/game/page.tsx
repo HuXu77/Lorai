@@ -1566,8 +1566,7 @@ function GamePageInner() {
                     isYourTurn={isYourTurn}
                     isDrying={engineState?.turnCount !== undefined && playAreaMenuCard.turnPlayed === engineState.turnCount}
                     challengeTargets={opponent.play.filter(c =>
-                        !c.ready &&
-                        c.type === 'Character' &&
+                        (c.type === 'Character' || c.type === 'Location') &&
                         (gameEngine?.turnManager?.canChallenge(playAreaMenuCard, c) ?? true)
                     )}
                     moveTargets={yourPlayer.play
