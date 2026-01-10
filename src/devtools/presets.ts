@@ -165,6 +165,38 @@ export const DEBUG_PRESETS: DebugPreset[] = [
         }
     },
     {
+        id: 'moana-princess-bug',
+        name: 'Moana & Princesses',
+        description: 'Verify Moana readies other Princesses but NOT herself',
+        category: 'ability',
+        setup: {
+            player1: {
+                hand: [],
+                play: [
+                    { name: 'Moana - Of Motunui', ready: true },
+                    { name: 'Cinderella - Gentle and Kind', ready: false }, // Princess, Exerted
+                    { name: 'Ariel - On Human Legs', ready: false }, // Princess, Exerted
+                    { name: 'Beast - Hardheaded', ready: false } // Not Princess, Exerted
+                ],
+                inkwell: [
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star'
+                ],
+                lore: 0
+            },
+            player2: {
+                hand: [],
+                play: [],
+                inkwell: [],
+                lore: 0
+            },
+            turnPlayer: 'player1'
+        }
+    },
+    {
         id: 'cost-reduction-test',
         name: 'Cost Reduction Test',
         description: 'Test cards that reduce costs of other cards',

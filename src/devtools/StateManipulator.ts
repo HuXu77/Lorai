@@ -290,6 +290,28 @@ export class StateManipulator {
     }
 
     /**
+     * Set the drying status of a specific card
+     */
+    setDrying(cardInstanceId: string, isDrying: boolean): boolean {
+        for (const player of Object.values(this.engine.stateManager.state.players)) {
+            const card = (player as PlayerState).play.find(c => c.instanceId === cardInstanceId);
+            if (card) {
+                const currentTurn = this.engine.stateManager.state.turnCount;
+                if (isDrying) {
+                    card.turnPlayed = currentTurn;
+                } else {
+                    card.turnPlayed = Math.max(0, currentTurn - 1);
+                }
+                console.log(`[StateManipulator] Set ${card.fullName} drying: ${isDrying}`);
+                return true;
+            }
+        }
+
+        console.error(`[StateManipulator] Card not found in play: ${cardInstanceId}`);
+        return false;
+    }
+
+    /**
      * Switch the active turn to a player
      */
     setTurn(playerId: string): boolean {

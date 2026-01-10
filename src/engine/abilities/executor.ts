@@ -1771,6 +1771,13 @@ export class EffectExecutor {
                 return false;
             }
         }
+
+        // Check other (exclude self)
+        if (filter.other || filter.excludeSelf) {
+            if (context.card && card.instanceId === context.card.instanceId) {
+                return false;
+            }
+        }
         // ... (skipping some)
 
         // Check keyword

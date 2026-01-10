@@ -26,9 +26,11 @@ describe('Moana - Of Motunui Ability', () => {
             cost: 5,
             lore: 2,
             inkwell: true,
+            subtypes: ['Storyborn', 'Hero', 'Princess'], // Correct subtypes
             abilities: [{
                 type: 'triggered',
-                fullText: 'WE CAN FIX IT Whenever this character quests, you may ready your other exerted Princess characters. If you do, they can\'t quest for the rest of this turn.',
+                // Exact text from allCards.json
+                fullText: 'WE CAN FIX IT Whenever this character quests,\nyou may ready your other Princess characters. They\ncan\'t quest for the rest of this turn.',
                 // Note: The parser logic will be tested here
             }]
         });
@@ -108,6 +110,7 @@ describe('Moana - Of Motunui Ability', () => {
 
         // 5. Verify State
         expect(cinderella.ready).toBe(true);
+        expect(moana.ready).toBe(false); // Should NOT ready herself ("other" clause)
         expect(beast.ready).toBe(false);
 
         // 6. Verify Restriction: Cinderella Can't Quest

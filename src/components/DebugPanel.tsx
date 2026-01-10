@@ -49,6 +49,30 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
         onStateChange({ ...gameEngine.stateManager.state });
     }, [gameEngine.stateManager, onStateChange]);
 
+    // Expose to window for automated testing
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            window.lorcanaDebug = {
+                loadPreset: (preset: DebugPreset) => {
+                    const success = manipulator.loadPreset(preset);
+                    if (success) refreshState();
+                    return success;
+                },
+                importState: (json: string) => {
+                    const success = manipulator.importState(json);
+                    if (success) refreshState();
+                    return success;
+                },
+                getState: () => manipulator.exportState()
+            };
+        }
+        return () => {
+            if (typeof window !== 'undefined') {
+                delete window.lorcanaDebug;
+            }
+        };
+    }, [manipulator, refreshState]);
+
     // Handle card selection from picker
     const handleSelectCard = useCallback((card: any) => {
         console.log(`[DebugPanel] Adding ${card.fullName} to ${targetPlayer}'s ${targetZone}`);
@@ -251,10 +275,56 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                 {/* Add Card Button */}
                                 <button
                                     onClick={() => setCardPickerOpen(true)}
-                                    className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                                    className="w-full py-2 mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded shadow-md transition-all active:scale-95"
                                 >
                                     + Add Card to {targetZone}
                                 </button>
+
+                                {/* Manage Play Zone Cards */}
+                                {targetZone === 'play' && (
+                                    <div className="mt-4 pt-4 border-t border-gray-700">
+                                        <h4 className="text-xs font-medium text-gray-500 mb-2">Cards in Play</h4>
+                                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                                            {engineState.players[targetPlayer]?.play.map(card => {
+                                                const isDrying = card.turnPlayed === engineState.turnCount;
+                                                return (
+                                                    <div key={card.instanceId} className="bg-gray-800 p-2 rounded flex flex-col gap-2 text-xs">
+                                                        <div className="font-medium text-white truncate">{card.name}</div>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    manipulator.setReady(card.instanceId, !card.ready);
+                                                                    refreshState();
+                                                                }}
+                                                                className={`flex-1 py-1 rounded ${card.ready
+                                                                    ? 'bg-green-900 text-green-200 border border-green-700'
+                                                                    : 'bg-gray-700 text-gray-400'
+                                                                    }`}
+                                                            >
+                                                                {card.ready ? 'Ready' : 'Exerted'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    manipulator.setDrying(card.instanceId, !isDrying);
+                                                                    refreshState();
+                                                                }}
+                                                                className={`flex-1 py-1 rounded ${isDrying
+                                                                    ? 'bg-blue-900 text-blue-200 border border-blue-700'
+                                                                    : 'bg-gray-700 text-gray-400'
+                                                                    }`}
+                                                            >
+                                                                {isDrying ? 'Drying' : 'Dry'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {engineState.players[targetPlayer]?.play.length === 0 && (
+                                                <p className="text-gray-500 italic">No cards in play</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Quick Zone Stats */}
                                 <div className="mt-4 pt-4 border-t border-gray-700">
