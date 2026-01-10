@@ -1185,52 +1185,43 @@ function GamePageInner() {
             <div className="flex items-center justify-between p-4 bg-black bg-opacity-30">
                 <h1 className="text-2xl font-bold text-white">🎮 Lorai • Lorcana</h1>
                 <div className="flex gap-2">
-                    {/* Test buttons for log system */}
-
-                    <button onClick={testCardPlayed} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs">🎴</button>
-                    <button onClick={testAbilityTriggered} className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs">⚡</button>
-                    <button onClick={testCombat} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs">⚔️</button>
-                    <button onClick={testLoreGain} className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs">◆</button>
-                    <button onClick={testTurnEvent} className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs">🔄</button>
-                    <div className="border-l border-gray-600 mx-2"></div>
-                    {/* Test buttons for choice system */}
-                    <button
-                        onClick={testModalChoice}
-                        className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
-                    >
-                        🎴 Test Modal
-                    </button>
-                    <button
-                        onClick={testCardSelection}
-                        className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
-                    >
-                        🎯 Test Targeting
-                    </button>
-                    {/* Test button - will be removed when backend integration is complete */}
-                    <button
-                        onClick={() => setOpponentHandRevealed(!opponentHandRevealed)}
-                        className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-sm"
-                    >
-                        {opponentHandRevealed ? '🔒 Hide' : '🔍 Reveal'} Opp Hand
-                    </button>
-                    <button
-                        onClick={() => setShowAnimationDemo(true)}
-                        className="px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded text-sm font-medium"
-                    >
-                        🎬 Animations
-                    </button>
-                    <button
-                        className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded"
-                        onClick={() => {
-                            if (gameEngine) {
-                                // Implement concede
-                                // gameEngine.turnManager.concede(player1.id);
-                                // setEngineState({ ...gameEngine.stateManager.state });
-                            }
-                        }}
-                    >
-                        Concede (Not Impl)
-                    </button>
+                    {/* Debug/Test buttons - only visible in development */}
+                    {process.env.NODE_ENV !== 'production' && (
+                        <>
+                            {/* Test buttons for log system */}
+                            <button onClick={testCardPlayed} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs">🎴</button>
+                            <button onClick={testAbilityTriggered} className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs">⚡</button>
+                            <button onClick={testCombat} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs">⚔️</button>
+                            <button onClick={testLoreGain} className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs">◆</button>
+                            <button onClick={testTurnEvent} className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs">🔄</button>
+                            <div className="border-l border-gray-600 mx-2"></div>
+                            {/* Test buttons for choice system */}
+                            <button
+                                onClick={testModalChoice}
+                                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
+                            >
+                                🎴 Test Modal
+                            </button>
+                            <button
+                                onClick={testCardSelection}
+                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+                            >
+                                🎯 Test Targeting
+                            </button>
+                            <button
+                                onClick={() => setOpponentHandRevealed(!opponentHandRevealed)}
+                                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-sm"
+                            >
+                                {opponentHandRevealed ? '🔒 Hide' : '🔍 Reveal'} Opp Hand
+                            </button>
+                            <button
+                                onClick={() => setShowAnimationDemo(true)}
+                                className="px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded text-sm font-medium"
+                            >
+                                🎬 Animations
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
