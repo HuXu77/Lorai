@@ -1286,9 +1286,9 @@ function GamePageInner() {
                     />
 
                     {/* Middle Section - Play Areas & Zones */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
                         {/* Opponent Zones */}
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                             {/* Opponent Items and Locations */}
                             {((opponent?.play.filter(c => c.type === 'Location').length || 0) > 0 ||
                                 (opponent?.play.filter(c => c.type === 'Item').length || 0) > 0) && (

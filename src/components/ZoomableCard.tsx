@@ -14,15 +14,15 @@ export const CARD_SIZES = {
     md: 'w-28 h-40',        // 112x160px - medium (hand cards)
     lg: 'w-32 h-44',        // 128x176px - large (modals, selection)
     xl: 'w-40 h-56',        // 160x224px - extra large
-    zoom: 'w-60 h-[336px]', // 240x336px - fixed hover zoom size (portrait)
-    zoomLandscape: 'w-[336px] h-60', // 336x240px - fixed hover zoom size (landscape for Locations)
+    zoom: 'w-72 h-[403px]', // 288x403px - fixed hover zoom size (1.2x scale for readability)
+    zoomLandscape: 'w-[420px] h-[300px]', // 420x300px - larger frame for rotated locations
 } as const;
 
 // Zoom dimensions in pixels for calculations
-const ZOOM_WIDTH = 240;
-const ZOOM_HEIGHT = 336;
-const ZOOM_WIDTH_LANDSCAPE = 336;
-const ZOOM_HEIGHT_LANDSCAPE = 240;
+const ZOOM_WIDTH = 288;
+const ZOOM_HEIGHT = 403;
+const ZOOM_WIDTH_LANDSCAPE = 420;
+const ZOOM_HEIGHT_LANDSCAPE = 300;
 const VIEWPORT_PADDING = 16; // Minimum distance from viewport edge
 
 export type CardSize = keyof typeof CARD_SIZES;
@@ -223,7 +223,13 @@ export default function ZoomableCard({
                     }}
                 >
                     {/* Always use fixed ZOOM size for the enlarged view */}
-                    <div className={`${isLocation ? CARD_SIZES.zoomLandscape : CARD_SIZES.zoom} rounded-lg overflow-hidden shadow-2xl relative ring-2 ring-white/20`}>
+                    {/* For locations, rotate the entire container to show landscape orientation */}
+                    <div
+                        className={`${CARD_SIZES.zoom} rounded-lg overflow-hidden shadow-2xl relative ring-2 ring-white/20`}
+                        style={isLocation ? {
+                            transform: 'rotate(90deg)',
+                        } : {}}
+                    >
                         <Card
                             card={card}
                             disableHoverZoom={true}

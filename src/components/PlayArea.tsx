@@ -52,7 +52,7 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
             >
                 <ZoomableCard
                     card={card}
-                    size="sm"
+                    size="md"
                     showAbilities={true}
                     isDrying={isDrying}
                 />
@@ -60,26 +60,29 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
         );
     };
 
+    // Compact empty state - just a small indicator
+    if (showEmptyState) {
+        return (
+            <div className="border border-dashed border-gray-700 rounded-lg p-2 bg-black bg-opacity-10">
+                <div className="text-xs text-gray-500 italic">
+                    {label}: <span className="text-gray-600">No characters in play</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-3 min-h-[140px] bg-black bg-opacity-20 relative overflow-hidden">
+        <div className="border-2 border-dashed border-gray-700 rounded-lg p-2 min-h-[80px] bg-black bg-opacity-20 relative overflow-hidden">
             {label && (
-                <div className="text-xs text-gray-400 mb-2 font-semibold">{label}</div>
+                <div className="text-xs text-gray-400 mb-1 font-semibold">{label}</div>
             )}
 
-            <div className="flex flex-wrap gap-2 relative z-10">
-                {showEmptyState ? (
-                    <div className="text-gray-600 text-xs italic w-full text-center py-4">
-                        No characters in play
-                    </div>
-                ) : (
-                    <>
-                        {/* Active Cards */}
-                        {cards.map(card => renderCard(card, false))}
+            <div className="flex flex-wrap gap-1 relative z-10">
+                {/* Active Cards */}
+                {cards.map(card => renderCard(card, false))}
 
-                        {/* Banishing Cards (ghosts) */}
-                        {banishingCards.map(card => renderCard(card, true))}
-                    </>
-                )}
+                {/* Banishing Cards (ghosts) */}
+                {banishingCards.map(card => renderCard(card, true))}
             </div>
 
             <style jsx>{`
