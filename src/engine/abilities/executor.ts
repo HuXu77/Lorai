@@ -2958,6 +2958,8 @@ export class EffectExecutor {
                 return [context.player];
             case 'all_opponents':
             case 'each_player':
+            case 'all_players':
+                // Returns all players (for effects like "Each player discards their hand...")
                 if (this.turnManager) {
                     return Object.values(this.turnManager.game.state.players);
                 }

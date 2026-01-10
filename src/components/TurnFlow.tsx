@@ -20,7 +20,7 @@ export default function TurnFlow({
     const canEndTurn = isYourTurn && currentPhase === TurnPhase.MAIN;
 
     return (
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center justify-between px-2 pb-2">
             {/* Left Container: Turn Info */}
             <div className="flex items-center gap-2 bg-black bg-opacity-40 px-3 py-1.5 rounded-lg border border-gray-700 text-sm">
                 <span className={isYourTurn ? 'text-green-400' : 'text-red-400'}>

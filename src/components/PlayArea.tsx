@@ -43,7 +43,7 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
                 key={card.instanceId}
                 className={`
                     transition-all duration-700
-                    ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-4' : ''}
+                    ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-8' : ''}
                     ${isBanishing
                         ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
                         : 'opacity-100 scale-100'}

@@ -185,81 +185,97 @@ export class OpponentInteractionFamilyHandler extends BaseFamilyHandler {
 
             case 'opponent_play_reveal_and_discard':
                 // Reveal opponent's hand, you choose what they discard
-                if (opponent.hand.length > 0) {
-                    this.turnManager.logger.info(`[OpponentInteraction] 👀 Opponent reveals hand`, {
-                        cards: opponent.hand.map((c: any) => c.name)
-                    });
+                // ALWAYS show modal with full hand - valid cards selectable, invalid cards visible but grayed out
+                this.turnManager.logger.info(`[OpponentInteraction] 👀 Opponent reveals hand`, {
+                    cards: opponent.hand.map((c: any) => c.name)
+                });
 
-                    // Build choice options from opponent's hand with FILTER
-                    const filter = effect.filter;
-                    const discardOptions = opponent.hand.map((c: any) => {
-                        let isValid = true;
+                // Build choice options from opponent's ENTIRE hand with validity based on filter
+                const filter = effect.filter;
+                const allHandOptions = opponent.hand.map((c: any) => {
+                    let isValid = true;
 
-                        // Apply Filter
-                        if (filter) {
-                            if (filter.type === 'not') {
-                                if (filter.filter.type === 'character' && c.type?.toLowerCase() === 'character') {
-                                    isValid = false;
-                                }
+                    // Apply Filter to determine selectability
+                    if (filter) {
+                        if (filter.type === 'not') {
+                            // "non-character" = NOT character type
+                            if (filter.filter.type === 'character' && c.type?.toLowerCase() === 'character') {
+                                isValid = false;
                             }
-                            // Add other filter types as needed
+                        } else if (filter.type) {
+                            // Direct type filter (e.g., "song", "action", "item")
+                            if (c.type?.toLowerCase() !== filter.type.toLowerCase()) {
+                                isValid = false;
+                            }
                         }
-
-                        return {
-                            id: c.instanceId,
-                            display: `${c.fullName || c.name} (Cost ${c.cost || 0})`,
-                            card: c,
-                            valid: isValid,
-                            invalidReason: isValid ? undefined : 'Current filter prevents choosing this card'
-                        };
-                    }).filter((o: any) => o.valid); // Only offering valid choices to the chooser (You)
-
-                    if (discardOptions.length === 0) {
-                        this.turnManager.logger.info(`[OpponentInteraction] 🤷 No valid cards to discard found in opponent's hand`);
-                        return;
                     }
 
-                    // Request choice from player via TurnManager
-                    if (this.turnManager.requestChoice) {
-                        const choiceRequest = {
-                            id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                            type: 'target_card_in_hand' as any,
-                            playerId: player.id,
-                            prompt: `Choose a card from opponent's hand to discard`,
-                            options: discardOptions,
-                            source: {
-                                card: context.card,
-                                abilityName: context.abilityName || 'Reveal and Discard',
-                                player: player
-                            },
-                            min: 1,
-                            max: 1,
-                            timestamp: Date.now()
-                        };
+                    return {
+                        id: c.instanceId,
+                        display: `${c.fullName || c.name} (${c.type || 'Unknown'} - Cost ${c.cost || 0})`,
+                        card: c,
+                        valid: isValid,
+                        invalidReason: isValid ? undefined : `Cannot select ${c.type || 'this card type'}`
+                    };
+                });
+                // NOTE: Do NOT filter - we show ALL cards, valid or not
 
-                        const response = await this.turnManager.requestChoice(choiceRequest);
-                        if (response && response.selectedIds && response.selectedIds.length > 0) {
-                            const toDiscard = opponent.hand.find((c: any) => c.instanceId === response.selectedIds[0]);
-                            if (toDiscard) {
-                                opponent.hand = opponent.hand.filter((c: any) => c.instanceId !== toDiscard.instanceId);
-                                toDiscard.zone = 'discard';
-                                opponent.discard.push(toDiscard);
-                                this.turnManager.logger.info(`[OpponentInteraction] 🗑️ You chose opponent discards ${toDiscard.name}`);
+                const hasValidOptions = allHandOptions.some((o: any) => o.valid);
+
+                // Request choice from player via TurnManager - ALWAYS show modal
+                if (this.turnManager.requestChoice) {
+                    const choiceRequest = {
+                        id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        type: 'reveal_opponent_hand_choose_discard' as any,
+                        playerId: player.id,
+                        prompt: hasValidOptions
+                            ? `Choose a card from opponent's hand to discard`
+                            : `Opponent's hand revealed (no valid cards to discard)`,
+                        options: allHandOptions,
+                        source: {
+                            card: context.card,
+                            abilityName: context.abilityName || 'Reveal and Discard',
+                            player: player
+                        },
+                        min: hasValidOptions ? 1 : 0,
+                        max: hasValidOptions ? 1 : 0,
+                        allowSkip: !hasValidOptions, // Allow skip if no valid options
+                        timestamp: Date.now()
+                    };
+
+                    const response = await this.turnManager.requestChoice(choiceRequest);
+                    if (response && response.selectedIds && response.selectedIds.length > 0) {
+                        const toDiscard = opponent.hand.find((c: any) => c.instanceId === response.selectedIds[0]);
+                        if (toDiscard) {
+                            opponent.hand = opponent.hand.filter((c: any) => c.instanceId !== toDiscard.instanceId);
+                            toDiscard.zone = 'discard';
+                            opponent.discard.push(toDiscard);
+                            this.turnManager.logger.info(`[OpponentInteraction] 🗑️ You chose opponent discards ${toDiscard.name}`);
+                        }
+                    } else if (!hasValidOptions) {
+                        this.turnManager.logger.info(`[OpponentInteraction] 👁️ No valid cards to discard, opponent's hand was revealed only`);
+                    } else {
+                        // Bot fallback: Choose highest cost valid card
+                        const validCards = opponent.hand.filter((c: any) => {
+                            if (!filter) return true;
+                            if (filter.type === 'not' && filter.filter.type === 'character') {
+                                return c.type?.toLowerCase() !== 'character';
                             }
-                        } else {
-                            // Bot fallback: Choose highest cost card
-                            const sortedByDesc = [...opponent.hand].sort((a: any, b: any) => (b.cost || 0) - (a.cost || 0));
+                            return true;
+                        });
+                        if (validCards.length > 0) {
+                            const sortedByDesc = [...validCards].sort((a: any, b: any) => (b.cost || 0) - (a.cost || 0));
                             const toDiscard = sortedByDesc[0];
 
                             opponent.hand = opponent.hand.filter((c: any) => c.instanceId !== toDiscard.instanceId);
                             toDiscard.zone = 'discard';
                             opponent.discard.push(toDiscard);
-                            this.turnManager.logger.info(`[OpponentInteraction] 🗑️ Opponent discard highest cost: ${toDiscard.name}`);
+                            this.turnManager.logger.info(`[OpponentInteraction] 🗑️ Bot chose opponent discard: ${toDiscard.name}`);
                         }
-                    } else {
-                        // Fallback: decline optional effect
-                        this.turnManager.logger.info(`[OpponentInteraction] 🗑️ No choice handler, skipping reveal and discard`);
                     }
+                } else {
+                    // Fallback: No choice handler
+                    this.turnManager.logger.info(`[OpponentInteraction] 🗑️ No choice handler, skipping reveal and discard`);
                 }
                 break;
 

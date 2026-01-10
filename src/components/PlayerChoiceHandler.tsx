@@ -53,6 +53,10 @@ export default function PlayerChoiceHandler({ choice, onResponse }: PlayerChoice
         case 'reveal_hand' as any:
             return <RevealHandModal choice={choice} onResponse={onResponse} />;
 
+        // Reveal opponent's hand and choose a card to discard (The Bare Necessities, etc.)
+        case 'reveal_opponent_hand_choose_discard' as any:
+            return <CardSelectionChoice choice={choice} onResponse={onResponse} />;
+
         // Card targeting / selection
         case ChoiceType.TARGET_CHARACTER:
         case ChoiceType.TARGET_OPPOSING_CHARACTER:
