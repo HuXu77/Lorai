@@ -76,7 +76,7 @@ describe('Cursed Merfolk - Challenge Trigger', () => {
         expect(p1.discard.length).toBe(0);
 
         // P1 challenges Cursed Merfolk
-        harness.turnManager.resolveAction({
+        await harness.turnManager.resolveAction({
             type: ActionType.Challenge,
             playerId: harness.p1Id,
             cardId: attacker.instanceId,
@@ -128,7 +128,7 @@ describe('Cursed Merfolk - Challenge Trigger', () => {
 
         expect(p1.hand.length).toBe(1);
 
-        harness.turnManager.resolveAction({
+        await harness.turnManager.resolveAction({
             type: ActionType.Challenge,
             playerId: harness.p1Id,
             cardId: attacker.instanceId,
@@ -173,7 +173,7 @@ describe('Cursed Merfolk - Challenge Trigger', () => {
         expect(p1.hand.length).toBe(0);
 
         // Challenge should not error
-        harness.turnManager.resolveAction({
+        await harness.turnManager.resolveAction({
             type: ActionType.Challenge,
             playerId: harness.p1Id,
             cardId: attacker.instanceId,
@@ -237,7 +237,7 @@ describe('Cursed Merfolk - Challenge Trigger', () => {
         expect(p1.discard.length).toBe(0);
 
         // P1 challenges the OTHER character (NOT Cursed Merfolk)
-        harness.turnManager.resolveAction({
+        await harness.turnManager.resolveAction({
             type: ActionType.Challenge,
             playerId: harness.p1Id,
             cardId: attacker.instanceId,

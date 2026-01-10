@@ -449,19 +449,62 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 const toDiscard = Math.min(effect.amount, opponent.hand.length);
 
                 for (let i = 0; i < toDiscard; i++) {
-                    const randomIndex = Math.floor(Math.random() * opponent.hand.length);
-                    const card = opponent.hand.splice(randomIndex, 1)[0];
-                    card.zone = 'discard';
-                    opponent.discard.push(card);
+                    if (opponent.hand.length === 0) break;
 
-                    if (this.turnManager) {
-                        this.turnManager.logger.info(`[EffectExecutor] ${opponent.name} chose to discard ${card.name}`);
-                        this.turnManager.trackZoneChange(card, 'hand', 'discard');
-                        this.turnManager.eventBus.emit(GameEvent.CARD_DISCARDED, {
-                            card: card,
-                            player: opponent,
-                            source: context.card
-                        });
+                    // Create choice options from opponent's hand
+                    const options = opponent.hand.map((card: any) => ({
+                        id: card.instanceId,
+                        display: `${card.name} (${card.cost}💧)`,
+                        label: card.name,
+                        card: card,
+                        valid: true
+                    }));
+
+                    // Request choice from the OPPONENT (not the active player)
+                    const choiceRequest = {
+                        id: `opponent_discard_${Date.now()}_${i}`,
+                        type: 'discard_from_hand' as any,
+                        playerId: opponent.id, // Key fix: prompt the opponent!
+                        prompt: `Choose a card to discard (${i + 1}/${toDiscard})`,
+                        options: options,
+                        min: 1,
+                        max: 1,
+                        source: {
+                            card: context.card,
+                            player: context.player,
+                            abilityName: context.abilityName || 'Opponent Discard'
+                        },
+                        timestamp: Date.now()
+                    };
+
+                    const response = await this.turnManager.requestChoice(choiceRequest);
+                    const selectedId = response.selectedIds?.[0];
+
+                    // If no response (e.g., timeout or AI), fall back to random
+                    let cardToDiscard;
+                    if (selectedId) {
+                        cardToDiscard = opponent.hand.find((c: any) => c.instanceId === selectedId);
+                    }
+                    if (!cardToDiscard && opponent.hand.length > 0) {
+                        // Fallback for AI/bot or timeout
+                        const randomIndex = Math.floor(Math.random() * opponent.hand.length);
+                        cardToDiscard = opponent.hand[randomIndex];
+                    }
+
+                    if (cardToDiscard) {
+                        opponent.hand = opponent.hand.filter((c: any) => c.instanceId !== cardToDiscard.instanceId);
+                        cardToDiscard.zone = 'discard';
+                        opponent.discard.push(cardToDiscard);
+
+                        if (this.turnManager) {
+                            this.turnManager.logger.info(`[ChoiceFamily] ${opponent.name} chose to discard ${cardToDiscard.name}`);
+                            this.turnManager.trackZoneChange(cardToDiscard, 'hand', 'discard');
+                            this.turnManager.eventBus?.emit(GameEvent.CARD_DISCARDED, {
+                                card: cardToDiscard,
+                                player: opponent,
+                                source: context.card
+                            });
+                        }
                     }
                 }
                 continue;
