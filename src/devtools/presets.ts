@@ -224,6 +224,51 @@ export const DEBUG_PRESETS: DebugPreset[] = [
             turnPlayer: 'player1'
         }
     },
+    {
+        id: 'ui-fluency-test',
+        name: 'UI Interaction Gauntlet',
+        description: 'Verify Targeting, Modals, Optionals, and Reveals',
+        category: 'ability',
+        setup: {
+            player1: {
+                hand: [
+                    'Smash',
+                    'The Queen - Commanding Presence',
+                    'Gramma Tala - Storyteller',
+                    'Develop Your Brain'
+                ],
+                play: [],
+                inkwell: [
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star',
+                    'Stitch - Rock Star'
+                ],
+                deck: [
+                    'Mickey Mouse - Brave Little Tailor',
+                    'Minnie Mouse - Beloved Princess',
+                    'Donald Duck - Musketeer',
+                    'Goofy - Musketeer'
+                ],
+                lore: 0
+            },
+            player2: {
+                hand: [],
+                play: [
+                    { name: 'Mickey Mouse - Brave Little Tailor', ready: true }
+                ],
+                inkwell: [],
+                lore: 0
+            },
+            turnPlayer: 'player1'
+        }
+    },
     // === Combat Testing ===
     {
         id: 'combat-basic',
