@@ -1244,6 +1244,7 @@ function GamePageInner() {
                                     cards={opponentCharacters}
                                     label="⚔️ Opponent Characters"
                                     currentTurn={engineState?.turnCount}
+                                    allLocations={opponent?.play.filter(c => c.type === 'Location') || []}
                                 />
                             </div>
                             {/* Opponent Items & Locations (fixed width) */}
@@ -1275,6 +1276,7 @@ function GamePageInner() {
                                     label="⚔️ Your Characters"
                                     currentTurn={engineState?.turnCount}
                                     onCardClick={handlePlayAreaCardClick}
+                                    allLocations={yourPlayer?.play.filter(c => c.type === 'Location') || []}
                                 />
                             </div>
                             {/* Player Items & Locations (fixed width) */}
@@ -1513,7 +1515,12 @@ function GamePageInner() {
                 <PlayAreaActionMenu
                     card={playAreaMenuCard}
                     isYourTurn={isYourTurn}
-                    isDrying={engineState?.turnCount !== undefined && playAreaMenuCard.turnPlayed === engineState.turnCount}
+                    isDrying={
+                        playAreaMenuCard.type === 'Character' &&
+                        engineState?.turnCount !== undefined &&
+                        playAreaMenuCard.turnPlayed === engineState.turnCount
+                    }
+                    allLocations={yourPlayer.play.filter(c => c.type === 'Location')}
                     challengeTargets={opponent.play.filter(c =>
                         (c.type === 'Character' || c.type === 'Location') &&
                         (gameEngine?.turnManager?.canChallenge(playAreaMenuCard, c) ?? true)

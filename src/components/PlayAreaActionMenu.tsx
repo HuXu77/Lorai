@@ -17,6 +17,8 @@ interface PlayAreaActionMenuProps {
     availableInk?: number;
     /** Current turn number for tracking Boost usage */
     currentTurn?: number;
+    /** All locations in play (for showing current location info) */
+    allLocations?: CardInstance[];
     /** Callbacks */
     onQuest: () => void;
     onChallenge: (targetId: string) => void;
@@ -34,6 +36,7 @@ export default function PlayAreaActionMenu({
     challengeTargets,
     availableInk = 0,
     currentTurn = 0,
+    allLocations = [],
     onQuest,
     onChallenge,
     onBoost,
@@ -46,6 +49,7 @@ export default function PlayAreaActionMenu({
     const [showMoveSelection, setShowMoveSelection] = useState(false);
 
     const isCharacter = card.type === 'Character';
+    const isItem = card.type === 'Item';
     const isReady = card.ready;
 
     // Check keywords
@@ -209,6 +213,22 @@ export default function PlayAreaActionMenu({
                             {card.damage > 0 && (
                                 <span className="ml-2 text-red-400">{card.damage} damage</span>
                             )}
+                            {/* Location Info */}
+                            {card.locationId && (() => {
+                                const location = allLocations.find(l => l.instanceId === card.locationId);
+                                if (!location) return null;
+                                // Check for duplicates
+                                const sameNameLocs = allLocations.filter(l => l.name === location.name);
+                                const index = sameNameLocs.length > 1
+                                    ? sameNameLocs.findIndex(l => l.instanceId === card.locationId) + 1
+                                    : null;
+                                return (
+                                    <div className="mt-1 text-cyan-400 flex items-center gap-1">
+                                        <span>🏰</span>
+                                        <span>At: {location.fullName || location.name}{index ? ` #${index}` : ''}</span>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Action Buttons */}
@@ -299,9 +319,18 @@ export default function PlayAreaActionMenu({
                                 const exertCost = ability.exertCost;
 
                                 const canAfford = availableInk >= abilityCost;
-                                const canExert = !exertCost || (isReady && !isDrying);
+                                // Items don't "dry" - they can use abilities immediately after being played
+                                const itemDrying = isItem ? false : isDrying;
+                                const canExert = !exertCost || (isReady && !itemDrying);
                                 // Simple check - actual check done in engine
                                 const isUsable = isYourTurn && canAfford && canExert;
+
+                                // Determine reason for being unusable
+                                let disabledReason = '';
+                                if (!isYourTurn) disabledReason = 'Not your turn';
+                                else if (!canAfford) disabledReason = `Need ${abilityCost - availableInk} more ◆`;
+                                else if (exertCost && !isReady) disabledReason = 'Must be ready';
+                                else if (exertCost && itemDrying) disabledReason = 'Drying';
 
                                 return (
                                     <button
@@ -314,9 +343,15 @@ export default function PlayAreaActionMenu({
                                             }`}
                                     >
                                         <span className="text-xl">✨</span>
-                                        {ability.name || 'Ability'}
-                                        {abilityCost > 0 && ` (${abilityCost}◆)`}
-                                        {exertCost && ` (Exert)`}
+                                        {isUsable ? (
+                                            <>
+                                                {ability.name || 'Ability'}
+                                                {abilityCost > 0 && ` (${abilityCost}◆)`}
+                                                {exertCost && ` (Exert)`}
+                                            </>
+                                        ) : (
+                                            <>{disabledReason}</>
+                                        )}
                                     </button>
                                 );
                             })}
@@ -354,13 +389,6 @@ export default function PlayAreaActionMenu({
                 {isYourTurn && !isReady && (
                     <div className="mt-4 p-3 bg-orange-900/30 border border-orange-600 rounded-lg text-orange-300 text-sm text-center">
                         This character is exerted and cannot act until your next turn
-                    </div>
-                )}
-
-                {/* Drying Warning */}
-                {isYourTurn && isReady && isDrying && (
-                    <div className="mt-4 p-3 bg-blue-900/30 border border-blue-600 rounded-lg text-blue-300 text-sm text-center">
-                        💧 Just played - drying! Cannot act until your next turn
                     </div>
                 )}
             </div>

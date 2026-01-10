@@ -10,9 +10,52 @@ interface PlayAreaProps {
     label?: string
     /** Current turn number for calculating drying status */
     currentTurn?: number
+    /** All locations in play (for showing location badges on characters) */
+    allLocations?: CardInstance[]
 }
 
-const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: PlayAreaProps) {
+/**
+ * Get abbreviated location name for badge display
+ * e.g., "Never Land" -> "NL", "The Queen's Castle" -> "QC"
+ */
+function getLocationAbbreviation(name: string): string {
+    // Get first letter of each significant word
+    const words = name.split(/[\s-]+/).filter(w =>
+        !['the', 'a', 'an', 'of', 'in', 'at', 'to'].includes(w.toLowerCase())
+    );
+    if (words.length === 1) {
+        // Single word - use first 2-3 chars
+        return words[0].substring(0, 3);
+    }
+    // Multiple words - use initials
+    return words.map(w => w[0]).join('').toUpperCase().substring(0, 3);
+}
+
+/**
+ * Get location label with duplicate index if needed
+ * Returns { abbr: "NL", index: 1 or undefined }
+ */
+function getLocationLabel(locationId: string, allLocations: CardInstance[]): { abbr: string; name: string; index?: number } | null {
+    const location = allLocations.find(l => l.instanceId === locationId);
+    if (!location) return null;
+
+    // Check if there are duplicates (same name)
+    const sameNameLocations = allLocations.filter(l => l.name === location.name);
+    const hasDuplicates = sameNameLocations.length > 1;
+
+    // Find index in duplicates (1-based)
+    const index = hasDuplicates
+        ? sameNameLocations.findIndex(l => l.instanceId === locationId) + 1
+        : undefined;
+
+    return {
+        abbr: getLocationAbbreviation(location.name),
+        name: location.fullName || location.name,
+        index
+    };
+}
+
+const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn, allLocations = [] }: PlayAreaProps) {
     const { banishingCards, hadCardsRecently } = useCardAnimations(cards);
 
     // Show empty state only when truly empty AND not recently had cards
@@ -38,11 +81,16 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
         // 2. Location is ready (Locations are horizontal by default)
         const shouldRotate = (!card.ready && !isLocation) || (card.ready && isLocation);
 
+        // Get location label if character is at a location
+        const locationLabel = card.locationId && allLocations.length > 0
+            ? getLocationLabel(card.locationId, allLocations)
+            : null;
+
         return (
             <div
                 key={card.instanceId}
                 className={`
-                    transition-all duration-700
+                    transition-all duration-700 relative
                     ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-8' : ''}
                     ${isBanishing
                         ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
@@ -56,6 +104,16 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
                     showAbilities={true}
                     isDrying={isDrying}
                 />
+                {/* Location Badge */}
+                {locationLabel && (
+                    <div
+                        className="absolute top-0 right-0 transform translate-x-1 -translate-y-1 bg-cyan-700 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg z-30 flex items-center gap-0.5"
+                        title={`At: ${locationLabel.name}${locationLabel.index ? ` #${locationLabel.index}` : ''}`}
+                    >
+                        <span>🏰</span>
+                        <span>{locationLabel.abbr}{locationLabel.index ? `#${locationLabel.index}` : ''}</span>
+                    </div>
+                )}
             </div>
         );
     };
