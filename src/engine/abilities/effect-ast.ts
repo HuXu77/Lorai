@@ -103,7 +103,9 @@ export type ConditionAST =
     | { type: 'min_other_characters', amount: number }
     | { type: 'hand_size', amount: number, comparison: string }
     | { type: 'relative_hand_size', comparison: string, opponent: string }
-    | { type: 'has_card_under' };
+    | { type: 'relative_hand_size', comparison: string, opponent: string }
+    | { type: 'has_card_under' }
+    | { type: 'has_no_damage', target?: 'self' };
 /**
  * Effect AST - All possible effect types
  */

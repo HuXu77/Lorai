@@ -64,7 +64,7 @@ describe('Batch 8: Simple Actions', () => {
             const abilities = parseToAbilityDefinition(card);
             expect(abilities.length).toBe(1);
             expect((abilities[0] as any).effects[0].type).toBe('banish');
-            expect((abilities[0] as any).effects[0].target.type).toBe('chosen');
+            expect((abilities[0] as any).effects[0].target.type).toBe('chosen_character');
         });
     });
 

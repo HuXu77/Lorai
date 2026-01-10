@@ -5,28 +5,51 @@ import { log } from '../ability-parser';
 
 export function parseSimpleBanishAction(text: string, card: Card, abilities: AbilityDefinition[]): boolean {
     const effects: any[] = [];
-    let target: any = { type: 'chosen' };
 
-    // Determine card type
-    if (text.includes('character')) target.cardType = 'character';
-    else if (text.includes('item')) target.cardType = 'item';
-    else if (text.includes('location')) target.cardType = 'location';
+    let targetType = 'chosen';
+    const filter: any = {};
+
+    // Determine card type and specific target type
+    if (text.includes('character')) {
+        targetType = 'chosen_character';
+        // filter.type = 'character'; // Implicit in chosen_character
+    } else if (text.includes('item')) {
+        targetType = 'chosen_item';
+    } else if (text.includes('location')) {
+        targetType = 'chosen_location';
+    }
 
     // Handle "location or item"
     if (text.match(/location or item/i)) {
-        target.cardType = ['location', 'item'];
+        targetType = 'chosen_item_or_location';
     }
 
     // Parse filters
-    const costMatch = text.match(/with (\d+) [¤⬡◊] or less/i);
+    // "with cost X or less"
+    const costMatch = text.match(/with cost (\d+) or less/i);
     if (costMatch) {
-        target.costMax = parseInt(costMatch[1]);
+        filter.costMax = parseInt(costMatch[1]);
+    }
+
+    // "with X strength or more" (Ratigan)
+    const strengthMatch = text.match(/with (\d+)\s*(?:strength|cost|lore|willpower|attack|\u00A4)\s*or more/i);
+    if (strengthMatch) {
+        filter.stats = {
+            stat: 'strength',
+            operator: '>=',
+            value: parseInt(strengthMatch[1])
+        };
     }
 
     const challengedMatch = text.match(/who was challenged this turn/i);
     if (challengedMatch) {
-        target.wasChallenged = true;
+        filter.wasChallenged = true;
     }
+
+    const target: any = {
+        type: targetType,
+        filter: Object.keys(filter).length > 0 ? filter : undefined
+    };
 
     effects.push({
         type: 'banish',

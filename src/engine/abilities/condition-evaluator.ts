@@ -192,6 +192,15 @@ export class ConditionEvaluator {
                 }
                 return false;
 
+            case 'has_no_damage':
+                if (condition.target === 'self' && context.card) {
+                    const damage = context.card.damage || 0;
+                    console.log(`[ConditionEvaluator] has_no_damage check on ${context.card.name}: damage=${damage}`);
+                    return damage === 0;
+                }
+                console.log(`[ConditionEvaluator] has_no_damage check failed: target=${condition.target}, card=${context.card?.name}`);
+                return false;
+
             case 'check_revealed_card':
                 // Check if revealed card matches filter
                 const revealedCard = (context.eventContext as any).revealedCard;

@@ -55,7 +55,8 @@ describe('Shift Mechanic Reproduction', () => {
             registerCardAbilities: jest.fn(),
             registerCard: jest.fn(),
             getModifiedShiftCost: jest.fn((card: any, player: any, baseCost: number) => baseCost), // Return base cost unchanged
-            unregisterCard: jest.fn()
+            unregisterCard: jest.fn(),
+            emitEvent: jest.fn()
         };
     });
 

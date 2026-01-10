@@ -14,6 +14,23 @@ import { parseTargetFilter } from '../pattern-matchers';
 export const actionPatterns: PatternHandler[] = [
     // "Banish chosen character." / "Banish chosen opposing character."
     {
+        name: 'banish_chosen_strength',
+        pattern: /banish chosen(?: opposing)? character with (\d+)\s*(?:strength|cost|lore|willpower|attack|\u00A4)?\s*or more/i,
+        handle: (text, match) => [{
+            type: 'banish',
+            target: {
+                type: 'chosen_character',
+                filter: {
+                    strengthMin: parseInt(match[1]),
+                    ...(text.includes('opposing') ? { opponent: true } : {})
+                }
+            }
+        }],
+        priority: 110
+    },
+
+    // "Banish chosen character." / "Banish chosen opposing character."
+    {
         name: 'banish_chosen',
         pattern: /^banish chosen(?: opposing)? character/i,
         handle: (text) => [{

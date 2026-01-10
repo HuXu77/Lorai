@@ -1134,6 +1134,8 @@ export class AbilitySystemManager {
                 return this.turnManager.game.state.turnPlayerId === player.id;
             case 'has_card_under':
                 return card.meta && card.meta.cardsUnder && card.meta.cardsUnder.length > 0;
+            case 'has_no_damage':
+                return (card.damage || 0) === 0;
             default:
                 return false;
         }
