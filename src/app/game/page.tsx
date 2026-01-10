@@ -137,7 +137,7 @@ function GamePageInner() {
     const [gameInitialized, setGameInitialized] = useState(false)
     const gameInitializedRef = useRef(false) // Synchronous guard for race condition
     // In test mode, don't show deck import modal - we'll auto-load default decks
-    const [deckImportModalOpen, setDeckImportModalOpen] = useState(!isTestMode)
+    const [deckImportModalOpen, setDeckImportModalOpen] = useState(!isTestMode && !isDebugMode)
     const [mulliganOpen, setMulliganOpen] = useState(false)
     const [actionMenuCard, setActionMenuCard] = useState<CardInstance | null>(null)
     const [showAnimationDemo, setShowAnimationDemo] = useState(false)
@@ -738,21 +738,21 @@ function GamePageInner() {
         return { restricted: false };
     };
 
-    // Auto-initialize game in test mode
+    // Auto-initialize game in test/debug mode
     useEffect(() => {
-        if (isTestMode && !gameInitializedRef.current) {
-            console.log('[TestMode] Auto-initializing game with default decks...');
+        if ((isTestMode || isDebugMode) && !gameInitializedRef.current) {
+            console.log('[GamePage] Auto-initializing game with default decks (Test/Debug Mode)...');
             initializeGame(); // Uses default decks from deck1.json/deck2.json
         }
-    }, [isTestMode]);
+    }, [isTestMode, isDebugMode]);
 
-    // Auto-mulligan in test mode (keep all cards)
+    // Auto-mulligan in test/debug mode (keep all cards)
     useEffect(() => {
-        if (autoMulligan && mulliganOpen && gameEngine) {
-            console.log('[TestMode] Auto-mulligan: keeping all cards');
+        if ((autoMulligan || isDebugMode) && mulliganOpen && gameEngine) {
+            console.log('[GamePage] Auto-mulligan: keeping all cards (Test/Debug Mode)');
             handleMulligan([]); // Keep all cards
         }
-    }, [autoMulligan, mulliganOpen, gameEngine]);
+    }, [autoMulligan, isDebugMode, mulliganOpen, gameEngine]);
 
     // Monitor hand size for draw animation
     useEffect(() => {
@@ -1853,6 +1853,7 @@ function GamePageInner() {
         </div>
     )
 }
+
 
 // Wrapper component with Suspense for useSearchParams
 export default function GamePage() {

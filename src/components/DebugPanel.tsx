@@ -14,6 +14,16 @@ import { TurnManager } from '../engine/actions';
 import { GameStateManager } from '../engine/state';
 import { GameState, ZoneType, CardInstance } from '../engine/models';
 
+declare global {
+    interface Window {
+        lorcanaDebug?: {
+            loadPreset: (preset: DebugPreset) => boolean;
+            importState: (json: string) => boolean;
+            getState: () => string;
+        };
+    }
+}
+
 export interface DebugPanelProps {
     gameEngine: {
         turnManager: TurnManager;

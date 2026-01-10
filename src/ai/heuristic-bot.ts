@@ -28,21 +28,42 @@ export class HeuristicBot implements Bot {
      * @param hand Current hand
      * @returns List of instance IDs to mulligan (put on bottom)
      */
+    /**
+     * Decide which cards to mulligan
+     * Strategy:
+     * - Keep a reliable early game (Cards cost 1-2).
+     * - If we have a good early game (2+ low cost cards), keep ONE high-impact card (Cost 5+).
+     * - Otherwise, look for curve.
+     */
     decideMulligan(hand: any[]): string[] {
         const toMulligan: string[] = [];
-
-        // Get player state for cost calculation context
         const player = this.turnManager.game.getPlayer(this.playerId);
 
+        // Analyze hand structure
+        const lowCostCards = hand.filter(c => {
+            const cost = this.turnManager.abilitySystem ? this.turnManager.abilitySystem.getModifiedCost(c, player) : c.cost;
+            return cost <= 2;
+        });
+
+        const hasGoodEarlyGame = lowCostCards.length >= 2;
+        let highCostKeeperFound = false;
+
         hand.forEach(card => {
-            // Use modified cost if available
             const cost = this.turnManager.abilitySystem
                 ? this.turnManager.abilitySystem.getModifiedCost(card, player)
                 : card.cost;
 
-            // Simple heuristic: Mulligan expensive cards (> 4 cost)
-            // unless we have no low cost cards, but this is a per-card decision
-            if (cost > 4) {
+            // Always keep low cost cards
+            if (cost <= 2) return;
+
+            // If we have early game secured, we can keep ONE expensive bomb
+            if (hasGoodEarlyGame && cost >= 5 && !highCostKeeperFound) {
+                highCostKeeperFound = true;
+                return; // Keep this one
+            }
+
+            // Otherwise, mulligan expensive cards and mid-range clutter if we are fishing for early game
+            if (cost > 4 || (!hasGoodEarlyGame && cost > 2)) {
                 toMulligan.push(card.instanceId);
             }
         });
@@ -70,8 +91,7 @@ export class HeuristicBot implements Bot {
         }
 
         // 1. Ink Phase Logic
-        // If we haven't inked yet, check if we should
-        const player = gameState.players[this.playerId] as any; // Cast to access inkedThisTurn
+        const player = gameState.players[this.playerId] as any;
         if (!player.inkedThisTurn) {
             const inkAction = this.getBestInkAction(validActions, player);
             if (inkAction) {
@@ -79,110 +99,91 @@ export class HeuristicBot implements Bot {
             }
         }
 
-        // 2. Main Phase Logic (Greedy Search)
-        // Filter out ink actions if we decided not to ink or already checked
+        // 2. Main Phase Logic (Greedy Search with Threat Awareness)
         const mainPhaseActions = validActions.filter(a => a.type !== ActionType.InkCard);
 
         if (mainPhaseActions.length === 0) {
             return { type: ActionType.PassTurn, playerId: this.playerId };
         }
 
-        // Optimization: If only one action (e.g. Pass), just take it
+        // Optimization: If only one action, take it
         if (mainPhaseActions.length === 1) {
-            if (this.logger) {
-                this.logger.info(`[Bot] Only one action available: ${mainPhaseActions[0].type}`);
-            }
             return mainPhaseActions[0];
         }
 
-        if (this.logger) {
-            this.logger.info(`[Bot] Evaluating ${mainPhaseActions.length} actions...`);
-            // Log what actions are available
-            const actionSummary = mainPhaseActions.map(a => {
-                if (a.type === ActionType.PlayCard) {
-                    const card = player.hand.find((c: any) => c.instanceId === a.cardId);
-                    return `PlayCard(${card?.name || a.cardId})`;
-                }
-                if (a.type === ActionType.Quest) {
-                    const card = player.play.find((c: any) => c.instanceId === a.cardId);
-                    return `Quest(${card?.name || a.cardId})`;
-                }
-                if (a.type === ActionType.Challenge) {
-                    const attackCard = player.play.find((c: any) => c.instanceId === a.cardId);
-                    // Find defender in opponent's play area
-                    const opponentId = Object.keys(gameState.players).find(id => id !== this.playerId);
-                    const defender = opponentId ? gameState.players[opponentId].play.find((c: any) => c.instanceId === a.targetId) : null;
-                    return `Challenge(${attackCard?.name || a.cardId} → ${defender?.name || a.targetId})`;
-                }
-                if (a.type === ActionType.UseAbility) {
-                    const card = player.play.find((c: any) => c.instanceId === a.cardId);
-                    return `UseAbility(${card?.name || a.cardId})`;
-                }
-                if (a.type === ActionType.SingSong) {
-                    const singer = player.play.find((c: any) => c.instanceId === a.cardId);
-                    const song = player.hand.find((c: any) => c.instanceId === a.targetId);
-                    return `Sing(${singer?.name} → ${song?.name})`;
-                }
-                return a.type;
-            }).join(', ');
-            this.logger.info(`[Bot] Available: ${actionSummary}`);
+        // --- LETHAL & THREAT ANALYSIS ---
+        const opponentId = Object.keys(gameState.players).find(id => id !== this.playerId);
+        const opponent = opponentId ? gameState.players[opponentId] : null;
+        const abilitySystem = this.turnManager.abilitySystem;
+
+        let defensiveEmergency = false;
+        let myLethal = false;
+
+        // Check if I have lethal on board (current lore + ready characters)
+        const myReadyLore = player.play
+            .filter((c: any) => c.ready)
+            .reduce((sum: number, c: any) => sum + (abilitySystem ? abilitySystem.getModifiedStat(c, 'lore') : (c.lore || 0)), 0);
+
+        if (player.lore + myReadyLore >= 20) {
+            myLethal = true; // Full Aggro Mode
+        }
+
+        // Check opponent threat
+        if (opponent) {
+            const opponentReadyLore = opponent.play
+                .filter((c: any) => c.ready)
+                .reduce((sum: number, c: any) => sum + (abilitySystem ? abilitySystem.getModifiedStat(c, 'lore') : (c.lore || 0)), 0);
+
+            const opponentTotalThreat = opponent.lore + opponentReadyLore;
+
+            // If opponent can win next turn, we are in emergency mode
+            if (opponentTotalThreat >= 20 && !myLethal) {
+                defensiveEmergency = true;
+                if (this.logger) this.logger.info(`[Bot] 🚨 DEFENSIVE EMERGENCY! Opponent threat: ${opponentTotalThreat}`);
+            }
         }
 
         // Evaluate each action
         let bestAction = mainPhaseActions[0];
         let bestScore = -Infinity;
 
-        // Clone the game state once to avoid repeated deserialization overhead if possible,
-        // but for now we need a fresh clone for each action simulation.
-        // Since we don't have a full simulation engine yet, we will use a simplified heuristic:
-        // "What action gives me the most immediate value?"
-
-        // TODO: Implement true simulation with GameStateManager.clone()
-        // For now, we'll use a simplified evaluation based on action type
-
-        const abilitySystem = this.turnManager.abilitySystem;
-
         for (const action of mainPhaseActions) {
             let score = 0;
 
-            // Heuristic scoring based on action type
             switch (action.type) {
                 case ActionType.Quest:
-                    score += 100; // Questing is good
-                    // Bonus if it wins the game
+                    score += 100; // Base value
+
                     const questerCard = gameState.players[this.playerId].play.find(c => c.instanceId === action.cardId);
+                    const loreGained = abilitySystem ? abilitySystem.getModifiedStat(questerCard, 'lore') : (questerCard?.lore || 1);
 
-                    // CRITICAL: Use modified lore
-                    const loreGained = abilitySystem
-                        ? abilitySystem.getModifiedStat(questerCard, 'lore')
-                        : (questerCard?.lore || 1);
-
+                    // If this wins the game, infinite value
                     if ((gameState.players[this.playerId].lore + loreGained) >= 20) {
-                        score += 10000; // LETHAL - ALWAYS QUEST FOR WIN
+                        score += 100000;
+                    }
+                    // If we are about to die, DO NOT QUEST unless it wins
+                    else if (defensiveEmergency) {
+                        score -= 500; // Questing exerts us and ignores the threat
+                    }
+                    else if (questerCard?.ready === false) {
+                        // Should not happen for quest action, but safeguard
+                        score -= 50;
                     }
                     break;
 
                 case ActionType.Challenge:
-                    score += 50; // Base score
+                    score += 50; // Base value
 
-                    // Analyze the challenge
                     const attacker = gameState.players[this.playerId].play.find(c => c.instanceId === action.cardId);
-                    const opponentId = Object.keys(gameState.players).find(id => id !== this.playerId);
-                    const defender = opponentId ? gameState.players[opponentId].play.find(c => c.instanceId === action.targetId) : null;
+                    const defender = opponentId ? gameState.players[opponentId!].play.find(c => c.instanceId === action.targetId) : null;
 
                     if (attacker && defender) {
-                        // CRITICAL: Use modified stats for combat calculation
                         const attStrength = abilitySystem ? abilitySystem.getModifiedStat(attacker, 'strength') : (attacker.strength || 0);
                         const attWillpower = abilitySystem ? abilitySystem.getModifiedStat(attacker, 'willpower') : (attacker.willpower || 0);
 
                         const defStrength = abilitySystem ? abilitySystem.getModifiedStat(defender, 'strength') : (defender.strength || 0);
                         const defWillpower = abilitySystem ? abilitySystem.getModifiedStat(defender, 'willpower') : (defender.willpower || 0);
-
                         const defLore = abilitySystem ? abilitySystem.getModifiedStat(defender, 'lore') : (defender.lore || 0);
-                        const attLore = abilitySystem ? abilitySystem.getModifiedStat(attacker, 'lore') : (attacker.lore || 0);
-
-                        const attCost = abilitySystem ? abilitySystem.getModifiedCost(attacker, player) : (attacker.cost || 0);
-                        const defCost = defender.cost || 0; // Can't easily get opponent modified cost, use base
 
                         const damageToDefender = attStrength;
                         const damageToAttacker = defStrength;
@@ -190,55 +191,60 @@ export class HeuristicBot implements Bot {
                         const defenderDies = (defender.damage || 0) + damageToDefender >= defWillpower;
                         const attackerDies = (attacker.damage || 0) + damageToAttacker >= attWillpower;
 
-                        // 1. Favorable Trade: We kill them, we survive
-                        if (defenderDies && !attackerDies) {
-                            score += 60; // Total 110 (Beats Quest 100)
-                        }
-
-                        // 2. Trade Up: We both die, but they are more valuable (Lore)
-                        if (defenderDies && attackerDies) {
-                            if (defLore > attLore) {
-                                score += 60;
-                            } else if (defCost > attCost) {
-                                score += 40; // Value trade
+                        // EMERGENCY MODE PRIORITIES
+                        if (defensiveEmergency) {
+                            if (defenderDies && defLore > 0) {
+                                score += 500; // MUST KILL LORE THREATS
+                            } else if (defLore > 0) {
+                                score += 200; // Soften them up at least
                             }
                         }
 
-                        // 3. Remove Threat: They have high lore
-                        if (defLore >= 2) {
-                            score += (defLore * 10);
-                        }
+                        // STANDARD TRADING LOGIC
+                        if (defenderDies) {
+                            score += 50; // Kill bonus
 
-                        // 4. Desperation: If they are about to win, prioritize challenging
-                        const opponent = gameState.players[opponentId!];
-                        if (opponent.lore >= 18) {
-                            score += 100; // MUST STOP THEM
+                            // Value Trading: Did we trade up?
+                            // Trading weak unit for strong unit
+                            if (attackerDies) {
+                                if (defLore > (attacker.lore || 0)) score += 60; // Traded for better lore
+                                if ((defender.cost || 0) > (attacker.cost || 0)) score += 40; // Traded for better cost
+                            } else {
+                                // FREE KILL
+                                score += 100;
+                            }
+
+                            // Removing High Lore Targets (even outside emergency)
+                            if (defLore >= 2) score += (defLore * 20);
+                        } else {
+                            // Chip damage - generally less valuable unless setting up
+                            score -= 20;
                         }
                     }
                     break;
 
                 case ActionType.PlayCard:
-                    score += 20; // Playing cards is generally good
+                    score += 20; // Developing board is good
+                    // In emergency, prioritize Rush/Evasive/Bodyguard? (Future improvement)
                     break;
 
                 case ActionType.UseAbility:
-                    score += 30; // Using abilities is generally good
+                    score += 30;
+                    // Ability logic would need specific parsing (Damage abilities good in emergency)
+                    if (defensiveEmergency) score += 50; // Prefer abilities that might affect board
                     break;
 
                 case ActionType.SingSong:
-                    score += 40; // Singing is efficient (free action)
+                    score += 40;
                     break;
 
                 case ActionType.PassTurn:
-                    score -= 10; // Passing is last resort
+                    score -= 100; // Avoid passing if possible
                     break;
-
-                default:
-                    score += 0;
             }
 
-            // Add some randomness to break ties
-            score += Math.random();
+            // Tie-breaker
+            score += Math.random() * 5;
 
             if (score > bestScore) {
                 bestScore = score;
@@ -247,16 +253,8 @@ export class HeuristicBot implements Bot {
         }
 
         if (this.logger) {
-            let actionDetails: string = bestAction.type;
-            if (bestAction.type === ActionType.PlayCard || bestAction.type === ActionType.InkCard) {
-                const card = player.hand.find((c: any) => c.instanceId === bestAction.cardId);
-                if (card) actionDetails += ` (${card.name})`;
-            } else if (bestAction.type === ActionType.Quest || bestAction.type === ActionType.Challenge || bestAction.type === ActionType.SingSong) {
-                const card = player.play.find((c: any) => c.instanceId === bestAction.cardId);
-                if (card) actionDetails += ` (${card.name})`;
-            }
-
-            this.logger.info(`[Bot] Chose action: ${actionDetails} with score ${bestScore.toFixed(2)}`);
+            // Shortened logging for brevity in this complex logic
+            this.logger.info(`[Bot] Action: ${bestAction.type} Score: ${bestScore.toFixed(0)} E:${defensiveEmergency}`);
         }
 
         return bestAction;
