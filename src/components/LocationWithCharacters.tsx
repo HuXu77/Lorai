@@ -33,7 +33,11 @@ export default function LocationWithCharacters({
     const renderCard = (card: CardInstance, isBanishing: boolean = false) => {
         // Card is drying if it was played this turn (can't act unless Rush)
         // Card is drying if it was played this turn (can't act unless Rush)
-        const isDrying = !isBanishing && currentTurn !== undefined && card.turnPlayed === currentTurn;
+        // Only characters dry.
+        const isDrying = !isBanishing &&
+            card.type === 'Character' &&
+            currentTurn !== undefined &&
+            card.turnPlayed === currentTurn;
 
         const isLocation = card.type === 'Location';
 
