@@ -20,6 +20,15 @@ declare global {
             loadPreset: (preset: DebugPreset) => boolean;
             importState: (json: string) => boolean;
             getState: () => string;
+            // E2E testing methods
+            addToHand: (playerId: string, cardName: string) => any;
+            addToPlay: (playerId: string, cardName: string, options?: { ready?: boolean }) => any;
+            addToInkwell: (playerId: string, cardName: string) => any;
+            setLore: (playerId: string, amount: number) => boolean;
+            setTurn: (playerId: string) => boolean;
+            // Player IDs for test access
+            player1Id: string;
+            player2Id: string;
         };
     }
 }
@@ -59,10 +68,11 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
         onStateChange({ ...gameEngine.stateManager.state });
     }, [gameEngine.stateManager, onStateChange]);
 
-    // Expose to window for automated testing
+    // Expose to window for automated testing (E2E)
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
             window.lorcanaDebug = {
+                // Core state methods
                 loadPreset: (preset: DebugPreset) => {
                     const success = manipulator.loadPreset(preset);
                     if (success) refreshState();
@@ -73,7 +83,38 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                     if (success) refreshState();
                     return success;
                 },
-                getState: () => manipulator.exportState()
+                getState: () => manipulator.exportState(),
+
+                // Card manipulation for E2E tests
+                addToHand: (playerId: string, cardName: string) => {
+                    const result = manipulator.addToHand(playerId, cardName);
+                    refreshState();
+                    return result;
+                },
+                addToPlay: (playerId: string, cardName: string, options?: { ready?: boolean }) => {
+                    const result = manipulator.addToPlay(playerId, cardName, options);
+                    refreshState();
+                    return result;
+                },
+                addToInkwell: (playerId: string, cardName: string) => {
+                    const result = manipulator.addToInkwell(playerId, cardName);
+                    refreshState();
+                    return result;
+                },
+                setLore: (playerId: string, amount: number) => {
+                    const success = manipulator.setLore(playerId, amount);
+                    refreshState();
+                    return success;
+                },
+                setTurn: (playerId: string) => {
+                    const success = manipulator.setTurn(playerId);
+                    refreshState();
+                    return success;
+                },
+
+                // Player IDs for E2E tests
+                player1Id: 'player1',
+                player2Id: 'player2'
             };
         }
         return () => {

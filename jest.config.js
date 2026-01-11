@@ -23,7 +23,7 @@ module.exports = {
     cacheDirectory: '/tmp/jest-cache',
     cache: true,
     // Faster test detection
-    testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+    testPathIgnorePatterns: ['/node_modules/', '/dist/', '/e2e/'],
     // Timeout for slow tests
     testTimeout: 15000,
 };
