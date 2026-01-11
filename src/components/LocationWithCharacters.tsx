@@ -39,13 +39,13 @@ export default function LocationWithCharacters({
             card.turnPlayed === currentTurn;
 
         const isLocation = card.type === 'Location';
+        // Use Landscape dimensions for Locations so they don't get cropped
+        const cardSize = isLocation ? 'w-40 h-28' : 'md';
 
-        // Rotation Logic:
-        // Locations: Ready = Horizontal (rotated 90), Exerted = Vertical (no rotation)
-        // Characters: Ready = Vertical (no rotation), Exerted = Horizontal (rotated 90)
-
-        // shouldRotate means "Apply 90deg rotation to the vertical card frame"
-        const shouldRotate = (!card.ready && !isLocation) || (card.ready && isLocation);
+        // Rotate only if exerted.
+        // Locations (Landscape) -> Rotate 90 -> Portrait (Exerted).
+        // Characters (Portrait) -> Rotate 90 -> Landscape (Exerted).
+        const shouldRotate = !card.ready;
 
         const MotionDiv = motion.div as any;
 
@@ -56,31 +56,33 @@ export default function LocationWithCharacters({
                 key={card.instanceId}
                 className={`
                     relative flex-shrink-0
-                    ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-8' : ''}
+                    ${shouldRotate && !isBanishing ? 'mx-8' : ''}
                     ${isBanishing
                         ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
                         : 'opacity-100 scale-100'}
                 `}
                 onClick={(e: React.MouseEvent) => !isBanishing && handleCardClick(card, e)}
             >
-                <ZoomableCard
-                    card={card}
-                    size="md"
-                    showAbilities={true}
-                    isDrying={isDrying}
-                />
+                <div className={`${shouldRotate && !isBanishing ? 'rotate-90 origin-center' : ''}`}>
+                    <ZoomableCard
+                        card={card}
+                        size={cardSize}
+                        showAbilities={true}
+                        isDrying={isDrying}
+                    />
 
-                {/* Duplicate Number Badge for Location */}
-                {isLocation && duplicateIndex && (
-                    <div
-                        className={`absolute -top-1 -right-1 bg-amber-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg z-30
-                        ${shouldRotate ? '-rotate-90' : ''} /* Counter-rotate badge if card is rotated */
-                        `}
-                        title={`${card.name} #${duplicateIndex}`}
-                    >
-                        #{duplicateIndex}
-                    </div>
-                )}
+                    {/* Duplicate Number Badge for Location */}
+                    {isLocation && duplicateIndex && (
+                        <div
+                            className={`absolute -top-1 -right-1 bg-amber-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg z-30
+                            ${shouldRotate ? '-rotate-90' : ''} /* Counter-rotate badge if card is rotated */
+                            `}
+                            title={`${card.name} #${duplicateIndex}`}
+                        >
+                            #{duplicateIndex}
+                        </div>
+                    )}
+                </div>
             </MotionDiv>
         );
     };

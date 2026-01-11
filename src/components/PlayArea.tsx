@@ -48,19 +48,21 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
                 key={card.instanceId}
                 className={`
                     relative
-                    ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-8' : ''}
+                    ${shouldRotate && !isBanishing ? 'mx-8' : ''}
                     ${isBanishing
                         ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
                         : 'opacity-100 scale-100'}
                 `}
                 onClick={(e: React.MouseEvent) => !isBanishing && handleCardClick(card, e)}
             >
-                <ZoomableCard
-                    card={card}
-                    size="md"
-                    showAbilities={true}
-                    isDrying={isDrying}
-                />
+                <div className={`${shouldRotate && !isBanishing ? 'rotate-90 origin-center' : ''}`}>
+                    <ZoomableCard
+                        card={card}
+                        size="md"
+                        showAbilities={true}
+                        isDrying={isDrying}
+                    />
+                </div>
             </MotionDiv>
         );
     };
