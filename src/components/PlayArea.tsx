@@ -72,7 +72,7 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
     }
 
     return (
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-2 min-h-[80px] bg-black bg-opacity-20 relative overflow-hidden">
+        <div className="border-2 border-dashed border-gray-700 rounded-lg p-2 min-h-[80px] bg-black bg-opacity-20 relative">
             {label && (
                 <div className="text-xs text-gray-400 mb-1 font-semibold">{label}</div>
             )}

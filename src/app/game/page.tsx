@@ -1238,7 +1238,7 @@ function GamePageInner() {
                     {/* Middle Section - Play Areas & Zones - 2-Row Layout */}
                     <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
                         {/* Opponent Row: Characters + Items/Locations */}
-                        <div className="flex gap-2 flex-1 min-h-0">
+                        <div className="flex gap-2">
                             {/* Opponent Characters + Locations */}
                             <div className="flex-1 min-w-0 flex flex-col gap-2">
                                 <LocationsZone
@@ -1268,7 +1268,7 @@ function GamePageInner() {
                         <div className="border-t border-gray-600 border-dashed opacity-50"></div>
 
                         {/* Player Row: Characters + Items/Locations */}
-                        <div className="flex gap-2 flex-1 min-h-0">
+                        <div className="flex gap-2">
                             {/* Player Locations + Characters */}
                             <div className="flex-1 min-w-0 flex flex-col gap-2">
                                 <PlayArea
