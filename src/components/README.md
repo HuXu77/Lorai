@@ -1,151 +1,184 @@
 # UI Components
 
-## Overview
+## Architecture Overview
 
-This directory contains all React components for the Lorai game UI. Components are organized by function.
-
----
-
-## Card Display
-
-### `Card.tsx`
-Base card rendering with image integration.
-```tsx
-<Card card={cardInstance} isExerted={false} variant="full" />
-```
-
-### `ZoomableCard.tsx`
-Wrapper for cards with portal-based hover zoom.
-```tsx
-<ZoomableCard card={card} size="w-32 h-44" zoomScale={2} selected={false} />
-```
-
-### `CardActionMenu.tsx`
-Modal showing available actions for a selected card.
-```tsx
-<CardActionMenu
-    card={card}
-    hasInkedThisTurn={false}
-    availableInk={3}
-    isYourTurn={true}
-    onInk={handleInk}
-    onPlay={handlePlay}
-    onCancel={handleCancel}
-/>
-```
-
----
-
-## Zone Components
-
-### `PlayerHand.tsx`
-Displays player or opponent hand with hover effects.
-```tsx
-<PlayerHand cards={hand} onCardClick={handleClick} isOpponent={false} />
-```
-
-### `PlayArea.tsx`
-Grid display for characters in play.
-```tsx
-<PlayArea cards={characters} onCardClick={handleClick} />
-```
-
-### `InkPile.tsx`
-Inkwell display showing ready/exerted ink.
-```tsx
-<InkPile cards={inkwell} label="Your Ink" />
-```
-
-### `DiscardPile.tsx`
-Compact discard pile summary with click to expand.
-```tsx
-<DiscardPile cards={discard} label="Discard" onClick={openModal} />
-```
-
-### `GameZone.tsx`
-Generic zone container for locations/items.
-```tsx
-<GameZone cards={locations} label="Locations" />
+```mermaid
+graph TB
+    subgraph "Game Page"
+        Page[page.tsx]
+        Page --> GameEngine[Game Engine State]
+        Page --> UIState[UI State]
+    end
+    
+    subgraph "Layout Components"
+        Page --> Header[Header]
+        Page --> TurnFlow[TurnFlow]
+        Page --> Sidebar[Sidebars]
+        Page --> Board[Game Board]
+        Page --> Log[GameLog]
+    end
+    
+    subgraph "Game Zones"
+        Board --> PlayerHand
+        Board --> PlayArea
+        Board --> LocationsZone
+        Board --> GameZone[Items Zone]
+    end
+    
+    subgraph "Card Display"
+        PlayerHand --> Card
+        PlayArea --> ZoomableCard
+        ZoomableCard --> Card
+    end
+    
+    subgraph "Choice System"
+        Page --> PlayerChoiceHandler
+        PlayerChoiceHandler --> ModalChoice
+        PlayerChoiceHandler --> CardSelectionChoice
+        PlayerChoiceHandler --> DistributeDamageChoice
+        PlayerChoiceHandler --> ScryChoice
+    end
+    
+    subgraph "Action Menus"
+        Card --> CardActionMenu[Hand Actions]
+        PlayArea --> PlayAreaActionMenu[Play Actions]
+    end
 ```
 
 ---
 
-## Modals
+## State Flow
 
-### `MulliganModal.tsx`
-Mulligan phase card selection.
-```tsx
-<MulliganModal isOpen={true} hand={hand} onConfirm={handleConfirm} />
+### Game State
+The game state flows from the engine through React state:
+
+```
+GameEngine.stateManager.state
+    ↓
+humanController.updateState()
+    ↓
+setEngineState(newState)
+    ↓
+Component re-render with new state
 ```
 
-### `DeckImportModal.tsx`
-Deck import via text or Dreamborn URL.
-```tsx
-<DeckImportModal isOpen={true} onImport={handleImport} onClose={close} />
+### Choice Handling
+Player choices are handled asynchronously:
+
 ```
-
-### `DiscardPileModal.tsx`
-Full discard pile view with zoom.
-```tsx
-<DiscardPileModal cards={discard} label="Your Discard" isOpen={true} onClose={close} />
+Engine requests choice → setCurrentChoice()
+    ↓
+PlayerChoiceHandler renders UI
+    ↓
+User makes selection
+    ↓
+handleChoiceResponse() → humanController.submitChoice()
+    ↓
+Engine continues execution
 ```
-
-### `ChoiceModal.tsx`
-Generic choice prompt modal.
-
-### `ModalChoice.tsx`
-Choice card within choice modals.
 
 ---
 
-## State Display
+## Component Reference
 
-### `GameStatePanel.tsx`
-Player stats (lore, deck size).
-```tsx
-<GameStatePanel playerName="You" lore={5} deckSize={40} isActive={true} />
-```
+### Card Display
 
-### `TurnFlow.tsx`
-Turn and phase indicator.
-```tsx
-<TurnFlow currentTurn={1} currentPhase="MAIN" isYourTurn={true} onEndTurn={end} />
-```
+| Component | Purpose | Key Props |
+|-----------|---------|-----------|
+| `Card.tsx` | Base card rendering | `card`, `isExerted`, `size`, `variant` |
+| `ZoomableCard.tsx` | Hover zoom portal | `card`, `zoomScale`, `selected` |
+| `CardActionMenu.tsx` | Hand card actions | `card`, `onInk`, `onPlay`, `onShift` |
+| `PlayAreaActionMenu.tsx` | Play area actions | `card`, `onQuest`, `onChallenge` |
 
-### `GameLog.tsx`
-Collapsible action log sidebar.
-```tsx
-<GameLog entries={logEntries} onClear={clear} isOpen={true} onToggle={toggle} />
-```
+### Zone Components
 
-### `LogEntry.tsx`
-Individual log entry rendering.
+| Component | Purpose | Key Props |
+|-----------|---------|-----------|
+| `PlayerHand.tsx` | Hand display | `cards`, `isOpponent`, `revealed` |
+| `PlayArea.tsx` | Characters grid | `cards`, `onCardClick` |
+| `LocationsZone.tsx` | Locations + chars | `locations`, `characters` |
+| `GameZone.tsx` | Generic zone | `cards`, `label` |
+| `InkPile.tsx` | Inkwell display | `cards`, `label` |
+| `DiscardPile.tsx` | Discard summary | `cards`, `onClick` |
+
+### Choice Components
+
+| Component | Purpose |
+|-----------|---------|
+| `PlayerChoiceHandler.tsx` | Routes choices to correct UI |
+| `ModalChoice.tsx` | Yes/No and multi-option prompts |
+| `CardSelectionChoice.tsx` | Target selection interface |
+| `DistributeDamageChoice.tsx` | Damage distribution UI |
+| `ScryChoice.tsx` | Drag-and-drop reordering |
+
+### Modals
+
+| Component | Purpose |
+|-----------|---------|
+| `MulliganModal.tsx` | Opening hand mulligan |
+| `DeckImportModal.tsx` | Deck import interface |
+| `DiscardPileModal.tsx` | Full discard view |
+| `RevealModal.tsx` | Card reveal display |
+| `RevealHandModal.tsx` | Hand reveal display |
+| `CardPickerModal.tsx` | Card selection from list |
+
+### State & Info
+
+| Component | Purpose |
+|-----------|---------|
+| `GameStatePanel.tsx` | Player stats (lore, deck) |
+| `TurnFlow.tsx` | Turn/phase indicator |
+| `GameLog.tsx` | Action log sidebar |
+| `LogEntry.tsx` | Individual log item |
+| `ActiveEffectsPanel.tsx` | Active effects display |
+| `DebugPanel.tsx` | Debug tools (dev only) |
+
+### Animations (`animations/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `AnimationDemo.tsx` | Animation showcase |
+| `LoreGainEffect.tsx` | Lore gain animation |
+| `StatChangeEffect.tsx` | Stat modification effect |
+| `ChallengeEffect.tsx` | Challenge animation |
+| `DrawAnimation.tsx` | Card draw animation |
 
 ---
 
-## Choice Components
+## Animation System
 
-### `PlayerChoiceHandler.tsx`
-Central router for all player choices. Routes ChoiceTypes to appropriate UI:
-- **Modal choices** → `ModalChoice`
-- **Card targeting** → `CardSelectionChoice`  
-- **Damage distribution** → `DistributeDamageChoice`
-- **Scry/rearrange** → `ScryChoice`
+Animations are triggered via state in `page.tsx`:
 
-### `CardSelectionChoice.tsx`
-Card selection interface for targeting abilities. Supports:
-- Character/Item/Location targeting
-- Hand and discard selection
-- Zone-based filtering
+```typescript
+// Lore animation
+setLoreAnimation({
+    show: true,
+    amount: loreAmount,
+    position: { x, y },
+    key: prevKey + 1  // Force remount
+});
 
-### `DistributeDamageChoice.tsx`
-UI for distributing damage across multiple targets.
+// Stat change
+setStatAnimation({
+    show: true,
+    amount: +2,
+    statType: 'strength',
+    position: { x, y }
+});
+```
 
-### `ScryChoice.tsx`
-Drag-and-drop interface for scry and card rearrangement.
+Animations self-dismiss via `onComplete` callback.
 
-### `ModalChoice.tsx`
-Yes/No prompts and multi-option ability choices.
+---
+
+## Adding New Components
+
+1. Create `ComponentName.tsx` in `src/components/`
+2. Add `'use client'` directive if using hooks
+3. Define TypeScript interface for props
+4. Export component as default
+5. Add documentation to this README
+6. Import in `page.tsx` if needed
 
 ---
 
@@ -158,14 +191,4 @@ See `src/utils/card-images.ts`:
 
 ---
 
-## Adding New Components
-
-1. Create `ComponentName.tsx` in this directory
-2. Add `'use client'` directive if using hooks
-3. Export from component file
-4. Document above with usage example
-5. Import in `src/app/game/page.tsx`
-
----
-
-*Updated December 19, 2024*
+*Updated January 2026*

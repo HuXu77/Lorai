@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { motion } from 'framer-motion'
 import ZoomableCard from './ZoomableCard'
 import { CardInstance } from '../engine/models'
@@ -13,13 +13,17 @@ interface PlayAreaProps {
     currentTurn?: number
 }
 
-const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: PlayAreaProps) {
+/**
+ * PlayArea - Displays characters in play
+ * Memoized to prevent unnecessary re-renders when parent state changes
+ */
+const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, currentTurn }: PlayAreaProps) {
     const { banishingCards, hadCardsRecently } = useCardAnimations(cards);
 
     // Show empty state only when truly empty AND not recently had cards
     const showEmptyState = cards.length === 0 && banishingCards.length === 0 && !hadCardsRecently;
 
-    const handleCardClick = (card: CardInstance, event: React.MouseEvent) => {
+    const handleCardClick = useCallback((card: CardInstance, event: React.MouseEvent) => {
         if (onCardClick) {
             // Get the card element's center position for animations
             const rect = event.currentTarget.getBoundingClientRect();
@@ -27,7 +31,7 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
             const centerY = rect.top + rect.height / 2;
             onCardClick(card, { x: centerX, y: centerY });
         }
-    };
+    }, [onCardClick]);
 
     const renderCard = (card: CardInstance, isBanishing: boolean = false) => {
         // Card is drying if it was played this turn (can't act unless Rush)
@@ -104,6 +108,7 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
             `}</style>
         </div>
     );
-};
+});
 
 export default PlayArea;
+

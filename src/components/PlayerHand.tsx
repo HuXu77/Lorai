@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react'
 import ZoomableCard from './ZoomableCard'
 import { CardInstance } from '../engine/models'
 
@@ -10,13 +11,16 @@ interface PlayerHandProps {
     /** Function to check if a card can be played */
     canPlayCard?: (card: CardInstance) => { canPlay: boolean; reason?: string }
     /** Callback when play button is clicked */
-    /** Callback when play button is clicked */
     onPlayCard?: (card: CardInstance) => void
     /** Ref for animation targeting */
     handRef?: React.RefObject<HTMLDivElement>
 }
 
-export default function PlayerHand({
+/**
+ * PlayerHand - Displays player or opponent hand
+ * Memoized to prevent unnecessary re-renders when parent state changes
+ */
+const PlayerHand = React.memo(function PlayerHand({
     cards,
     onCardClick,
     isOpponent = false,
@@ -25,6 +29,15 @@ export default function PlayerHand({
     onPlayCard,
     handRef
 }: PlayerHandProps) {
+    const handleCardClick = useCallback((card: CardInstance) => {
+        onCardClick?.(card);
+    }, [onCardClick]);
+
+    const handlePlayCard = useCallback((card: CardInstance, e: React.MouseEvent) => {
+        e.stopPropagation();
+        onPlayCard?.(card);
+    }, [onPlayCard]);
+
     if (isOpponent) {
         // Opponent hand - compact by default, expands when revealed
         if (!revealed) {
@@ -67,7 +80,7 @@ export default function PlayerHand({
                                 <ZoomableCard
                                     card={card}
                                     size="sm"
-                                    onClick={() => onCardClick?.(card)}
+                                    onClick={() => handleCardClick(card)}
                                 />
                             </div>
                         ))
@@ -105,7 +118,7 @@ export default function PlayerHand({
                             <ZoomableCard
                                 card={card}
                                 size="hand"
-                                onClick={() => onCardClick?.(card)}
+                                onClick={() => handleCardClick(card)}
                             />
 
                             {/* Playability Overlay */}
@@ -114,10 +127,7 @@ export default function PlayerHand({
                                     {canPlay && onPlayCard && (
                                         <div className="absolute inset-0 border-2 border-green-400 border-opacity-40 rounded-lg pointer-events-none transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] z-10">
                                             <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onPlayCard(card);
-                                                }}
+                                                onClick={(e) => handlePlayCard(card, e)}
                                                 className="absolute bottom-1 left-1/2 transform -translate-x-1/2 bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-xs font-bold pointer-events-auto shadow-lg transition-all"
                                             >
                                                 ▶ PLAY ({card.cost}◆)
@@ -136,4 +146,7 @@ export default function PlayerHand({
             )}
         </div>
     )
-}
+});
+
+export default PlayerHand;
+

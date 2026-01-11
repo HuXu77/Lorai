@@ -4,7 +4,7 @@
 
 import { Card } from '../../engine/models';
 import { PlayerState } from '../../engine/state';
-import { expect } from 'vitest';
+// Note: Jest's expect is globally available, no import needed
 
 declare global {
     namespace jest {
