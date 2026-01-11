@@ -25,7 +25,10 @@ export default function ChoiceModal({ choice, onResponse, children }: ChoiceModa
     return (
         <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center p-4">
             {/* Modal Content */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg shadow-2xl max-w-4xl w-full border-2 border-yellow-500">
+            <div
+                data-testid="choice-modal"
+                className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg shadow-2xl max-w-4xl w-full border-2 border-yellow-500"
+            >
                 {/* Header */}
                 <div className="bg-black bg-opacity-40 p-4 border-b border-gray-700">
                     <div className="flex items-start justify-between gap-4">

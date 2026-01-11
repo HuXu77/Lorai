@@ -8,6 +8,7 @@ interface GameStatePanelProps {
     handSize: number;
     isActive: boolean;
     hasPriority: boolean;
+    testId?: string;
 }
 
 export const GameStatePanel: React.FC<GameStatePanelProps> = ({
@@ -17,7 +18,8 @@ export const GameStatePanel: React.FC<GameStatePanelProps> = ({
     deckSize,
     handSize,
     isActive,
-    hasPriority
+    hasPriority,
+    testId
 }) => {
     const deckRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +43,7 @@ export const GameStatePanel: React.FC<GameStatePanelProps> = ({
             <div className="mb-4">
                 <div className="flex justify-between items-end mb-2">
                     <span className="text-gray-400 text-sm uppercase tracking-wider font-semibold">Lore</span>
-                    <span className="text-yellow-400 font-extrabold text-4xl drop-shadow-md">{lore} <span className="text-lg text-yellow-600 font-normal">/ {loreGoal}</span></span>
+                    <span data-testid={testId} className="text-yellow-400 font-extrabold text-4xl drop-shadow-md">{lore} <span className="text-lg text-yellow-600 font-normal">/ {loreGoal}</span></span>
                 </div>
                 <div className="h-3 bg-gray-800 rounded-full overflow-hidden border border-gray-700 shadow-inner">
                     <div

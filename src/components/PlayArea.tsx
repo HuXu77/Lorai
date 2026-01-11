@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import ZoomableCard from './ZoomableCard'
 import { CardInstance } from '../engine/models'
 import { useCardAnimations } from '../hooks/useCardAnimations'
@@ -18,10 +18,10 @@ interface PlayAreaProps {
  * Memoized to prevent unnecessary re-renders when parent state changes
  */
 const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, currentTurn }: PlayAreaProps) {
-    const { banishingCards, hadCardsRecently } = useCardAnimations(cards);
+    const { hadCardsRecently } = useCardAnimations(cards);
 
     // Show empty state only when truly empty AND not recently had cards
-    const showEmptyState = cards.length === 0 && banishingCards.length === 0 && !hadCardsRecently;
+    const showEmptyState = cards.length === 0 && !hadCardsRecently;
 
     const handleCardClick = useCallback((card: CardInstance, event: React.MouseEvent) => {
         if (onCardClick) {
@@ -33,9 +33,9 @@ const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, curre
         }
     }, [onCardClick]);
 
-    const renderCard = (card: CardInstance, isBanishing: boolean = false) => {
+    const renderCard = (card: CardInstance) => {
         // Card is drying if it was played this turn (can't act unless Rush)
-        const isDrying = !isBanishing && currentTurn !== undefined && card.turnPlayed === currentTurn;
+        const isDrying = currentTurn !== undefined && card.turnPlayed === currentTurn;
 
         const isLocation = card.type === 'Location';
         // Rotate if: 
@@ -50,16 +50,19 @@ const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, curre
                 layoutId={card.instanceId}
                 layout
                 key={card.instanceId}
-                className={`
-                    relative
-                    ${shouldRotate && !isBanishing ? 'mx-8' : ''}
-                    ${isBanishing
-                        ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
-                        : 'opacity-100 scale-100'}
-                `}
-                onClick={(e: React.MouseEvent) => !isBanishing && handleCardClick(card, e)}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{
+                    opacity: 0,
+                    scale: 0.5,
+                    y: -20,
+                    filter: 'grayscale(100%)', // Optional: turn grey/ghostly instead of gold
+                    transition: { duration: 0.5 }
+                }}
+                className={`relative ${shouldRotate ? 'mx-8' : ''}`}
+                onClick={(e: React.MouseEvent) => handleCardClick(card, e)}
             >
-                <div className={`${shouldRotate && !isBanishing ? 'rotate-90 origin-center' : ''}`}>
+                <div className={`${shouldRotate ? 'rotate-90 origin-center' : ''}`}>
                     <ZoomableCard
                         card={card}
                         size="md"
@@ -89,23 +92,10 @@ const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, curre
             )}
 
             <div className="flex flex-wrap gap-1 relative z-10">
-                {/* Active Cards */}
-                {cards.map(card => renderCard(card, false))}
-
-                {/* Banishing Cards (ghosts) */}
-                {banishingCards.map(card => renderCard(card, true))}
+                <AnimatePresence mode='popLayout'>
+                    {cards.map(card => renderCard(card))}
+                </AnimatePresence>
             </div>
-
-            <style jsx>{`
-                @keyframes banish {
-                    0% { transform: scale(1) translateY(0); opacity: 1; filter: brightness(1); }
-                    50% { transform: scale(1.1) translateY(-10px); opacity: 0.8; filter: brightness(1.5) sepia(1) saturate(5) hue-rotate(-50deg); }
-                    100% { transform: scale(0.5) translateY(-20px); opacity: 0; filter: brightness(0); }
-                }
-                .animate-banish {
-                    animation: banish 0.7s ease-out forwards;
-                }
-            `}</style>
         </div>
     );
 });

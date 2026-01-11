@@ -32,6 +32,9 @@ export default defineConfig({
         /* Base URL to use in tests */
         baseURL: 'http://localhost:3000',
 
+        /* Viewport size - large enough for debug panel */
+        viewport: { width: 1920, height: 1080 },
+
         /* Collect trace when retrying the failed test */
         trace: 'on-first-retry',
 
@@ -54,7 +57,7 @@ export default defineConfig({
     webServer: {
         command: 'npm run dev',
         url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: true,  // Always reuse existing server
         timeout: 120 * 1000,
     },
 });

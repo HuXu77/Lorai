@@ -11,9 +11,13 @@ test.describe('Core Flow: Quest Character', () => {
     test('should quest with ready character and gain lore', async ({ gamePage }) => {
         await gamePage.loadTestGame();
 
-        // Add a ready character in play (not drying)
+        // Add a ready character in play
+        // Note: Even with ready=true, we need to pass turn to ensure it's not "just played" (summoning sickness)
         await gamePage.addCardToPlay('Mickey Mouse - Brave Little Tailor', 1, true);
-        await gamePage.page.waitForTimeout(500);
+        await gamePage.endTurn(); // End turn
+        await gamePage.page.waitForTimeout(500); // Wait for opponent
+        // Ensure it's back to our turn
+        await expect(gamePage.page.locator('text=Your Turn')).toBeVisible({ timeout: 10000 });
 
         // Get initial lore
         const initialLore = await gamePage.page.locator('[data-testid="player-lore"]').textContent();
@@ -21,7 +25,7 @@ test.describe('Core Flow: Quest Character', () => {
         // Click the character
         await gamePage.clickCardInPlay('Mickey Mouse');
 
-        // Click Quest action
+        // Click Quest action (matches "Quest for X Lore")
         await gamePage.clickAction('Quest');
 
         // Wait for quest to complete
@@ -56,7 +60,9 @@ test.describe('Core Flow: Quest Character', () => {
 
         // Add ready character
         await gamePage.addCardToPlay('Mickey Mouse - Brave Little Tailor', 1, true);
+        await gamePage.endTurn();
         await gamePage.page.waitForTimeout(500);
+        await expect(gamePage.page.locator('text=Your Turn')).toBeVisible({ timeout: 10000 });
 
         // Quest with the character
         await gamePage.clickCardInPlay('Mickey Mouse');

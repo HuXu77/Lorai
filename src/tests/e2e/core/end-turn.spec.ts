@@ -27,20 +27,23 @@ test.describe('Core Flow: End Turn', () => {
     test('should ready characters at start of next turn', async ({ gamePage }) => {
         await gamePage.loadTestGame();
 
-        // Add a character and exert it via questing
+        // Add a character
         await gamePage.addCardToPlay('Mickey Mouse - Brave Little Tailor', 1, true);
-        await gamePage.page.waitForTimeout(500);
+
+        // Pass turn to dry (summoning sickness)
+        await gamePage.endTurn();
+        await gamePage.page.waitForTimeout(1000); // Wait for turn processing
+        await gamePage.page.waitForSelector('text=Your Turn', { timeout: 30000 }); // Wait for turn to come back
 
         // Quest to exert
         await gamePage.clickCardInPlay('Mickey Mouse');
         await gamePage.clickAction('Quest');
         await gamePage.page.waitForTimeout(500);
 
-        // End turn
+        // End turn (giving opponent turn)
         await gamePage.endTurn();
-
-        // Wait for bot turn to complete
-        await gamePage.page.waitForTimeout(3000);
+        await gamePage.page.waitForTimeout(1000);
+        await gamePage.page.waitForSelector('text=Your Turn', { timeout: 30000 }); // Wait for turn to come back
 
         // On our next turn, character should be ready again
         // Click character - Quest should now be available

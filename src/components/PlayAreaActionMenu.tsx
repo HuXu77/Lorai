@@ -84,7 +84,7 @@ export default function PlayAreaActionMenu({
                         {moveTargets.map(({ card: location, cost }) => {
                             const canAfford = availableInk >= cost;
                             return (
-                                <div
+                                <button
                                     key={location.instanceId}
                                     className={`
                                     cursor-pointer transition-transform hover:scale-105 flex flex-col items-center p-2
@@ -108,7 +108,7 @@ export default function PlayAreaActionMenu({
                                     <div className={`text-center text-sm font-bold ${canAfford ? 'text-cyan-400' : 'text-red-500'}`}>
                                         Move Cost: {cost}⬡
                                     </div>
-                                </div>
+                                </button>
                             )
                         })}
                     </div>
@@ -131,6 +131,7 @@ export default function PlayAreaActionMenu({
                 onClick={() => setShowTargetSelection(false)}
             >
                 <div
+                    data-testid="choice-modal"
                     className="bg-slate-900 border border-slate-600 rounded-xl p-6 shadow-2xl max-w-2xl w-full animate-in fade-in zoom-in duration-150"
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -140,14 +141,16 @@ export default function PlayAreaActionMenu({
 
                     <div className="flex flex-wrap gap-4 justify-center mb-4">
                         {challengeTargets.map((target) => (
-                            <div
+                            <button
                                 key={target.instanceId}
                                 className="cursor-pointer transition-transform hover:scale-105 rounded-lg hover:ring-2 hover:ring-red-500"
+                                aria-label={target.fullName || target.name}
                                 onClick={() => {
                                     onChallenge(target.instanceId);
                                     setShowTargetSelection(false);
                                 }}
                             >
+                                <span className="sr-only">{target.fullName || target.name}</span>
                                 <ZoomableCard
                                     card={target}
                                     size="md"
@@ -157,7 +160,7 @@ export default function PlayAreaActionMenu({
                                     {target.strength}⚔️ / {target.willpower}❤️
                                     {target.damage > 0 && <span className="ml-1 text-orange-400">({target.damage} dmg)</span>}
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
 
@@ -168,7 +171,7 @@ export default function PlayAreaActionMenu({
                         Cancel
                     </button>
                 </div>
-            </div>
+            </div >
         );
     }
 

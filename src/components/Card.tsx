@@ -233,6 +233,8 @@ export default function Card({
     return (
         <div
             onClick={onClick}
+            data-card-name={card.fullName || card.name}
+            data-card-id={card.instanceId}
             className={`
                 card-container relative w-full h-full z-10
                 ${exerted ? 'opacity-60' : ''}

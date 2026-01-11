@@ -89,13 +89,17 @@ export default function CardSelectionChoice({ choice, onResponse }: CardSelectio
                         return (
                             <div
                                 key={option.id}
+                                data-testid="choice-option"
                                 className={`
                                     relative transition-all duration-200 cursor-pointer w-fit
                                     ${isSelected ? 'transform scale-105 z-10' : 'z-0 hover:scale-102'}
                                     ${!option.valid ? 'cursor-not-allowed' : ''}
                                 `}
                                 onClick={() => handleCardClick(option.id, option.valid)}
+                                aria-label={option.card!.fullName || option.card!.name}
+                                role="button"
                             >
+                                <span className="sr-only">{option.card!.fullName || option.card!.name}</span>
                                 <div className={`
                                     rounded-lg overflow-hidden
                                     ${isSelected ? 'ring-4 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)]' : ''}
@@ -160,6 +164,7 @@ export default function CardSelectionChoice({ choice, onResponse }: CardSelectio
 
     return (
         <ChoiceContainer
+            data-testid="choice-modal"
             prompt={choice.prompt}
             sourceCard={choice.source.card}
             sourceAbilityName={choice.source.abilityName}

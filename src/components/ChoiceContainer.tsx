@@ -21,6 +21,7 @@ interface ChoiceContainerProps {
 
     instructionText?: React.ReactNode;
     children: React.ReactNode;
+    'data-testid'?: string;
 }
 
 export default function ChoiceContainer({
@@ -35,12 +36,13 @@ export default function ChoiceContainer({
     canConfirm = false,
     confirmLabel = 'Confirm',
     instructionText,
+    'data-testid': testId,
     children
 }: ChoiceContainerProps) {
     return (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             {/* Modal Container */}
-            <div className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-xl shadow-2xl max-w-5xl w-full border border-yellow-500/50 overflow-hidden flex flex-col max-h-[90vh]">
+            <div data-testid={testId} className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-xl shadow-2xl max-w-5xl w-full border border-yellow-500/50 overflow-hidden flex flex-col max-h-[90vh]">
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 p-4 border-b border-yellow-500/30 flex-shrink-0">

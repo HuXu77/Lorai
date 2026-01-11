@@ -43,7 +43,7 @@ const PlayerHand = React.memo(function PlayerHand({
         if (!revealed) {
             // Compact mode - just show count badge
             return (
-                <div className="flex justify-center items-center py-2 px-4">
+                <div data-testid="opponent-hand" className="flex justify-center items-center py-2 px-4">
                     <div className="flex items-center gap-2 bg-black bg-opacity-40 rounded-full px-4 py-2 border border-gray-600">
                         <div className="w-8 h-10 rounded overflow-hidden border border-gray-500">
                             <img
@@ -62,7 +62,7 @@ const PlayerHand = React.memo(function PlayerHand({
 
         // Revealed mode - show actual cards (when ability requires it)
         return (
-            <div className="p-3 bg-yellow-900 bg-opacity-20 border-t border-b border-yellow-600">
+            <div data-testid="opponent-hand" className="p-3 bg-yellow-900 bg-opacity-20 border-t border-b border-yellow-600">
                 <div className="text-center text-yellow-300 text-xs mb-2 font-semibold">
                     🔍 Opponent Hand (Revealed)
                 </div>
@@ -94,6 +94,7 @@ const PlayerHand = React.memo(function PlayerHand({
     return (
         <div
             ref={handRef}
+            data-testid="player-hand"
             className="flex justify-center items-end gap-0 px-4 py-1 h-28 overflow-visible"
         >
             {cards.length === 0 ? (

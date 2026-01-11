@@ -16,25 +16,30 @@ test.describe('Core Flow: Play Character', () => {
             const debug = (window as any).lorcanaDebug;
             const playerId = debug?.player1Id;
             for (let i = 0; i < 5; i++) {
-                debug?.addToInkwell(playerId, 'Generic Ink Card');
+                debug?.addToInkwell(playerId, 'Minnie Mouse - Always Classy');
             }
         });
 
+        // Pass turn to ready the ink (it enters exerted)
+        await gamePage.endTurn();
+        await gamePage.page.waitForTimeout(1000);
+        await gamePage.page.waitForSelector('text=Your Turn', { timeout: 30000 });
+
         // Add a cheap character to hand
-        await gamePage.addCardToHand('Stitch - Carefree Surfer', 1);
+        await gamePage.addCardToHand('Sergeant Tibbs - Courageous Cat', 1);
         await gamePage.page.waitForTimeout(500);
 
         // Click the card
-        await gamePage.clickCardInHand('Stitch');
+        await gamePage.clickCardInHand('Sergeant Tibbs');
 
         // Click Play action
-        await gamePage.clickAction('Play');
+        await gamePage.clickAction('Play Card');
 
         // Wait for play to complete
         await gamePage.page.waitForTimeout(1000);
 
         // Verify card is now in play area
-        await gamePage.expectCardInPlay('Stitch');
+        await gamePage.expectCardInPlay('Sergeant Tibbs');
 
         // Verify game log shows play action
         await gamePage.expectLogMessage(/played/i);
@@ -68,19 +73,25 @@ test.describe('Core Flow: Play Character', () => {
             const debug = (window as any).lorcanaDebug;
             const playerId = debug?.player1Id;
             for (let i = 0; i < 3; i++) {
-                debug?.addToInkwell(playerId, 'Generic Ink Card');
+                debug?.addToInkwell(playerId, 'Minnie Mouse - Always Classy');
             }
         });
-        await gamePage.addCardToHand('Stitch - Carefree Surfer', 1);
+
+        // Pass turn to ready ink
+        await gamePage.endTurn();
+        await gamePage.page.waitForTimeout(1000);
+        await gamePage.page.waitForSelector('text=Your Turn', { timeout: 30000 });
+
+        await gamePage.addCardToHand('Sergeant Tibbs - Courageous Cat', 1);
         await gamePage.page.waitForTimeout(500);
 
         // Play the character
-        await gamePage.clickCardInHand('Stitch');
-        await gamePage.clickAction('Play');
+        await gamePage.clickCardInHand('Sergeant Tibbs');
+        await gamePage.clickAction('Play Card');
         await gamePage.page.waitForTimeout(1000);
 
         // Verify card shows drying state (can't quest same turn)
-        const card = gamePage.page.locator('[data-testid="player-play-area"] [data-card-name*="Stitch"]');
+        const card = gamePage.page.locator('[data-card-name*="Sergeant Tibbs"]');
         await expect(card).toBeVisible();
 
         // Card should have some visual indicator of drying/ink-drying state

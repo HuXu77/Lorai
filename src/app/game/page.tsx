@@ -291,7 +291,13 @@ function GamePageInner() {
 
         try {
             await gameEngine.turnManager.playCard(player as any, cardToPlay.instanceId);
-            // Note: Logging is handled by engine
+
+            addLogEntry({
+                category: LogCategory.CARD,
+                message: `${cardToPlay.fullName || cardToPlay.name} played!`,
+                details: {}
+            });
+
             gameEngine.humanController.updateState(gameEngine.stateManager.state);
         } catch (error) {
             addLogEntry({
@@ -1217,6 +1223,7 @@ function GamePageInner() {
                         handSize={opponent?.hand.length || 0}
                         isActive={!isYourTurn}
                         hasPriority={false}
+                        testId="opponent-lore"
                     />
                     <InkPile cards={opponent?.inkwell || []} label="Opponent Ink" />
                     <DiscardPile
@@ -1332,6 +1339,7 @@ function GamePageInner() {
                         handSize={yourPlayer?.hand.length || 0}
                         isActive={isYourTurn}
                         hasPriority={isYourTurn}
+                        testId="player-lore"
                     />
                     <InkPile cards={yourPlayer?.inkwell || []} label="Your Ink" />
                     {/* Active Effects Panel */}
