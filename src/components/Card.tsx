@@ -50,8 +50,12 @@ export default function Card({
     const imagePath = getCardImagePath(card, 'full'); // Assuming 'full' as default since variant prop is removed
 
     // Calculate stat modifications
-    const strengthMod = card.strength !== undefined && card.baseStrength !== undefined
-        ? card.strength - card.baseStrength
+    // Fix: Clamp strength to 0 for display and modification calculation
+    // This prevents negative strength from appearing in UI or badges (rules say min 0)
+    const displayStrength = card.strength !== undefined ? Math.max(0, card.strength) : undefined;
+
+    const strengthMod = displayStrength !== undefined && card.baseStrength !== undefined
+        ? displayStrength - card.baseStrength
         : 0;
     const willpowerMod = card.willpower !== undefined && card.baseWillpower !== undefined
         ? card.willpower - card.baseWillpower
@@ -183,10 +187,10 @@ export default function Card({
                             {card.type === 'Character' && (
                                 <>
                                     <div className="flex gap-2 text-xs">
-                                        {card.strength !== undefined && (
+                                        {displayStrength !== undefined && (
                                             <span className="flex items-center gap-0.5">
                                                 <span className={`font-bold ${getStatColor(strengthMod, 'text-red-400')}`}>
-                                                    ⚔️ {card.strength}
+                                                    ⚔️ {displayStrength}
                                                 </span>
                                                 <StatModificationBadge modification={strengthMod} stat="strength" size="sm" />
                                             </span>

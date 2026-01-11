@@ -8,13 +8,15 @@ interface TurnFlowProps {
     activePlayer: 'player' | 'opponent';
     availableInk: number;
     onEndTurn: () => void;
+    children?: React.ReactNode;
 }
 
 export default function TurnFlow({
     currentTurn,
     currentPhase,
     activePlayer,
-    onEndTurn
+    onEndTurn,
+    children
 }: TurnFlowProps) {
     const isYourTurn = activePlayer === 'player';
     const canEndTurn = isYourTurn && currentPhase === TurnPhase.MAIN;
@@ -33,8 +35,10 @@ export default function TurnFlow({
                 <span className="text-gray-400 text-xs">Turn {currentTurn}</span>
             </div>
 
-            {/* Middle: Empty space for play area visibility */}
-            <div className="flex-1" />
+            {/* Middle: Opponent Hand Info */}
+            <div className="flex-1 flex justify-center">
+                {children}
+            </div>
 
             {/* Right Container: End Turn Only */}
             <button

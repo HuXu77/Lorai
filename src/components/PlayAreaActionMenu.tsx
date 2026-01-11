@@ -340,21 +340,32 @@ export default function PlayAreaActionMenu({
                                         key={`ability-${index}`}
                                         onClick={() => onUseAbility && onUseAbility(index)}
                                         disabled={!isUsable}
-                                        className={`w-full px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${isUsable
+                                        className={`w-full px-4 py-3 rounded-lg font-semibold transition-colors flex items-start gap-3 ${isUsable
                                             ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
                                             : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >
-                                        <span className="text-xl">✨</span>
-                                        {isUsable ? (
-                                            <>
-                                                {ability.name || 'Ability'}
-                                                {abilityCost > 0 && ` (${abilityCost}◆)`}
-                                                {exertCost && ` (Exert)`}
-                                            </>
-                                        ) : (
-                                            <>{disabledReason}</>
-                                        )}
+                                        <span className="text-xl mt-0.5">✨</span>
+                                        <div className="flex flex-col items-start text-left">
+                                            {isUsable ? (
+                                                <>
+                                                    <div className="flex flex-wrap gap-1 items-center">
+                                                        <span>{ability.name || 'Ability'}</span>
+                                                        <span className="text-indigo-200 text-sm font-normal">
+                                                            {abilityCost > 0 && ` (${abilityCost}◆)`}
+                                                            {exertCost && ` (Exert)`}
+                                                        </span>
+                                                    </div>
+                                                    {ability.text && (
+                                                        <div className="text-xs text-indigo-200 font-normal mt-0.5 opacity-90">
+                                                            "{ability.text}"
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>{disabledReason}</>
+                                            )}
+                                        </div>
                                     </button>
                                 );
                             })}

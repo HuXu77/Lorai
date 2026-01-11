@@ -23,6 +23,7 @@ export interface ActivatedAbility {
     discardCost?: number;
     name?: string;
     keyword?: string;
+    text?: string;
     effects: any[];
 }
 
@@ -283,6 +284,7 @@ export function getActivatedAbilities(card: CardInstance): ActivatedAbility[] {
                 inkCost: effect.cost?.ink,
                 exertCost: effect.cost?.exert,
                 discardCost: effect.cost?.discard,
+                text: effect.text || effect.fullText || effect.rawText || effect.effect,
                 effects: effect.effects || []
             });
         }

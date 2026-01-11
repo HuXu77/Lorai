@@ -76,6 +76,12 @@
 - Refactored `ModalChoice`, `CardSelectionChoice`, and `OrderCardsChoice` to use the new container.
 - Implemented **UI Debug Harness** (`/debug/ui`) for isolated component testing.
 
+### UI Polish (January 2026) ✨
+- **Player Hand**: Converted to transparent floating overlay (removed bottom bar).
+- **Opponent Hand**: Integrated into header bar for better space efficiency.
+- **Item Modals**: Added ability text to action buttons for clarity.
+
+
 ### Bug Fixes (December 20-21, 2025)
 - ✅ Megara Boost Quest: `has_card_under` lore bonus
 - ✅ Banish animation timing (1900ms delay sync)

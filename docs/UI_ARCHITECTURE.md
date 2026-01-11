@@ -81,7 +81,7 @@ Enabled by `useSearchParams()` hook with `Suspense` wrapper for SSR compatibilit
 #### Zone Components
 | Component | Purpose |
 |-----------|---------|
-| `PlayerHand.tsx` | Player/opponent hand display |
+| `PlayerHand.tsx` | Player hand (overlay) / Opponent hand (header) |
 | `PlayArea.tsx` | Cards in play (characters) |
 | `InkPile.tsx` | Inkwell display |
 | `DiscardPile.tsx` | Discard pile summary |
@@ -118,7 +118,7 @@ Enabled by `useSearchParams()` hook with `Suspense` wrapper for SSR compatibilit
 | Component | Purpose |
 |-----------|---------|
 | `GameStatePanel.tsx` | Player stats (lore, deck size) |
-| `TurnFlow.tsx` | Turn/phase indicator |
+| `TurnFlow.tsx` | Turn/phase indicator + Opponent Hand (Header) |
 | `GameLog.tsx` | Action log sidebar |
 
 ---

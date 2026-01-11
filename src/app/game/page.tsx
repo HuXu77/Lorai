@@ -1208,7 +1208,13 @@ function GamePageInner() {
                             setEngineState(newState);
                         }
                     }}
-                />
+                >
+                    <PlayerHand
+                        cards={opponent?.hand || []}
+                        isOpponent={true}
+                        revealed={opponentHandRevealed}
+                    />
+                </TurnFlow>
             </div>
 
             {/* Main Game Board */}
@@ -1234,16 +1240,11 @@ function GamePageInner() {
                 </div>
 
                 {/* Center - Game Zones & Play Areas */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    {/* Opponent Hand */}
-                    <PlayerHand
-                        cards={opponent?.hand || []}
-                        isOpponent={true}
-                        revealed={opponentHandRevealed}
-                    />
+                <div className="flex-1 flex flex-col overflow-hidden relative">
+
 
                     {/* Middle Section - Play Areas & Zones - 2-Row Layout */}
-                    <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
+                    <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2 pb-32">
                         {/* Opponent Row: Characters + Items/Locations */}
                         <div className="flex gap-2">
                             {/* Opponent Characters + Locations */}
@@ -1305,27 +1306,29 @@ function GamePageInner() {
                         </div>
                     </div>
 
-                    {/* Player Hand - Fixed at Bottom, peek-on-hover */}
-                    <div className="border-t border-gray-600 bg-gradient-to-t from-black/30 to-transparent">
-                        <PlayerHand
-                            cards={yourPlayer?.hand || []}
-                            handRef={handRef as any}
-                            onCardClick={(card) => setActionMenuCard(card)}
-                            canPlayCard={(card) => {
-                                if (!gameEngine || !yourPlayer || !engineState) return { canPlay: false, reason: "Game not ready" };
-                                if (!isYourTurn) return { canPlay: false, reason: "Not your turn" };
-                                if (engineState.phase !== Phase.Main) return { canPlay: false, reason: "Wait for Main phase" };
-                                const availInk = yourPlayer.inkwell.filter(c => c.ready).length;
-                                if (card.cost > availInk) return { canPlay: false, reason: `Need ${card.cost - availInk} more◆` };
-                                return { canPlay: true };
-                            }}
-                            onPlayCard={async (card) => {
-                                if (gameEngine && yourPlayer) {
-                                    await gameEngine.turnManager.playCard(yourPlayer as any, card.instanceId);
-                                    gameEngine.humanController.updateState(gameEngine.stateManager.state);
-                                }
-                            }}
-                        />
+                    {/* Player Hand - Floating Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-50">
+                        <div className="pointer-events-auto">
+                            <PlayerHand
+                                cards={yourPlayer?.hand || []}
+                                handRef={handRef as any}
+                                onCardClick={(card) => setActionMenuCard(card)}
+                                canPlayCard={(card) => {
+                                    if (!gameEngine || !yourPlayer || !engineState) return { canPlay: false, reason: "Game not ready" };
+                                    if (!isYourTurn) return { canPlay: false, reason: "Not your turn" };
+                                    if (engineState.phase !== Phase.Main) return { canPlay: false, reason: "Wait for Main phase" };
+                                    const availInk = yourPlayer.inkwell.filter(c => c.ready).length;
+                                    if (card.cost > availInk) return { canPlay: false, reason: `Need ${card.cost - availInk} more◆` };
+                                    return { canPlay: true };
+                                }}
+                                onPlayCard={async (card) => {
+                                    if (gameEngine && yourPlayer) {
+                                        await gameEngine.turnManager.playCard(yourPlayer as any, card.instanceId);
+                                        gameEngine.humanController.updateState(gameEngine.stateManager.state);
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
 
