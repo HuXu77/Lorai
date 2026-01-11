@@ -476,6 +476,16 @@ export class AbilitySystemManager {
         let baseCost = (card.baseCost !== undefined) ? card.baseCost : (card.cost || 0);
         let modification = 0;
 
+        // CRITICAL FIX: On-demand parsing for cards that haven't been parsed yet
+        // This fixes bugs where newly drawn cards (like second Kristoff) have empty parsedEffects
+        if ((!card.parsedEffects || card.parsedEffects.length === 0) &&
+            (card.abilities?.length > 0 || card.fullTextSections?.length > 0)) {
+            const { parseToAbilityDefinition } = require('../ability-parser');
+            card.parsedEffects = parseToAbilityDefinition(card);
+            this.turnManager.logger.debug(`[AbilitySystem] On-demand parse for ${card.name}: ${card.parsedEffects.length} effects`);
+        }
+
+
         // Check all static abilities for cost reduction effects
         for (const [sourceCard, abilities] of this.staticAbilities.entries()) {
             // Only apply abilities from cards the player controls
