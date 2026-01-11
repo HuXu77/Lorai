@@ -32,20 +32,20 @@ export default function LocationWithCharacters({
 
     const renderCard = (card: CardInstance, isBanishing: boolean = false) => {
         // Card is drying if it was played this turn (can't act unless Rush)
-        // Only characters dry.
-        const isDrying = !isBanishing &&
-            card.type === 'Character' &&
-            currentTurn !== undefined &&
-            card.turnPlayed === currentTurn;
+        // Card is drying if it was played this turn (can't act unless Rush)
+        const isDrying = !isBanishing && currentTurn !== undefined && card.turnPlayed === currentTurn;
 
         const isLocation = card.type === 'Location';
-        // Use Landscape dimensions for Locations so they don't get cropped
-        const cardSize = isLocation ? 'w-40 h-28' : 'md';
 
-        // Rotate only if exerted.
-        // Locations (Landscape) -> Rotate 90 -> Portrait (Exerted).
-        // Characters (Portrait) -> Rotate 90 -> Landscape (Exerted).
-        const shouldRotate = !card.ready;
+        // Use standard 'md' size regardless of type.
+        // We achieve "Landscape" for locations by rotating the portrait container.
+        const cardSize = 'md';
+
+        // Rotation Logic (Original):
+        // Locations: Ready = Horizontal (rotated 90), Exerted = Vertical (no rotation)
+        // Characters: Ready = Vertical (no rotation), Exerted = Horizontal (rotated 90)
+        // shouldRotate means "Apply 90deg rotation to the vertical card frame"
+        const shouldRotate = (!card.ready && !isLocation) || (card.ready && isLocation);
 
         const MotionDiv = motion.div as any;
 
