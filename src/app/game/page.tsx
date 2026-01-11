@@ -1241,16 +1241,16 @@ function GamePageInner() {
                         <div className="flex gap-2 flex-1 min-h-0">
                             {/* Opponent Characters + Locations */}
                             <div className="flex-1 min-w-0 flex flex-col gap-2">
-                                <PlayArea
-                                    cards={opponentCharacters.filter(c => !c.locationId)}
-                                    label="⚔️ Opponent Characters"
-                                    currentTurn={engineState?.turnCount}
-                                />
                                 <LocationsZone
                                     locations={opponent?.play.filter(c => c.type === 'Location') || []}
                                     characters={opponentCharacters}
                                     currentTurn={engineState?.turnCount}
                                     label="🏰 Opp. Locations"
+                                />
+                                <PlayArea
+                                    cards={opponentCharacters.filter(c => !c.locationId)}
+                                    label="⚔️ Opponent Characters"
+                                    currentTurn={engineState?.turnCount}
                                 />
                             </div>
                             {/* Opponent Items (fixed width) */}
@@ -1271,18 +1271,18 @@ function GamePageInner() {
                         <div className="flex gap-2 flex-1 min-h-0">
                             {/* Player Locations + Characters */}
                             <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                <PlayArea
+                                    cards={yourCharacters.filter(c => !c.locationId)}
+                                    label="⚔️ Your Characters"
+                                    currentTurn={engineState?.turnCount}
+                                    onCardClick={handlePlayAreaCardClick}
+                                />
                                 <LocationsZone
                                     locations={yourPlayer?.play.filter(c => c.type === 'Location') || []}
                                     characters={yourCharacters}
                                     currentTurn={engineState?.turnCount}
                                     onCardClick={handlePlayAreaCardClick}
                                     label="🏰 Your Locations"
-                                />
-                                <PlayArea
-                                    cards={yourCharacters.filter(c => !c.locationId)}
-                                    label="⚔️ Your Characters"
-                                    currentTurn={engineState?.turnCount}
-                                    onCardClick={handlePlayAreaCardClick}
                                 />
                             </div>
                             {/* Player Items (fixed width) */}

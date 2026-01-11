@@ -22,11 +22,11 @@ export default function LocationsZone({
     if (locations.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-2 w-full p-2 bg-black/10 rounded-lg border-2 border-dashed border-gray-700/50">
+        <div className="flex flex-col gap-2 w-full">
             {label && (
-                <div className="text-xs text-gray-400 font-semibold mb-1">{label}</div>
+                <div className="text-xs text-gray-400 font-semibold px-1 mb-1">{label}</div>
             )}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
                 {locations.map((location) => {
                     // Find characters at this location
                     const charsAtLocation = characters.filter(c => c.locationId === location.instanceId);
