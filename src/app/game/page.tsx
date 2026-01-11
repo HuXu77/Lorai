@@ -17,6 +17,7 @@ import { MulliganModal } from '../../components/MulliganModal'
 import CardActionMenu from '../../components/CardActionMenu'
 import PlayAreaActionMenu from '../../components/PlayAreaActionMenu'
 import GameZone from '../../components/GameZone'
+import LocationsZone from '../../components/LocationsZone'
 import ActiveEffectsPanel from '../../components/ActiveEffectsPanel'
 import { AnimationDemo, LoreGainEffect, StatChangeEffect, DrawAnimation, ChallengeEffect } from '../../components/animations'
 import VictoryOverlay from '../../components/VictoryOverlay'
@@ -1238,23 +1239,22 @@ function GamePageInner() {
                     <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
                         {/* Opponent Row: Characters + Items/Locations */}
                         <div className="flex gap-2 flex-1 min-h-0">
-                            {/* Opponent Characters (expands) */}
-                            <div className="flex-1 min-w-0">
+                            {/* Opponent Characters + Locations */}
+                            <div className="flex-1 min-w-0 flex flex-col gap-2">
                                 <PlayArea
-                                    cards={opponentCharacters}
+                                    cards={opponentCharacters.filter(c => !c.locationId)}
                                     label="⚔️ Opponent Characters"
                                     currentTurn={engineState?.turnCount}
-                                    allLocations={opponent?.play.filter(c => c.type === 'Location') || []}
+                                />
+                                <LocationsZone
+                                    locations={opponent?.play.filter(c => c.type === 'Location') || []}
+                                    characters={opponentCharacters}
+                                    currentTurn={engineState?.turnCount}
+                                    label="🏰 Opp. Locations"
                                 />
                             </div>
-                            {/* Opponent Items & Locations (fixed width) */}
+                            {/* Opponent Items (fixed width) */}
                             <div className="w-52 flex flex-col gap-1">
-                                {(opponent?.play.filter(c => c.type === 'Location').length || 0) > 0 && (
-                                    <GameZone
-                                        cards={opponent?.play.filter(c => c.type === 'Location') || []}
-                                        label="🏰 Opp. Locations"
-                                    />
-                                )}
                                 {(opponent?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
                                     <GameZone
                                         cards={opponent?.play.filter(c => c.type === 'Item') || []}
@@ -1269,25 +1269,24 @@ function GamePageInner() {
 
                         {/* Player Row: Characters + Items/Locations */}
                         <div className="flex gap-2 flex-1 min-h-0">
-                            {/* Player Characters (expands) */}
-                            <div className="flex-1 min-w-0">
+                            {/* Player Locations + Characters */}
+                            <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                <LocationsZone
+                                    locations={yourPlayer?.play.filter(c => c.type === 'Location') || []}
+                                    characters={yourCharacters}
+                                    currentTurn={engineState?.turnCount}
+                                    onCardClick={handlePlayAreaCardClick}
+                                    label="🏰 Your Locations"
+                                />
                                 <PlayArea
-                                    cards={yourCharacters}
+                                    cards={yourCharacters.filter(c => !c.locationId)}
                                     label="⚔️ Your Characters"
                                     currentTurn={engineState?.turnCount}
                                     onCardClick={handlePlayAreaCardClick}
-                                    allLocations={yourPlayer?.play.filter(c => c.type === 'Location') || []}
                                 />
                             </div>
-                            {/* Player Items & Locations (fixed width) */}
+                            {/* Player Items (fixed width) */}
                             <div className="w-52 flex flex-col gap-1">
-                                {(yourPlayer?.play.filter(c => c.type === 'Location').length || 0) > 0 && (
-                                    <GameZone
-                                        cards={yourPlayer?.play.filter(c => c.type === 'Location') || []}
-                                        label="🏰 Your Locations"
-                                        onCardClick={(card) => handlePlayAreaCardClick(card, { x: 0, y: 0 })}
-                                    />
-                                )}
                                 {(yourPlayer?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
                                     <GameZone
                                         cards={yourPlayer?.play.filter(c => c.type === 'Item') || []}
