@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { CardInstance } from '../engine/models';
 import ZoomableCard from './ZoomableCard';
 import { useCardAnimations } from '../hooks/useCardAnimations';
@@ -46,17 +47,21 @@ export default function LocationWithCharacters({
         // shouldRotate means "Apply 90deg rotation to the vertical card frame"
         const shouldRotate = (!card.ready && !isLocation) || (card.ready && isLocation);
 
+        const MotionDiv = motion.div as any;
+
         return (
-            <div
+            <MotionDiv
+                layoutId={card.instanceId}
+                layout
                 key={card.instanceId}
                 className={`
-                    transition-all duration-700 relative flex-shrink-0
+                    relative flex-shrink-0
                     ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-8' : ''}
                     ${isBanishing
                         ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
                         : 'opacity-100 scale-100'}
                 `}
-                onClick={(e) => !isBanishing && handleCardClick(card, e)}
+                onClick={(e: React.MouseEvent) => !isBanishing && handleCardClick(card, e)}
             >
                 <ZoomableCard
                     card={card}
@@ -76,7 +81,7 @@ export default function LocationWithCharacters({
                         #{duplicateIndex}
                     </div>
                 )}
-            </div>
+            </MotionDiv>
         );
     };
 

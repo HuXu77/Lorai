@@ -1,4 +1,5 @@
 import React from 'react'
+import { motion } from 'framer-motion'
 import ZoomableCard from './ZoomableCard'
 import { CardInstance } from '../engine/models'
 import { useCardAnimations } from '../hooks/useCardAnimations'
@@ -38,17 +39,21 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
         // 2. Location is ready (Locations are horizontal by default)
         const shouldRotate = (!card.ready && !isLocation) || (card.ready && isLocation);
 
+        const MotionDiv = motion.div as any;
+
         return (
-            <div
+            <MotionDiv
+                layoutId={card.instanceId}
+                layout
                 key={card.instanceId}
                 className={`
-                    transition-all duration-700 relative
+                    relative
                     ${shouldRotate && !isBanishing ? 'rotate-90 origin-center mx-8' : ''}
                     ${isBanishing
                         ? 'animate-banish z-50 pointer-events-none filter sepia saturate-200 hue-rotate-[-50deg] opacity-0 scale-125'
                         : 'opacity-100 scale-100'}
                 `}
-                onClick={(e) => !isBanishing && handleCardClick(card, e)}
+                onClick={(e: React.MouseEvent) => !isBanishing && handleCardClick(card, e)}
             >
                 <ZoomableCard
                     card={card}
@@ -56,7 +61,7 @@ const PlayArea = function PlayArea({ cards, onCardClick, label, currentTurn }: P
                     showAbilities={true}
                     isDrying={isDrying}
                 />
-            </div>
+            </MotionDiv>
         );
     };
 
