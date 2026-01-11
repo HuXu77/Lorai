@@ -361,16 +361,16 @@ export async function executeResolveEffect(
     else if (effect.action === 'cant_play_actions') {
         if (sourceCard && effect.duration) {
             // Normalize target: parser may provide { type: 'all_opponents' } or string 'opponent'
-            let targetValue: string | undefined;
+            let targetValue: 'opponent' | 'all' | 'self' | 'custom' = 'opponent'; // Default to opponent
             if (typeof effect.target === 'object' && effect.target?.type) {
                 // Convert parser object format to string format for restriction check
                 if (effect.target.type === 'all_opponents' || effect.target.type === 'opponent') {
                     targetValue = 'opponent';
-                } else {
-                    targetValue = effect.target.type;
+                } else if (effect.target.type === 'all') {
+                    targetValue = 'all';
                 }
-            } else {
-                targetValue = effect.target;
+            } else if (effect.target === 'opponent' || effect.target === 'all') {
+                targetValue = effect.target as 'opponent' | 'all';
             }
 
             turnManager.addActiveEffect({
