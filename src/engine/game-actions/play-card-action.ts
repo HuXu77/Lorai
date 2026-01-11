@@ -67,7 +67,13 @@ export async function executePlayCard(
         // Check filtering for global effects
         if (e.targetPlayerIds && e.targetPlayerIds.includes(player.id)) return true;
         // Check opponent targeting (global effect)
-        if (e.target === 'opponent' && e.sourcePlayerId && e.sourcePlayerId !== player.id) return true;
+        // FIXED: Restriction targets OPPONENTS of the source player
+        // So if current player IS the source, they are NOT affected (return false)
+        // If current player is NOT the source, they ARE affected (return true)
+        if (e.target === 'opponent' && e.sourcePlayerId) {
+            // Apply restriction to everyone EXCEPT the source player
+            return e.sourcePlayerId !== player.id;
+        }
         // Direct restriction on player (from player.restrictions)
         if (!e.target && !e.targetPlayerIds && !e.sourcePlayerId) return true; // Generically attached to player
 

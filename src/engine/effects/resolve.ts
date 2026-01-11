@@ -360,11 +360,24 @@ export async function executeResolveEffect(
     // Cant Play Actions (Pete)
     else if (effect.action === 'cant_play_actions') {
         if (sourceCard && effect.duration) {
+            // Normalize target: parser may provide { type: 'all_opponents' } or string 'opponent'
+            let targetValue: string | undefined;
+            if (typeof effect.target === 'object' && effect.target?.type) {
+                // Convert parser object format to string format for restriction check
+                if (effect.target.type === 'all_opponents' || effect.target.type === 'opponent') {
+                    targetValue = 'opponent';
+                } else {
+                    targetValue = effect.target.type;
+                }
+            } else {
+                targetValue = effect.target;
+            }
+
             turnManager.addActiveEffect({
                 id: `${sourceCard.instanceId}_cant_play_actions`,
                 type: 'restriction',
                 restrictionType: 'cant_play_actions',
-                target: effect.target,
+                target: targetValue,
                 sourceCardId: sourceCard.instanceId,
                 sourcePlayerId: player.id,
                 duration: effect.duration
