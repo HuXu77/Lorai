@@ -58,7 +58,9 @@ describe('Effect Execution Tests', () => {
     // =========================================================================
 
     describe('Draw Effects (Verified)', () => {
-        it.skip('should draw cards via resolveEffect (TODO: verify action path)', async () => {
+        // NOTE: Skipped because resolveEffect expects type-based effects, not action-based.
+        // Draw functionality works via DrawFamilyHandler with type: 'draw_cards'.
+        it.skip('should draw cards via resolveEffect', async () => {
             for (let i = 0; i < 5; i++) {
                 const card = createCard(`deck-${i}`, `Deck Card ${i}`, player.id);
                 card.zone = ZoneType.Deck;

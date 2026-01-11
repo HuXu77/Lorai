@@ -1,5 +1,5 @@
 
-import { describe, it, expect } from 'vitest';
+// Jest globals are automatically available
 import { parseToAbilityDefinition } from '../../engine/ability-parser';
 
 // Mock card data based on assumed issue

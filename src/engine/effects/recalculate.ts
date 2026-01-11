@@ -155,6 +155,11 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
                             }
 
                             effect.effects.forEach((subEffect: any) => {
+                                // Check subEffect's individual condition (e.g. Flynn Rider: "While there's a card under")
+                                if (subEffect.condition) {
+                                    if (!evaluateCondition(player as any, subEffect.condition, card)) return;
+                                }
+
                                 if (subEffect.type === 'modify_stats') {
                                     let amount = 0;
 

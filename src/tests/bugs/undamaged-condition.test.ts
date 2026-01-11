@@ -1,4 +1,4 @@
-// import { describe, it, expect, beforeEach } from 'vitest';
+// // Jest globals are automatically available
 import { TestHarness } from '../engine-test-utils';
 import { CardInstance, ZoneType } from '../../engine/models';
 

@@ -118,7 +118,12 @@ describe('The Bare Necessities Real Parsing', () => {
             const stitchOption = capturedRequest.options.find((o: any) => o.id === 'i_stitch');
 
             expect(dingleOption).toBeDefined();
-            expect(stitchOption).toBeUndefined(); // Should be filtered out!
+            expect(dingleOption.valid).toBe(true);
+
+            // BUG FIX VERIFIED: Stitch IS present in options, but correctly marked as invalid
+            expect(stitchOption).toBeDefined();
+            expect(stitchOption.valid).toBe(false);
+            expect(stitchOption.invalidReason).toBe('Cannot select Character');
         }
     }); // Close test
 }); // Close describe

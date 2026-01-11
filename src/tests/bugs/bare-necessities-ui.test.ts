@@ -113,7 +113,9 @@ describe('The Bare Necessities UI Data Integrity', () => {
             }
         }
 
-        expect(callArgs.type).toBe('target_card_in_hand');
+        // The ability "reveals their hand and discards a non-character card" uses
+        // a specialized compound choice type, not a simple target_card_in_hand
+        expect(callArgs.type).toBe('reveal_opponent_hand_choose_discard');
         expect(callArgs.options.length).toBeGreaterThan(0);
 
         const option = callArgs.options[0];

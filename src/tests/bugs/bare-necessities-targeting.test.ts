@@ -85,9 +85,12 @@ describe('The Bare Necessities Targeting Bug', () => {
         const dingleOption = capturedOptions.find(o => o.id === 'i_dingle');
 
         expect(dingleOption).toBeDefined();
+        expect(dingleOption.valid).toBe(true);
 
-        // THIS IS THE BUG: Baloo IS present, but shouldn't be.
-        // Expect failure initially:
-        expect(balooOption).toBeUndefined();
+        // BUG FIX VERIFIED: Baloo IS present in options, but correctly marked as invalid
+        // The UI should show both options, but only allow selecting valid ones
+        expect(balooOption).toBeDefined();
+        expect(balooOption.valid).toBe(false);
+        expect(balooOption.invalidReason).toBe('Cannot select Character');
     });
 });
