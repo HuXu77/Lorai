@@ -156,18 +156,66 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
 
                             effect.effects.forEach((subEffect: any) => {
                                 if (subEffect.type === 'modify_stats') {
-                                    const amount = subEffect.amount;
+                                    let amount = 0;
+
+                                    // Handle dynamic amount (e.g. "+1 for each Villain")
+                                    if (typeof subEffect.amount === 'object' && subEffect.amount.type === 'per_character') {
+                                        const amountConfig = subEffect.amount;
+
+                                        // Determine scope (yours vs all)
+                                        // Hades says "you have in play", so 'yours' is true. 
+                                        // The parser set 'yours': true.
+                                        let targetPlayers = [player];
+                                        if (amountConfig.opponent) {
+                                            targetPlayers = players.filter(p => p.id !== player.id);
+                                        } else if (!amountConfig.yours) {
+                                            targetPlayers = players; // All players? Usually "each character" implies implied scope.
+                                        }
+
+                                        let count = 0;
+                                        targetPlayers.forEach(p => {
+                                            p.play.forEach(c => {
+                                                // Skip self if 'other' is true
+                                                if (amountConfig.other && c.instanceId === card.instanceId) return;
+
+                                                // Check subtype
+                                                if (amountConfig.subtype) {
+                                                    if (c.subtypes && c.subtypes.some((s: string) => s.toLowerCase() === amountConfig.subtype.toLowerCase())) {
+                                                        count++;
+                                                    }
+                                                }
+                                                // Check type (e.g. "Item")
+                                                else if (amountConfig.cardType) {
+                                                    if (c.type.toLowerCase() === amountConfig.cardType.toLowerCase()) {
+                                                        count++;
+                                                    }
+                                                }
+                                                else {
+                                                    // Just count everything?
+                                                    count++;
+                                                }
+                                            });
+                                        });
+
+                                        amount = count * (amountConfig.multiplier || 1);
+                                        // Add base if any? No, usually it's just the multiplier.
+                                    } else {
+                                        // Static number
+                                        amount = typeof subEffect.amount === 'number' ? subEffect.amount : parseInt(String(subEffect.amount));
+                                    }
+
                                     const stat = subEffect.stat;
                                     const target = subEffect.target;
                                     const filter = target?.filter; // e.g. { subtype: 'Villain' }
 
-                                    // Check explicit condition on the sub-effect (e.g. "While has card under")
-                                    if (subEffect.condition) {
-                                        if (!evaluateCondition(player as any, subEffect.condition, card)) return;
-                                    }
-
                                     // Apply to appropriate targets
                                     // Identify targets based on filter
+                                    // CRITICAL: Previously iterate player.play. But logic should apply `amount` to `target`.
+                                    // If target is self (which it is for Hades), we just modify `card`.
+                                    // BUT the existing code iterates `player.play` to find targets.
+
+                                    // Let's use the existing target iteration logic, just passed `amount`.
+
                                     player.play.forEach(targetCard => {
                                         // Skip self if filter says so
                                         if (filter?.other && targetCard.instanceId === card.instanceId) {

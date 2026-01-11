@@ -207,6 +207,7 @@ export class AbilitySystemManager {
      * Execute a triggered ability
      */
     private async executeAbility(ability: AbilityDefinition, card: any, eventContext: Partial<EventContext>): Promise<void> {
+        this.turnManager.logger.debug(`[AbilitySystem] Executing ability: ${ability.rawText}`);
         const triggeredAbility = ability as TriggeredAbility;
 
         // ===== CHECK EVENT CONDITIONS =====
@@ -435,6 +436,7 @@ export class AbilitySystemManager {
      * Resolve a single queued ability
      */
     private async resolveQueuedAbility(entry: QueuedAbility): Promise<void> {
+        console.log(`[AbilitySystem] executing ability for ${entry.card?.name} (event=${entry.context.event})`);
         this.turnManager.logger.debug(`[AbilitySystem] Resolving queued ability for ${entry.card.name}`);
         await this.executeAbility(entry.ability, entry.card, entry.context);
     }

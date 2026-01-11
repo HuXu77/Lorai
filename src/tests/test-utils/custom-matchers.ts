@@ -4,6 +4,7 @@
 
 import { Card } from '../../engine/models';
 import { PlayerState } from '../../engine/state';
+import { expect } from 'vitest';
 
 declare global {
     namespace jest {

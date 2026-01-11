@@ -218,6 +218,26 @@ export class PreventionFamilyHandler extends BaseFamilyHandler {
                 }
                 break;
 
+            case 'force_quest':
+                {
+                    const targets = await this.resolveTargets(effect.target, context);
+
+                    targets.forEach((target: any) => {
+                        if (!target.restrictions) {
+                            target.restrictions = [];
+                        }
+
+                        target.restrictions.push({
+                            type: 'force_quest',
+                            duration: effect.duration || 'next_turn', // Default to next_turn for forced actions typically? Or just let effect dictate.
+                            sourceId: context.card?.instanceId
+                        });
+
+                        this.turnManager.logger.info(`[Prevention] ⚔️ ${target.name} must quest if able`);
+                    });
+                }
+                break;
+
             case 'unexertable':
                 {
                     const targets = await this.resolveTargets(effect.target, context);

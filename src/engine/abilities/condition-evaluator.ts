@@ -161,6 +161,13 @@ export class ConditionEvaluator {
             case 'is_self':
                 return context.eventContext.card === condition.card;
 
+            case 'has_card_under':
+                if (context.card) {
+                    const cardsUnder = context.card.meta?.cardsUnder || context.card.cardsUnder;
+                    return !!(cardsUnder && cardsUnder.length > 0);
+                }
+                return false;
+
             case 'has_subtype':
                 if (context.card && context.card.subtypes) {
                     return context.card.subtypes.some((s: string) => s.toLowerCase() === condition.subtype.toLowerCase());

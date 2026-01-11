@@ -104,7 +104,7 @@ export default function PlayerHand({
                         >
                             <ZoomableCard
                                 card={card}
-                                size="sm"
+                                size="hand"
                                 onClick={() => onCardClick?.(card)}
                             />
 

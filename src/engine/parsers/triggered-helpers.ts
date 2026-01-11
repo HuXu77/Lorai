@@ -84,17 +84,19 @@ export function parseConditionalEffect(text: string): any[] {
         }
     }
 
-    // 4b. If there's a card under form (Robin Hood - Ephemeral Archer)
+    // 4b. If there's a card under form (Robin Hood - Ephemeral Archer, Gaston - Frightful Bully)
     const cardUnderMatch = text.match(/if there's a card under (?:her|this character|him|them), (.+)/i);
     if (cardUnderMatch) {
         const subEffectText = cardUnderMatch[1];
         const thenEffects = parseStaticEffects(subEffectText);
         if (thenEffects.length > 0) {
-            return [{
+            // Support multiple effects by wrapping each in its own conditional
+            // This ensures all effects are executed when the condition is met
+            return thenEffects.map(effect => ({
                 type: 'conditional',
                 condition: { type: 'has_card_under' },
-                effect: thenEffects[0]
-            }];
+                effect
+            }));
         }
     }
 

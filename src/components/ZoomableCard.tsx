@@ -11,6 +11,7 @@ import AbilityBadge, { extractKeywords } from './AbilityBadge';
 export const CARD_SIZES = {
     xs: 'w-16 h-[90px]',    // 64x90px - very compact (e.g., ink piles)
     sm: 'w-20 h-28',        // 80x112px - compact (play area)
+    hand: 'w-24 h-[134px]', // 96x134px - 1.2x of sm (Player Hand)
     md: 'w-28 h-40',        // 112x160px - medium (hand cards)
     lg: 'w-32 h-44',        // 128x176px - large (modals, selection)
     xl: 'w-40 h-56',        // 160x224px - extra large

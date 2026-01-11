@@ -90,13 +90,7 @@ export default function Card({
                         </div>
                     )}
 
-                    {/* Cards Underneath Counter (Boost) */}
-                    {card.meta?.cardsUnder && card.meta.cardsUnder.length > 0 && (
-                        <div className="absolute bottom-2 left-2 bg-teal-600 text-white rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-bold shadow-lg border-2 border-white z-10">
-                            <span>📚</span>
-                            <span>{card.meta.cardsUnder.length}</span>
-                        </div>
-                    )}
+
 
                     {/* Stat Modification Badges - only show if there are modifications */}
                     {(strengthMod !== 0 || willpowerMod !== 0 || loreMod !== 0) && (
@@ -240,44 +234,52 @@ export default function Card({
         <div
             onClick={onClick}
             className={`
-                card relative w-full h-full rounded-lg overflow-hidden z-10
+                card-container relative w-full h-full z-10
                 ${exerted ? 'opacity-60' : ''}
                 ${onClick ? 'cursor-pointer' : ''}
-                ${showFallback ? 'border-2 border-gray-600 bg-gradient-to-br from-gray-800 to-gray-900' : ''}
             `}
         >
-            {renderCardContent()}
+            {/* Main Card Content (Clipped) */}
+            <div className={`
+                card-inner relative w-full h-full rounded-lg overflow-hidden z-20
+                ${showFallback ? 'border-2 border-gray-600 bg-gradient-to-br from-gray-800 to-gray-900' : ''}
+            `}>
+                {renderCardContent()}
+            </div>
 
             {/* Cards Under (for Boost mechanic) */}
+            {/* Cards Under (for Boost mechanic) */}
             {(card as any).meta?.cardsUnder?.length > 0 && (
-                <div className="absolute -bottom-1 -right-1 z-0">
+                <>
                     {/* Show up to 3 card backs stacked */}
                     {Array.from({ length: Math.min((card as any).meta.cardsUnder.length, 3) }).map((_, index) => (
                         <div
                             key={index}
-                            className="absolute bg-blue-900 border-2 border-blue-700 rounded shadow-lg"
+                            className="absolute rounded-lg shadow-md z-0 overflow-hidden border border-gray-500"
                             style={{
-                                width: '60%',
-                                height: '80%',
-                                right: `${index * 3}px`,
-                                bottom: `${index * 3}px`,
-                                transform: `rotate(${index * 2}deg)`
+                                width: '100%',
+                                height: '100%',
+                                top: '0',
+                                left: `${(index + 1) * 12}px`,
+                                transform: `rotate(${(index + 1) * 2}deg)`,
+                                zIndex: 0
                             }}
                             title={`${(card as any).meta.cardsUnder.length} card${(card as any).meta.cardsUnder.length > 1 ? 's' : ''} under (for Boost)`}
                         >
-                            {/* Card back pattern */}
-                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-800 to-blue-950 text-blue-300 text-xs font-bold">
-                                🃏
-                            </div>
+                            <img
+                                src="/images/card-back.png"
+                                alt="Card Back"
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                     ))}
                     {/* Count badge */}
                     {(card as any).meta.cardsUnder.length > 1 && (
-                        <div className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold border-2 border-white z-10 shadow-lg">
+                        <div className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold border-2 border-white z-20 shadow-lg">
                             {(card as any).meta.cardsUnder.length}
                         </div>
                     )}
-                </div>
+                </>
             )}
 
             {/* Selection Overlay for Mulligan */}

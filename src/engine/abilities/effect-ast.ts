@@ -210,9 +210,10 @@ export type EffectAST =
     | { type: 'cant_quest', target: TargetAST, duration?: string }
     | { type: 'cant_challenge', target: TargetAST, duration?: string }
     | { type: 'cant_ready', target: TargetAST, duration?: string }
-    | { type: 'must_challenge', target: TargetAST }
+    | { type: 'must_challenge', target: TargetAST, duration?: string }
+    | { type: 'force_quest', target: TargetAST, duration?: string }
+    | { type: 'unexertable', target: TargetAST, duration?: string }
     | { type: 'return_from_discard', target: TargetAST, destination: 'hand' | 'deck' }
-    | { type: 'unexertable', target: TargetAST }
     | { type: 'hexproof', target: TargetAST }
     | { type: 'lose_all_abilities', target: TargetAST }
     | { type: 'double_lore', target: TargetAST }

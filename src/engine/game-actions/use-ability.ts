@@ -54,10 +54,13 @@ export async function executeUseAbility(
     }
 
     // Validate Costs
-    const cost: ActivationCost = effect.cost || {};
+    let cost: ActivationCost = effect.cost ? { ...effect.cost } : {};
 
     // BACKWARD COMPATIBILITY: Map 'costs' array (from new parser) to ActivationCost object
-    if ((effect as any).costs && Array.isArray((effect as any).costs)) {
+    // CRITICAL FIX: If 'costs' array exists, it is the source of truth. 
+    // We must reset 'cost' to avoid double-counting if the parser populated both.
+    if ((effect as any).costs && Array.isArray((effect as any).costs) && (effect as any).costs.length > 0) {
+        cost = {}; // Reset to build from costs array
         (effect as any).costs.forEach((c: any) => {
             if (c.type === 'exert') cost.exert = true;
             if (c.type === 'ink') cost.ink = (cost.ink || 0) + (c.amount || 0);

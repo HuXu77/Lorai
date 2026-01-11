@@ -482,6 +482,7 @@ export class EffectExecutor {
             case 'cant_quest':
             case 'cant_challenge':
             case 'must_challenge':
+            case 'force_quest':
             case 'unexertable':
             case 'hexproof':
             case 'prevent_damage_from_source':
@@ -1761,7 +1762,7 @@ export class EffectExecutor {
         }
 
         // Check owner (opposing/mine/owner property)
-        if (filter.opposing || filter.owner === 'opponent') {
+        if (filter.opposing || filter.owner === 'opponent' || filter.opponent) {
             if (card.ownerId === context.player.id) {
                 return false;
             }
@@ -1899,22 +1900,8 @@ export class EffectExecutor {
         const player = this.turnManager.game.state.players[context.player.id];
         const cost = effect.cost;
 
-        // Check if boost already used this turn
-        if (!card.meta) card.meta = {};
-        if (!card.meta.usedAbilities) card.meta.usedAbilities = {};
-
-        const boostKey = 'boost';
-        const currentTurn = this.turnManager.game.state.turnCount;
-
-        if (card.meta.usedAbilities[boostKey] === currentTurn) {
-            this.turnManager.logger.debug(`[${player.name}] ${card.name}'s Boost already used this turn.`);
-            return;
-        }
-
-        // NOTE: Ink cost is handled by TurnManager for 'activated' abilities.
-        // However, if called directly (not as activated ability), we might need to check?
-        // But Boost is consistently parsed as activated.
-        // We REMOVE the payment here to avoid double charging.
+        // NOTE: Ink cost and Usage Limits are handled by TurnManager for 'activated' abilities.
+        // We do NOT check usage here because TurnManager already marked it as used before calling execute.
 
         // Place top deck card under character
         if (player.deck.length > 0) {
@@ -1933,9 +1920,6 @@ export class EffectExecutor {
             this.turnManager.logger.debug(`[${player.name}] No cards in deck to Boost.`);
             return;
         }
-
-        // Mark boost as used this turn
-        card.meta.usedAbilities[boostKey] = currentTurn;
 
         // CRITICAL: Recalculate static abilities to apply conditional effects like Flynn Rider's buff
         this.turnManager.recalculateEffects();
