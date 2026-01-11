@@ -1362,24 +1362,9 @@ export class TurnManager {
                     opponent.lore -= lost;
                     this.logger.effect(opponent.name, `Lost ${lost} lore`);
                 }
-            }
         }
 
-        // Cant Play Actions (Pete)
-        else if (effect.action === 'cant_play_actions') {
-            if (sourceCard && effect.duration) {
-                this.addActiveEffect({
-                    id: `${sourceCard.instanceId}_cant_play_actions`,
-                    type: 'restriction',
-                    restrictionType: 'cant_play_actions',
-                    target: effect.target,
-                    sourceCardId: sourceCard.instanceId,
-                    sourcePlayerId: player.id,
-                    duration: effect.duration
-                });
-                this.logger.effect(player.name, `Applied restriction: Opponents can't play actions`);
-            }
-        }
+        // NOTE: cant_play_actions is handled in resolve.ts with proper target normalization
 
         // Grant Keyword Temporary (Activated Ability)
         else if (effect.action === 'grant_keyword_temporary') {
