@@ -1577,10 +1577,16 @@ export class AbilitySystemManager {
             cardAbilities.set(card, abilities);
         });
 
-        // Find cards with temporary abilities
+        // Find cards with GRANTED temporary abilities (not permanent abilities with timed effects)
+        // CRITICAL: Permanent abilities from card text should NEVER be unregistered
+        // Only abilities that were dynamically added with duration='until_end_of_turn' should be cleaned up
         const cardsToReparse: any[] = [];
         cardAbilities.forEach((abilities, card) => {
-            const hasTemporary = abilities.some(a => a.duration === 'until_end_of_turn');
+            // Check if card has any dynamically-granted temporary abilities
+            // Permanent abilities (from card text) have no 'grantedBy' or similar marker
+            const hasTemporary = abilities.some(a =>
+                a.duration === 'until_end_of_turn' && a.grantedBy !== undefined
+            );
             if (hasTemporary) {
                 cardsToReparse.push(card);
             }
@@ -1594,10 +1600,12 @@ export class AbilitySystemManager {
             this.eventBus.unregister(card);
             listenersRemoved++;
 
-            // Re-register only permanent abilities (use cached parse result)
+            // Re-register all permanent triggered abilities
             const abilities = cardAbilities.get(card)!;
             abilities.forEach(ability => {
-                if (ability.type === 'triggered' && ability.duration !== 'until_end_of_turn') {
+                // Only skip abilities that are EXPLICITLY temporary grants
+                const isTemporaryGrant = ability.duration === 'until_end_of_turn' && ability.grantedBy !== undefined;
+                if (ability.type === 'triggered' && !isTemporaryGrant) {
                     this.eventBus.register(ability, card);
                 }
             });
