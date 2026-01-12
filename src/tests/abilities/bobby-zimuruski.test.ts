@@ -85,7 +85,7 @@ describe('Bobby Zimuruski Execution', () => {
         };
 
         // Mock requestChoice
-        turnManager.requestChoice = jest.fn()
+        turnManager.requestChoice = vi.fn()
             .mockResolvedValueOnce({ selectedIds: ['yes'] }) // Say YES to draw
             .mockResolvedValueOnce({ selectedIds: ['d1'] }); // Select card to discard (if implemented)
 
@@ -93,7 +93,7 @@ describe('Bobby Zimuruski Execution', () => {
 
         // Expect YES_NO prompt for optional draw
         expect(turnManager.requestChoice).toHaveBeenCalled();
-        const call1 = (turnManager.requestChoice as jest.Mock).mock.calls[0][0];
+        const call1 = (turnManager.requestChoice as vi.Mock).mock.calls[0][0];
         // Check if the FIRST call was a YES/NO prompt
         // If current impl ignores proper optional, it might just be the discard choice
 

@@ -6,7 +6,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Advanced Deck Manipulation', () => {
     let executor: EffectExecutor;
@@ -36,7 +36,7 @@ describe('Executor: Advanced Deck Manipulation', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1');
         p2 = setupPlayer('p2');
@@ -47,21 +47,21 @@ describe('Executor: Advanced Deck Manipulation', () => {
         };
 
         // Mock getOpponents
-        game.getOpponents = jest.fn((id) => id === 'p1' ? [p2] : [p1]);
+        game.getOpponents = vi.fn((id) => id === 'p1' ? [p2] : [p1]);
 
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
 
         executor = new EffectExecutor(turnManager);
         executor.setTurnManager(turnManager);
 
         // Mock resolveTargets for generic usage if needed
-        (executor as any).resolveTargets = jest.fn((target, context) => []);
+        (executor as any).resolveTargets = vi.fn((target, context) => []);
     });
 
     describe('look_and_distribute (Scry)', () => {
@@ -77,7 +77,7 @@ describe('Executor: Advanced Deck Manipulation', () => {
             } as any;
 
             // Mock response for scry
-            (turnManager.requestChoice as any) = jest.fn().mockResolvedValue({
+            (turnManager.requestChoice as any) = vi.fn().mockResolvedValue({
                 payload: {
                     top: [card1.instanceId, card2.instanceId],
                     bottom: []
@@ -136,7 +136,7 @@ describe('Executor: Advanced Deck Manipulation', () => {
             } as any;
 
             // Mock response for discard choice
-            (turnManager.requestChoice as any) = jest.fn().mockResolvedValue({
+            (turnManager.requestChoice as any) = vi.fn().mockResolvedValue({
                 selectedIds: [oppCard.instanceId]
             });
 

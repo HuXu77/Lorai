@@ -6,7 +6,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Quest, Draw, & Lore Mechanics', () => {
     let executor: EffectExecutor;
@@ -41,7 +41,7 @@ describe('Executor: Quest, Draw, & Lore Mechanics', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1');
         game = new GameStateManager();
@@ -53,13 +53,13 @@ describe('Executor: Quest, Draw, & Lore Mechanics', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
 
         // Mock getPlayer
-        game.getPlayer = jest.fn((id) => game.state.players[id]);
+        game.getPlayer = vi.fn((id) => game.state.players[id]);
 
         executor = new EffectExecutor(turnManager);
         executor.setTurnManager(turnManager);
@@ -70,7 +70,7 @@ describe('Executor: Quest, Draw, & Lore Mechanics', () => {
 
         // We need to mock executor.resolveTargets because we don't have full TargetResolver logic in this isolated test setup 
         // unless we import it, but cleaner to mock for unit testing logic.
-        (executor as any).resolveTargets = jest.fn((target, context) => {
+        (executor as any).resolveTargets = vi.fn((target, context) => {
             if (target && (target.type === 'chosen_character' || target.type === 'chosen')) {
                 // Return other card if available, or self?
                 // Let's assume testing "Quest debuff chosen".

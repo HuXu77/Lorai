@@ -5,7 +5,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Static Abilities & Conditional Buffs', () => {
     let executor: EffectExecutor;
@@ -38,7 +38,7 @@ describe('Executor: Static Abilities & Conditional Buffs', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1');
         game = new GameStateManager();
@@ -51,9 +51,9 @@ describe('Executor: Static Abilities & Conditional Buffs', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
         turnManager.addActiveEffect.mockImplementation((effect: any) => {
             game.state.activeEffects.push(effect);

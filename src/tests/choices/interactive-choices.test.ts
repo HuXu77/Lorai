@@ -8,13 +8,13 @@ import { DeckManipulationFamilyHandler } from '../../engine/abilities/families/d
 // Mock TurnManager and Game
 const mockTurnManager = {
     logger: {
-        info: jest.fn(),
-        warn: jest.fn(),
-        error: jest.fn()
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn()
     },
-    requestChoice: jest.fn(),
+    requestChoice: vi.fn(),
     game: {
-        getOpponents: jest.fn()
+        getOpponents: vi.fn()
     }
 } as any;
 
@@ -25,7 +25,7 @@ describe('Interactive Choices Verification', () => {
     let context: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Setup players
         player = {
@@ -76,7 +76,7 @@ describe('Interactive Choices Verification', () => {
             };
 
             // Mock resolveTargets to return our targets
-            executor['resolveTargets'] = jest.fn().mockReturnValue([target1, target2]);
+            executor['resolveTargets'] = vi.fn().mockReturnValue([target1, target2]);
 
             // Mock requestChoice response
             mockTurnManager.requestChoice.mockResolvedValue({

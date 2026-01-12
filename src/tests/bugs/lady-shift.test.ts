@@ -17,7 +17,7 @@ describe('Lady - Miss Park Avenue Shift Bug', () => {
         player = game.getPlayer(game.addPlayer('player1', 'Player'));
         opponent = game.getPlayer(game.addPlayer('player2', 'Opponent'));
         turnManager = new TurnManager(game, new GameLogger());
-        (turnManager as any).eventBus = { emit: jest.fn() }; // Mock eventBus
+        (turnManager as any).eventBus = { emit: vi.fn() }; // Mock eventBus
         turnManager.abilitySystem = new AbilitySystemManager(turnManager);
 
         // Set phase to Main
@@ -108,7 +108,7 @@ describe('Lady - Miss Park Avenue Shift Bug', () => {
         // 5. Track if resolveEffect was called
         let resolveEffectCalled = false;
         const originalResolveEffect = turnManager.resolveEffect.bind(turnManager);
-        turnManager.resolveEffect = jest.fn(async (...args: any[]) => {
+        turnManager.resolveEffect = vi.fn(async (...args: any[]) => {
             resolveEffectCalled = true;
             // Don't actually execute, just track
             return undefined;
@@ -160,7 +160,7 @@ describe('Lady - Miss Park Avenue Shift Bug', () => {
         }
 
         // 4. Spy on emitEvent
-        const emitSpy = jest.spyOn(turnManager.abilitySystem, 'emitEvent');
+        const emitSpy = vi.spyOn(turnManager.abilitySystem, 'emitEvent');
 
         // 5. Perform Shift
         await executePlayCard(

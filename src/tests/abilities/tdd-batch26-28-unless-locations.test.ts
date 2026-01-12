@@ -46,12 +46,12 @@ describe('TDD Batches 26-28: Unless, Locations & Search', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                action: vi.fn()
             },
-            requestChoice: jest.fn().mockResolvedValue({ selectedIds: [] })
+            requestChoice: vi.fn().mockResolvedValue({ selectedIds: [] })
         };
 
         executor = new EffectExecutor(turnManager);

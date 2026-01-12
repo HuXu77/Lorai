@@ -73,10 +73,10 @@ describe('TDD Batch 8: Complex Targeting & Edge Cases', () => {
                 warn: console.warn,
                 error: console.error
             },
-            trackZoneChange: jest.fn(),
+            trackZoneChange: vi.fn(),
             // Mock choices for 'chosen' targets
             mockPendingChoice: undefined,
-            addActiveEffect: jest.fn((effect) => {
+            addActiveEffect: vi.fn((effect) => {
                 mockTurnManager.game.state.activeEffects.push(effect);
             })
         };

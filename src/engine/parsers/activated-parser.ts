@@ -334,6 +334,26 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
 
     // BATCH 14: Each player effects (Action cards)
     // "Each player draws 3 cards" (Show Me More!)
+    // "Each player may draw a card" (Amethyst Chromicon)
+    const eachPlayerMayDrawMatch = text.match(/^each player may draw (?:a|(\d+)) cards?\.?$/i);
+    if (eachPlayerMayDrawMatch) {
+        const amount = eachPlayerMayDrawMatch[1] ? parseInt(eachPlayerMayDrawMatch[1]) : 1;
+        abilities.push({
+            id: generateAbilityId(),
+            cardId: card.id.toString(),
+            type: 'activated',
+            costs: [],
+            effects: [{
+                type: 'draw',
+                amount,
+                target: { type: 'all_players' },
+                optional: true  // "may" means each player chooses
+            }],
+            rawText: text
+        } as any);
+        return true;
+    }
+
     const eachPlayerDrawsMatch = text.match(/^each player draws (?:a|(\d+)) cards?\.?$/i);
     if (eachPlayerDrawsMatch) {
         const amount = eachPlayerDrawsMatch[1] ? parseInt(eachPlayerDrawsMatch[1]) : 1;

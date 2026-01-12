@@ -23,15 +23,15 @@ describe('Ability System Manager', () => {
         // Create mock turn manager
         mockTurnManager = {
             game: {
-                getPlayer: jest.fn(id => mockPlayer)
+                getPlayer: vi.fn(id => mockPlayer)
             },
             logger: {
-                debug: jest.fn(),
-                info: jest.fn(),
-                warn: jest.fn(),
-                error: jest.fn()
+                debug: vi.fn(),
+                info: vi.fn(),
+                warn: vi.fn(),
+                error: vi.fn()
             },
-            requestChoice: jest.fn().mockReturnValue({
+            requestChoice: vi.fn().mockReturnValue({
                 selectedIds: ['yes'],
                 declined: false
             })

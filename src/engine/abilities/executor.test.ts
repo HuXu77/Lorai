@@ -55,7 +55,8 @@ class MockTurnManager {
             warn: jest.fn(),
             error: jest.fn(),
             debug: jest.fn(),
-            action: jest.fn()
+            action: jest.fn(),
+            effect: jest.fn()
         };
         this.eventBus = {
             emit: jest.fn(),
@@ -618,13 +619,15 @@ describe('EffectExecutor', () => {
             } as any;
 
 
-            const logSpy = jest.spyOn(turnManager.logger, 'info');
+            const logSpy = jest.spyOn(turnManager.logger, 'effect');
             await executor.execute(effect, context);
 
             // Updated to match new logging format
             expect(logSpy).toHaveBeenCalledWith(
-                expect.stringContaining('Drew'),
-                expect.any(Object)
+                expect.any(String), // Player Name
+                expect.stringContaining('Drew'), // Message
+                expect.any(String),  // Caused By
+                expect.anything()   // Details
             );
             logSpy.mockRestore();
         });
@@ -643,10 +646,10 @@ describe('EffectExecutor', () => {
                 effect: { type: 'draw', amount: 1 }
             } as any;
 
-            const logSpy = jest.spyOn(turnManager.logger, 'info');
+            const logSpy = jest.spyOn(turnManager.logger, 'effect');
             await executor.execute(effect, context);
 
-            expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('drew 1 card'));
+            expect(logSpy).not.toHaveBeenCalledWith(expect.anything(), expect.stringContaining('drew 1 card'), expect.anything());
             logSpy.mockRestore();
         });
     });
@@ -705,7 +708,7 @@ describe('EffectExecutor', () => {
                 await executor.execute(effect, context);
 
                 expect(player1.hand).toHaveLength(0);
-                expect(mockLogger.info).toHaveBeenCalled();
+                expect(mockLogger.effect).toHaveBeenCalled();
             });
 
             it('should log draw action with structured data', async () => {
@@ -715,13 +718,11 @@ describe('EffectExecutor', () => {
                 const effect = { type: 'draw', amount: 1 } as any;
                 await executor.execute(effect, context);
 
-                expect(mockLogger.info).toHaveBeenCalledWith(
-                    expect.stringContaining('Drew'),
-                    expect.objectContaining({
-                        player: 'Player 1',
-                        requested: 1,
-                        drawn: 1
-                    })
+                expect(mockLogger.effect).toHaveBeenCalledWith(
+                    'Player 1',
+                    expect.stringContaining('Drew 1 card'),
+                    'Test Card', // Caused by context.card
+                    expect.anything() // Details
                 );
             });
         });

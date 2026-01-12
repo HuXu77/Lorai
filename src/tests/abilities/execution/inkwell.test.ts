@@ -109,7 +109,7 @@ describe('Executor: Inkwell Interactions', () => {
             } as any;
 
             // Mock turnManager playCard
-            turnManager.playCard = jest.fn();
+            turnManager.playCard = vi.fn();
 
             await executor.execute(effect, {
                 player: p1,

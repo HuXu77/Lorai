@@ -6,7 +6,7 @@ import { Player, ZoneType } from '../../engine/models';
 import { GameEvent } from '../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../engine/actions');
+vi.mock('../../engine/actions');
 
 describe('Daisy Duck Reveal Logic', () => {
     let executor: EffectExecutor;
@@ -41,7 +41,7 @@ describe('Daisy Duck Reveal Logic', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1', 'Player 1');
         p2 = setupPlayer('p2', 'Player 2');
@@ -56,16 +56,16 @@ describe('Daisy Duck Reveal Logic', () => {
         turnManager.game = game;
         turnManager.abilitySystem = {
             executor: {
-                resolvePlayerTargets: jest.fn().mockReturnValue([p2])
+                resolvePlayerTargets: vi.fn().mockReturnValue([p2])
             }
         };
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn(),
-            debug: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn()
         };
-        turnManager.trackZoneChange = jest.fn();
+        turnManager.trackZoneChange = vi.fn();
 
         executor = new EffectExecutor(turnManager);
         executor.setTurnManager(turnManager);
@@ -76,7 +76,7 @@ describe('Daisy Duck Reveal Logic', () => {
         p2.deck = [topCard];
 
         // Mock choice: Put into Hand
-        turnManager.requestChoice = jest.fn().mockResolvedValue({
+        turnManager.requestChoice = vi.fn().mockResolvedValue({
             selectedIds: ['hand']
         });
 
@@ -115,7 +115,7 @@ describe('Daisy Duck Reveal Logic', () => {
 
         // Mock choice: Logic forces bottom if not match, but we still verify choice request call structure if any
         // The handler logic: if !matchesCondition, valid options only Bottom.
-        turnManager.requestChoice = jest.fn().mockResolvedValue({
+        turnManager.requestChoice = vi.fn().mockResolvedValue({
             selectedIds: ['bottom']
         });
 

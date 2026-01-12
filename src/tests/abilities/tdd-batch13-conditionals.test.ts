@@ -25,7 +25,7 @@ describe('TDD Batch 13: Conditional Effects & Special Triggers', () => {
                 turnCount: 1
             },
             getPlayer: (id: string) => player,
-            addCardToZone: jest.fn((player, card, zone) => {
+            addCardToZone: vi.fn((player, card, zone) => {
                 if (zone === 'inkwell') {
                     player.inkwell.push(card);
                     card.zone = 'inkwell';
@@ -36,16 +36,16 @@ describe('TDD Batch 13: Conditional Effects & Special Triggers', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn()
             },
-            trackZoneChange: jest.fn(),
-            addActiveEffect: jest.fn((effect) => {
+            trackZoneChange: vi.fn(),
+            addActiveEffect: vi.fn((effect) => {
                 game.state.activeEffects.push(effect);
             }),
-            checkWinCondition: jest.fn(),
-            requestChoice: jest.fn(async (request: any) => ({
+            checkWinCondition: vi.fn(),
+            requestChoice: vi.fn(async (request: any) => ({
                 requestId: request.id,
                 playerId: request.playerId,
                 selectedIds: request.options?.[0]?.id ? [request.options[0].id] : ['yes'],
@@ -126,7 +126,7 @@ describe('TDD Batch 13: Conditional Effects & Special Triggers', () => {
             };
 
             // Mock resolveTargets
-            jest.spyOn(executor as any, 'resolveTargets').mockReturnValue([target]);
+            vi.spyOn(executor as any, 'resolveTargets').mockReturnValue([target]);
 
             await executor.execute(effect as any, context);
 
@@ -168,7 +168,7 @@ describe('TDD Batch 13: Conditional Effects & Special Triggers', () => {
             };
 
             // Mock executeDraw
-            const drawSpy = jest.spyOn(executor as any, 'executeDraw').mockResolvedValue(undefined);
+            const drawSpy = vi.spyOn(executor as any, 'executeDraw').mockResolvedValue(undefined);
 
             await executor.execute(effect as any, context);
 

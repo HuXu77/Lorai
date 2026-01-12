@@ -1,5 +1,4 @@
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { TestHarness } from '../engine-test-utils';
 import { CardInstance } from '../../engine/models';
 import { EffectExecutor } from '../../engine/abilities/executor';
@@ -16,7 +15,7 @@ describe('Ariel - Spectacular Singer Modal Verification', () => {
         const player = harness.getPlayer(harness.p1Id);
 
         // Mock requestChoice on turnManager
-        const mockRequestChoice = jest.fn().mockImplementation(async (request: any) => {
+        const mockRequestChoice = vi.fn().mockImplementation(async (request: any) => {
             return {
                 requestId: request.id,
                 playerId: request.playerId,

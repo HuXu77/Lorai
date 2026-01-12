@@ -54,7 +54,7 @@ describe('Ability Prompts Integration', () => {
         harness.setTurn(harness.p1Id);
 
         // Spy on requestChoice
-        const requestChoiceSpy = jest.spyOn(harness.turnManager, 'requestChoice').mockReturnValue({
+        const requestChoiceSpy = vi.spyOn(harness.turnManager, 'requestChoice').mockReturnValue({
             selectedIds: [targetChar.instanceId]
         } as any);
 

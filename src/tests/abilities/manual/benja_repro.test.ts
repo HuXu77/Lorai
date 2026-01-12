@@ -1,6 +1,7 @@
 
 import { TestHarness } from '../../engine-test-utils';
 import { CardInstance, ZoneType, CardType } from '../../../engine/models';
+import { parseToAbilityDefinition } from '../../../engine/ability-parser';
 
 describe('Bug Fix Verification: Benja', () => {
     let harness: TestHarness;
@@ -53,7 +54,6 @@ describe('Bug Fix Verification: Benja', () => {
         // In this harness, we manually set parsedEffects on cards usually. 
         // But for this bug, we need to verify the PARSER output.
 
-        const { parseToAbilityDefinition } = require('../../../engine/ability-parser');
         const mockCard = {
             id: 'mock-benja',
             name: 'Benja - Guardian of the Dragon Gem',

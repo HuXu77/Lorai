@@ -59,7 +59,7 @@ describe('Blessed Bagpipes Bug', () => {
         harness.setTurn(harness.p1Id);
 
         // Mock requestChoice to select Flynn
-        const requestChoiceSpy = jest.spyOn(harness.turnManager, 'requestChoice').mockResolvedValue({
+        const requestChoiceSpy = vi.spyOn(harness.turnManager, 'requestChoice').mockResolvedValue({
             selectedIds: [flynnInPlay.instanceId]
         } as any);
 

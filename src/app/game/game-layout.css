@@ -1,0 +1,117 @@
+/**
+ * Game Layout Styles
+ * 
+ * Centralized styling for the game UI. Edit these variables to change
+ * backgrounds, borders, and colors across the entire game interface.
+ */
+
+/* ===== CSS Variables ===== */
+:root {
+    /* Backgrounds */
+    --game-bg-gradient: linear-gradient(to bottom right, #0f172a, #1e3a5f, #0f172a);
+    --panel-bg: rgba(0, 0, 0, 0.2);
+    --panel-bg-light: rgba(0, 0, 0, 0.1);
+    --modal-backdrop: rgba(0, 0, 0, 0.6);
+
+    /* Borders */
+    --zone-border: rgba(75, 85, 99, 0.5);
+    --zone-border-dashed: 1px dashed rgba(75, 85, 99, 0.5);
+    --panel-border: rgba(75, 85, 99, 0.3);
+
+    /* Sizes */
+    --sidebar-width: 16rem;
+    /* 256px / w-64 */
+    --header-padding: 1rem;
+}
+
+/* ===== Layout Classes ===== */
+
+/* Main game container */
+.game-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--game-bg-gradient);
+}
+
+/* Header bar - TRANSPARENT by default */
+.game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--header-padding);
+    /* No background - transparent */
+}
+
+/* Sidebar panels (stats, ink, discard) */
+.game-sidebar {
+    width: var(--sidebar-width);
+    padding: 1rem;
+    background: var(--panel-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+/* Play area zones */
+.game-zone {
+    border: var(--zone-border-dashed);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    min-height: 6rem;
+}
+
+/* Zone labels */
+.game-zone-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    /* gray-400 */
+    margin-bottom: 0.25rem;
+}
+
+/* Modal backdrop */
+.game-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-backdrop);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal content container */
+.game-modal-content {
+    background: #0f172a;
+    /* slate-900 */
+    border: 1px solid #4b5563;
+    /* gray-600 */
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 32rem;
+    width: 100%;
+}
+
+/* ===== Utility Classes ===== */
+
+/* Transparent panel (no background) */
+.panel-transparent {
+    background: transparent !important;
+}
+
+/* Semi-transparent panel */
+.panel-semi {
+    background: var(--panel-bg) !important;
+}
+
+/* Card hover effect */
+.card-hover {
+    transition: transform 0.15s ease;
+}
+
+.card-hover:hover {
+    transform: scale(1.05);
+}

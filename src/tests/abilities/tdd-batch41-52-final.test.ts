@@ -34,8 +34,8 @@ describe('TDD Batches 41-52: Final Features to 100%', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn()
             }
         };
 

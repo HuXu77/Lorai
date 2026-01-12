@@ -3,6 +3,7 @@ import { GameStateManager } from '../../engine/state';
 import { GameLogger } from '../../engine/logger';
 import { AbilitySystemManager } from '../../engine/abilities/ability-system';
 import { CardInstance, ZoneType } from '../../engine/models';
+import { ChoiceFamilyHandler } from '../../engine/abilities/families/choice-family';
 
 describe('Modal Card Rendering Bug', () => {
     let game: GameStateManager;
@@ -15,7 +16,7 @@ describe('Modal Card Rendering Bug', () => {
         player = game.getPlayer(game.addPlayer('player1', 'Player'));
         opponent = game.getPlayer(game.addPlayer('player2', 'Opponent'));
         turnManager = new TurnManager(game, new GameLogger());
-        (turnManager as any).eventBus = { emit: jest.fn() };
+        (turnManager as any).eventBus = { emit: vi.fn() };
         turnManager.abilitySystem = new AbilitySystemManager(turnManager);
     });
 
@@ -83,7 +84,6 @@ describe('Modal Card Rendering Bug', () => {
         // Let's use the actual AbilitySystem if possible, or direct instantiation.
 
         // Since we want to test ChoiceFamilyHandler specifically:
-        const { ChoiceFamilyHandler } = require('../../engine/abilities/families/choice-family');
         const handler = new ChoiceFamilyHandler({ turnManager });
 
         await handler.execute(effect, context);

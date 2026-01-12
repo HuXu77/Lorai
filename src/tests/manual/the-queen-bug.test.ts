@@ -1,5 +1,4 @@
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { TestHarness } from '../engine-test-utils';
 import { CardInstance } from '../../engine/models';
 
@@ -61,7 +60,7 @@ describe('The Queen - Commanding Presence Bug Reproduction', () => {
         }]);
 
         // 2. Mock Request Choice to capture prompts
-        const mockRequestChoice = jest.fn().mockImplementation(async (request: any) => {
+        const mockRequestChoice = vi.fn().mockImplementation(async (request: any) => {
             // We expect 2 choices or a combined sequence.
             // If this is triggered, we should verify the prompts/types.
             return {

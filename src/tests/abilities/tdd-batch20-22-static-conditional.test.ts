@@ -40,7 +40,7 @@ describe('TDD Batches 20-22: Static Complex & Conditional', () => {
                 activePlayerId: 'p1'
             },
             getPlayer: (id: string) => id === 'p1' ? player : opponent,
-            addCardToZone: jest.fn((player, card, zone) => {
+            addCardToZone: vi.fn((player, card, zone) => {
                 if (zone === 'hand') {
                     player.hand.push(card);
                     card.zone = 'hand';
@@ -51,13 +51,13 @@ describe('TDD Batches 20-22: Static Complex & Conditional', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                action: vi.fn()
             },
-            trackZoneChange: jest.fn(),
-            applyDamage: jest.fn((player, target, amount) => {
+            trackZoneChange: vi.fn(),
+            applyDamage: vi.fn((player, target, amount) => {
                 target.damage = (target.damage || 0) + amount;
             })
         };
@@ -192,7 +192,7 @@ describe('TDD Batches 20-22: Static Complex & Conditional', () => {
                 };
 
                 // Mock banish logic
-                (turnManager as any).banishCard = jest.fn((player, card) => {
+                (turnManager as any).banishCard = vi.fn((player, card) => {
                     player.play = player.play.filter((c: any) => c.instanceId !== card.instanceId);
                 });
 

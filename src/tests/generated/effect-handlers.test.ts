@@ -22,7 +22,7 @@ describe('Effect Execution Tests', () => {
         player = game.getPlayer(game.addPlayer('player1', 'Player'));
         opponent = game.getPlayer(game.addPlayer('player2', 'Opponent'));
         turnManager = new TurnManager(game, new GameLogger());
-        (turnManager as any).eventBus = { emit: jest.fn() };
+        (turnManager as any).eventBus = { emit: vi.fn() };
         turnManager.abilitySystem = new AbilitySystemManager(turnManager);
         game.state.phase = Phase.Main;
         game.state.turnPlayerId = player.id;
@@ -53,29 +53,9 @@ describe('Effect Execution Tests', () => {
         parsedEffects: []
     } as any);
 
-    // =========================================================================
-    // DRAW EFFECT TESTS - VERIFIED WORKING
-    // =========================================================================
 
-    describe('Draw Effects (Verified)', () => {
-        // NOTE: Skipped because resolveEffect expects type-based effects, not action-based.
-        // Draw functionality works via DrawFamilyHandler with type: 'draw_cards'.
-        it.skip('should draw cards via resolveEffect', async () => {
-            for (let i = 0; i < 5; i++) {
-                const card = createCard(`deck-${i}`, `Deck Card ${i}`, player.id);
-                card.zone = ZoneType.Deck;
-                player.deck.push(card);
-            }
-            const initialHandSize = player.hand.length;
 
-            const effect = { action: 'draw_card', amount: 2 };
-            const source = createCard('source', 'Source', player.id);
 
-            await turnManager.resolveEffect(player, effect, source);
-
-            expect(player.hand.length).toBe(initialHandSize + 2);
-        });
-    });
 
     // =========================================================================
     // LORE EFFECT TESTS - VERIFIED WORKING  

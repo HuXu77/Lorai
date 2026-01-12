@@ -1,5 +1,6 @@
 import { TestHarness } from '../engine-test-utils';
 import { CardInstance, ActionType } from '../../engine/models';
+import { parseToAbilityDefinition } from '../../engine/ability-parser';
 
 describe('Manual: The Queen - Commanding Presence', () => {
     let harness: TestHarness;
@@ -36,7 +37,6 @@ describe('Manual: The Queen - Commanding Presence', () => {
             } as any as CardInstance;
 
             if (!card.parsedEffects || card.parsedEffects.length === 0) {
-                const { parseToAbilityDefinition } = require('../../engine/ability-parser');
                 if (card.abilities && card.abilities.length > 0) {
                     card.parsedEffects = parseToAbilityDefinition(card) as any;
                 }

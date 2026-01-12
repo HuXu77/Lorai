@@ -5,7 +5,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Prevention & Restriction Effects', () => {
     let executor: EffectExecutor;
@@ -36,7 +36,7 @@ describe('Executor: Prevention & Restriction Effects', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1');
         p2 = setupPlayer('p2');
@@ -47,16 +47,16 @@ describe('Executor: Prevention & Restriction Effects', () => {
             activeEffects: []
         };
 
-        game.getOpponents = jest.fn((id) => id === 'p1' ? [p2] : [p1]);
+        game.getOpponents = vi.fn((id) => id === 'p1' ? [p2] : [p1]);
 
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
-        turnManager.addActiveEffect = jest.fn((effect) => {
+        turnManager.addActiveEffect = vi.fn((effect) => {
             game.state.activeEffects.push(effect);
         });
 

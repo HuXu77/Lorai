@@ -41,7 +41,7 @@ describe('TDD Batches 23-25: Triggers & Quest Mechanics', () => {
             },
             getPlayer: (id: string) => id === 'p1' ? player : opponent,
             getOpponent: (id: string) => id === 'p1' ? opponent : player,
-            addCardToZone: jest.fn((player, card, zone) => {
+            addCardToZone: vi.fn((player, card, zone) => {
                 if (zone === 'hand') {
                     player.hand.push(card);
                     card.zone = 'hand';
@@ -52,13 +52,13 @@ describe('TDD Batches 23-25: Triggers & Quest Mechanics', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                action: vi.fn()
             },
-            trackZoneChange: jest.fn(),
-            applyDamage: jest.fn((player, target, amount) => {
+            trackZoneChange: vi.fn(),
+            applyDamage: vi.fn((player, target, amount) => {
                 target.damage = (target.damage || 0) + amount;
             })
         };

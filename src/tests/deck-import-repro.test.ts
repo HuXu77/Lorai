@@ -1,4 +1,4 @@
-import { parseDeckText } from '../utils/deck-import';
+import { parseDeckText, parseDreambornUrl } from '../utils/deck-import';
 
 describe('Deck Import Logic', () => {
     it('should parse text deck list correctly', () => {
@@ -45,8 +45,7 @@ describe('Deck Import Logic', () => {
         `;
         // "VGhlIFF1ZWVuanM0fE1pY2tleSBNb3VzZV9CcmF2ZSBMaXR0bGUgVGFpbG9yJDM=" decodes to: "The Queen$4|Mickey Mouse_Brave Little Tailor$3"
 
-        const mockFetcher = jest.fn().mockResolvedValue(mockHtml);
-        const { parseDreambornUrl } = require('../utils/deck-import');
+        const mockFetcher = vi.fn().mockResolvedValue(mockHtml);
 
         const cards = await parseDreambornUrl('https://dreamborn.ink/decks/test', mockFetcher);
 

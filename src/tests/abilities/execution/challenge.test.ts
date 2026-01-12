@@ -6,7 +6,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Challenge & Combat Mechanics', () => {
     let executor: EffectExecutor;
@@ -42,7 +42,7 @@ describe('Executor: Challenge & Combat Mechanics', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1');
         p2 = setupPlayer('p2');
@@ -59,13 +59,13 @@ describe('Executor: Challenge & Combat Mechanics', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
 
         // Mock game.addCardToZone
-        game.addCardToZone = jest.fn((player, card, zone) => {
+        game.addCardToZone = vi.fn((player, card, zone) => {
             card.zone = zone;
             if (zone === ZoneType.Discard) {
                 // Remove from play
@@ -78,7 +78,7 @@ describe('Executor: Challenge & Combat Mechanics', () => {
         });
 
         // Mock getPlayer
-        game.getPlayer = jest.fn((id) => game.state.players[id]);
+        game.getPlayer = vi.fn((id) => game.state.players[id]);
 
         executor = new EffectExecutor(turnManager);
         executor.setTurnManager(turnManager);

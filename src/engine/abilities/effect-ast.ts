@@ -117,7 +117,7 @@ export type EffectAST =
     | { type: 'resolution', effects?: EffectAST[] }
 
     // Card draw
-    | { type: 'draw', amount: number | Expression, optional?: boolean }
+    | { type: 'draw', amount: number | Expression, optional?: boolean, target?: TargetAST }
     | { type: 'reveal_hand', target: TargetAST }
     | { type: 'discard_chosen', target: TargetAST, filter: any, chooser: 'self' | 'opponent' }
 
@@ -129,7 +129,7 @@ export type EffectAST =
     // Card movement
     | { type: 'banish', target: TargetAST }
     | { type: 'return_to_hand', target: TargetAST, amount?: number }
-    | { type: 'discard', amount: number, optional?: boolean }
+    | { type: 'discard', amount: number, optional?: boolean, target?: TargetAST }
     | { type: 'put_from_discard', filter?: { cardType?: string }, destination: string, optional?: boolean }
     | { type: 'shuffle_into_deck', target: TargetAST }
 

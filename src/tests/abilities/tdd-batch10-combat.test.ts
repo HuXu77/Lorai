@@ -44,15 +44,15 @@ describe('TDD Batch 10: Combat & Play Free', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                effect: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                effect: vi.fn(),
+                action: vi.fn()
             },
-            playCard: jest.fn().mockResolvedValue(true),
+            playCard: vi.fn().mockResolvedValue(true),
             // Mock requestChoice to simulate user selecting the first option
-            requestChoice: jest.fn().mockImplementation((choice: any) => {
+            requestChoice: vi.fn().mockImplementation((choice: any) => {
                 return Promise.resolve({
                     requestId: choice.id,
                     playerId: choice.playerId,
@@ -61,7 +61,7 @@ describe('TDD Batch 10: Combat & Play Free', () => {
                 });
             }),
             abilitySystem: {
-                emitEvent: jest.fn().mockResolvedValue(undefined)
+                emitEvent: vi.fn().mockResolvedValue(undefined)
             }
         };
 

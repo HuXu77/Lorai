@@ -22,6 +22,9 @@ import ActiveEffectsPanel from '../../components/ActiveEffectsPanel'
 import { AnimationDemo, LoreGainEffect, StatChangeEffect, DrawAnimation, ChallengeEffect } from '../../components/animations'
 import VictoryOverlay from '../../components/VictoryOverlay'
 import { DebugPanel } from '../../components/DebugPanel'
+import GameHeader from '../../components/GameHeader'
+import GameSidebar from '../../components/GameSidebar'
+import './game-layout.css'
 import { CardInstance, ZoneType, ChoiceRequest, ChoiceResponse, ChoiceType, GameState } from '../../engine/models'
 import { LogEntry, LogCategory } from '../../types/log'
 import { TurnPhase } from '../../types/turn'
@@ -1138,48 +1141,20 @@ function GamePageInner() {
     return (
         <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 bg-black bg-opacity-30">
-                <h1 className="text-2xl font-bold text-white">🎮 Lorai • Lorcana</h1>
-                <div className="flex gap-2">
-                    {/* Debug/Test buttons - only visible in development */}
-                    {process.env.NODE_ENV !== 'production' && (
-                        <>
-                            {/* Test buttons for log system */}
-                            <button onClick={testCardPlayed} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs">🎴</button>
-                            <button onClick={testAbilityTriggered} className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs">⚡</button>
-                            <button onClick={testCombat} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs">⚔️</button>
-                            <button onClick={testLoreGain} className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs">◆</button>
-                            <button onClick={testTurnEvent} className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs">🔄</button>
-                            <div className="border-l border-gray-600 mx-2"></div>
-                            {/* Test buttons for choice system */}
-                            <button
-                                onClick={testModalChoice}
-                                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
-                            >
-                                🎴 Test Modal
-                            </button>
-                            <button
-                                onClick={testCardSelection}
-                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
-                            >
-                                🎯 Test Targeting
-                            </button>
-                            <button
-                                onClick={() => setOpponentHandRevealed(!opponentHandRevealed)}
-                                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-sm"
-                            >
-                                {opponentHandRevealed ? '🔒 Hide' : '🔍 Reveal'} Opp Hand
-                            </button>
-                            <button
-                                onClick={() => setShowAnimationDemo(true)}
-                                className="px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded text-sm font-medium"
-                            >
-                                🎬 Animations
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
+            <GameHeader
+                debugActions={{
+                    onTestCardPlayed: testCardPlayed,
+                    onTestAbility: testAbilityTriggered,
+                    onTestCombat: testCombat,
+                    onTestLore: testLoreGain,
+                    onTestTurn: testTurnEvent,
+                    onTestModal: testModalChoice,
+                    onTestTargeting: testCardSelection,
+                    onToggleOpponentHand: () => setOpponentHandRevealed(!opponentHandRevealed),
+                    onShowAnimations: () => setShowAnimationDemo(true)
+                }}
+                opponentHandRevealed={opponentHandRevealed}
+            />
 
             {/* Turn Flow */}
             <div className="px-4 pt-2">
@@ -1220,24 +1195,20 @@ function GamePageInner() {
             {/* Main Game Board */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Left Sidebar - Opponent Stats & Ink */}
-                <div className="w-64 p-4 bg-black bg-opacity-20 flex flex-col gap-4 overflow-y-auto">
-                    <GameStatePanel
-                        playerName={opponent?.name || 'Bot'}
-                        lore={opponent?.lore || 0}
-                        loreGoal={opponent?.loreGoal || 20}
-                        deckSize={opponent?.deck.length || 0}
-                        handSize={opponent?.hand.length || 0}
-                        isActive={!isYourTurn}
-                        hasPriority={false}
-                        testId="opponent-lore"
-                    />
-                    <InkPile cards={opponent?.inkwell || []} label="Opponent Ink" />
-                    <DiscardPile
-                        cards={opponent?.discard || []}
-                        label="Opponent Discard"
-                        onClick={() => setOpponentDiscardModalOpen(true)}
-                    />
-                </div>
+                <GameSidebar
+                    playerName={opponent?.name || 'Bot'}
+                    lore={opponent?.lore || 0}
+                    loreGoal={opponent?.loreGoal || 20}
+                    deckSize={opponent?.deck.length || 0}
+                    handSize={opponent?.hand.length || 0}
+                    isActive={!isYourTurn}
+                    inkwellCards={opponent?.inkwell || []}
+                    inkLabel="Opponent Ink"
+                    discardCards={opponent?.discard || []}
+                    discardLabel="Opponent Discard"
+                    onDiscardClick={() => setOpponentDiscardModalOpen(true)}
+                    testId="opponent-lore"
+                />
 
                 {/* Center - Game Zones & Play Areas */}
                 <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -1262,7 +1233,7 @@ function GamePageInner() {
                                 />
                             </div>
                             {/* Opponent Items (fixed width) */}
-                            <div className="w-52 flex flex-col gap-1">
+                            <div className="w-52 flex flex-col gap-1 self-start">
                                 {(opponent?.play.filter(c => c.type === 'Item').length || 0) > 0 && (
                                     <GameZone
                                         cards={opponent?.play.filter(c => c.type === 'Item') || []}

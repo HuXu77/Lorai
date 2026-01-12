@@ -45,12 +45,12 @@ describe('TDD Batches 35-37: Final Features', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                action: vi.fn()
             },
-            addActiveEffect: jest.fn((effect) => {
+            addActiveEffect: vi.fn((effect) => {
                 game.state.activeEffects.push(effect);
             })
         };

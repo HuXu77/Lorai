@@ -27,6 +27,12 @@ export default function LogEntry({ entry, debugMode = false }: LogEntryProps) {
                     <div className="flex-1 min-w-0">
                         <div className="text-sm text-white font-medium break-words">
                             {entry.message}
+                            {/* Show ability causality context inline */}
+                            {entry.details?.causedBy && (
+                                <span className="text-purple-400 text-xs ml-1">
+                                    (via {entry.details.causedBy.cardName}'s {entry.details.causedBy.abilityName || 'ability'})
+                                </span>
+                            )}
                         </div>
                         <div className="text-xs text-gray-400 mt-0.5">
                             {formatRelativeTime(entry.timestamp)}

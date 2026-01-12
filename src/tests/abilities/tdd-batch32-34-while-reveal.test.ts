@@ -44,13 +44,13 @@ describe('TDD Batches 32-34: While, Look, Reveal', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                action: vi.fn()
             },
-            trackZoneChange: jest.fn(),
-            checkWinCondition: jest.fn()
+            trackZoneChange: vi.fn(),
+            checkWinCondition: vi.fn()
         };
 
         executor = new EffectExecutor(turnManager);
@@ -150,7 +150,7 @@ describe('TDD Batches 32-34: While, Look, Reveal', () => {
                 };
 
                 // Mock resolveTargets to return the card from discard
-                jest.spyOn(executor as any, 'resolveTargets').mockReturnValue([card]);
+                vi.spyOn(executor as any, 'resolveTargets').mockReturnValue([card]);
 
                 await executor.execute(effect as any, context);
 
@@ -210,7 +210,7 @@ describe('TDD Batches 32-34: While, Look, Reveal', () => {
                 };
 
                 // Mock resolveTargets to return player's characters
-                jest.spyOn(executor as any, 'resolveTargets').mockReturnValue([char1, char2]);
+                vi.spyOn(executor as any, 'resolveTargets').mockReturnValue([char1, char2]);
 
                 await executor.execute(effect as any, context);
 

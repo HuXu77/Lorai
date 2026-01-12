@@ -5,7 +5,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Location & Movement Mechanics', () => {
     let executor: EffectExecutor;
@@ -40,7 +40,7 @@ describe('Executor: Location & Movement Mechanics', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1', 'Player 1');
 
@@ -53,12 +53,12 @@ describe('Executor: Location & Movement Mechanics', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
         // Mock game.addCardToZone
-        game.addCardToZone = jest.fn((player, card, zone) => {
+        game.addCardToZone = vi.fn((player, card, zone) => {
             card.zone = zone;
             if (zone === ZoneType.Hand) player.hand.push(card);
             if (zone === ZoneType.Play) player.play.push(card);
@@ -84,7 +84,7 @@ describe('Executor: Location & Movement Mechanics', () => {
 
             const handler = (executor as any).familyHandlers.get('location');
             expect(handler).toBeDefined();
-            (handler as any).resolveTargets = jest.fn().mockReturnValue([char]);
+            (handler as any).resolveTargets = vi.fn().mockReturnValue([char]);
 
             await executor.execute(effectSelf, {
                 player: p1,
@@ -108,7 +108,7 @@ describe('Executor: Location & Movement Mechanics', () => {
             } as any;
 
             const handler = (executor as any).familyHandlers.get('location');
-            (handler as any).resolveTargets = jest.fn().mockReturnValue([char]);
+            (handler as any).resolveTargets = vi.fn().mockReturnValue([char]);
 
             await executor.execute(effect, {
                 player: p1,

@@ -1133,27 +1133,73 @@ export class EffectExecutor {
      */
     private async executeDraw(effect: Extract<EffectAST, { type: 'draw' }>, context: GameContext): Promise<boolean | void> {
         const amount = this.conditionEvaluator!.evaluateExpression(effect.amount, context);
-        const player = context.player;
-
         if (!this.turnManager) return;
 
-        // Check if effect is optional - use helper
-        const shouldExecute = await this.checkOptional(effect, context, `Do you want to draw ${amount} card(s)?`);
-        if (!shouldExecute) {
-            return false; // Abort remaining effects
+        // Resolve targets (players)
+        // This handles 'self', 'opponent', 'all_players', 'all_opponents' unified
+        const targetPlayers = await this.resolvePlayerTargets(effect.target, context);
+
+        let anyDrawDeclined = false;
+
+        for (const player of targetPlayers) {
+            // For optional effects, each player decides individually
+            // But we only want to return 'false' (abort) if the *primary* player declines?
+            // Or if ANY player declines? 
+            // "may draw" usually implies independent choices.
+            // If it's "You may draw", we return false if declined to stop sequence.
+            // If it's "Each player may draw", one player declining shouldn't stop others or the ability sequence for others.
+            // However, the current execute() contract returns false to abort sequence.
+            // We should probably only abort if context.player declines?
+
+            let shouldDraw = true;
+
+            if ((effect as any).optional) {
+                // Only prompt for human player - bot auto-accepts drawing
+                const isBot = (player as any).isBot === true;
+
+                if (!isBot && this.turnManager) {
+                    // Prompt this player
+                    const choice = await this.turnManager.requestChoice({
+                        type: 'confirm',
+                        playerId: (player as any).id,
+                        prompt: `Do you want to draw ${amount} card(s)?`,
+                        options: [
+                            { id: 'yes', display: 'Yes', valid: true },
+                            { id: 'no', display: 'No', valid: true }
+                        ]
+                    });
+
+                    if (choice?.selectedIds[0] === 'no' || choice?.declined) {
+                        this.turnManager.logger.effect(
+                            (player as any).name,
+                            `Declined to draw`,
+                            context.card?.name
+                        );
+                        shouldDraw = false;
+
+                        // If the main player declined, potentially signal abort for sequence
+                        if (player.id === context.player.id) {
+                            anyDrawDeclined = true;
+                        }
+                    }
+                }
+            }
+
+            if (shouldDraw) {
+                // Draw for this player
+                const drawn = this.drawCards(player as any, amount);
+
+                this.turnManager.logger.effect(
+                    (player as any).name,
+                    `Drew ${drawn} card(s)`,
+                    context.card?.name,
+                    { amount: drawn, deckRemaining: (player as any).deck.length }
+                );
+            }
         }
 
-        // Use utility method
-        const drawn = this.drawCards(player, amount);
-
-        this.turnManager.logger.info(`📖 Drew ${drawn}/${amount} card(s)`, {
-            player: player.name,
-            requested: amount,
-            drawn,
-            deckRemaining: player.deck.length
-        });
-
-        return true; // Continue with remaining effects
+        if (anyDrawDeclined) return false;
+        return true;
     }
 
     /**
@@ -1293,22 +1339,38 @@ export class EffectExecutor {
      * Discard cards
      */
     private async executeDiscard(effect: Extract<EffectAST, { type: 'discard' }>, context: GameContext): Promise<void> {
+        if (!this.turnManager) return;
+
         const amount = effect.amount;
-        const player = context.player;
+        // Resolve targets (players)
+        const targets = await this.resolvePlayerTargets(effect.target, context);
 
-        // Discard from hand to discard pile
-        for (let i = 0; i < amount && player.hand.length > 0; i++) {
-            const card = player.hand.pop();
-            if (card) {
-                card.zone = 'discard';
-                player.discard.push(card);
+        targets.forEach(player => {
+            // Discard from hand to discard pile
+            // TODO: Implement 'choose card to discard' logic using ChoiceHandler
+            // Currently defaulting to 'pop' (last card) as placeholder behavior
+            for (let i = 0; i < amount && player.hand.length > 0; i++) {
+                const card = player.hand.pop();
+                if (card) {
+                    card.zone = 'discard';
+                    player.discard.push(card);
+                    if (this.turnManager) {
+                        this.turnManager.trackZoneChange(card, 'hand', 'discard');
+                    }
+                }
             }
-        }
 
-        if (this.turnManager) {
-            const source = context.abilityName ? ` (Source: ${context.abilityName})` : '';
-            this.turnManager.logger.info(`[EffectExecutor] ${player.name} discarded ${amount} card(s)${source}`);
-        }
+            if (this.turnManager) {
+                const source = context.abilityName ? ` (Source: ${context.abilityName})` : '';
+                this.turnManager.logger.info(`[EffectExecutor] ${player.name} discarded ${amount} card(s)${source}`);
+                this.turnManager.logger.effect(
+                    player.name,
+                    `Discarded ${amount} card(s)`,
+                    context.card?.name,
+                    { amount: amount, handRemaining: player.hand.length }
+                );
+            }
+        });
     }
 
     /**
@@ -2655,6 +2717,34 @@ export class EffectExecutor {
      * @param context - Game context for filtering and validation
      * @returns Array of CardInstance objects that match the target specification
      */
+    /**
+     * Resolve targets specifically for Player objects
+     * Handles: 'self', 'opponent', 'all_players', 'all_opponents', 'target_owner'
+     */
+    public async resolvePlayerTargets(target: TargetAST | undefined, context: GameContext): Promise<any[]> {
+        if (!target) return [context.player]; // Default to self if no target specified
+
+        // Handle explicit player targets
+        switch (target.type) {
+            case 'self':
+                return [context.player];
+
+            case 'opponent':
+            case 'chosen_opponent':
+                // Find opponent(s)
+                const opponents = Object.values(this.turnManager.game.state.players).filter((p: any) => p.id !== context.player.id);
+                return opponents;
+
+            case 'all_players':
+                return Object.values(this.turnManager.game.state.players);
+
+            case 'all_opponents':
+                return Object.values(this.turnManager.game.state.players).filter((p: any) => p.id !== context.player.id);
+        }
+
+        return [context.player];
+    }
+
     public async resolveTargets(target: TargetAST | undefined, context: GameContext): Promise<any[]> {
         if (!target) return [];
 
@@ -3303,33 +3393,20 @@ export class EffectExecutor {
      */
     private async executeMill(effect: Extract<EffectAST, { type: 'mill' }>, context: GameContext): Promise<void> {
         if (!this.turnManager) return;
-        const targets = await this.resolveTargets(effect.target, context);
+
+        // Use resolvePlayerTargets to correctly handle 'all_opponents', 'opponent', etc.
+        const targets = await this.resolvePlayerTargets(effect.target, context);
         const amount = effect.amount;
 
-        targets.forEach(targetPlayer => {
-            // targetPlayer is a Player object (or should be)
-            // resolveTargets returns cards usually, but for 'all_opponents', it might need to return players.
-            // If resolveTargets returns cards, we need to get owners.
-            // But 'all_opponents' target type should return players?
-            // Let's check resolveTargets implementation or usage.
-            // If it returns cards, we can map to owners.
-            // But wait, 'mill' targets players.
-
-            // Assuming resolveTargets returns Player objects for player targets.
-            // If not, we need to handle it.
-            // Let's assume we get players or we get cards and find owners.
-
-            let playerToMill = targetPlayer;
-            if (targetPlayer.ownerId) {
-                // It's a card, get owner
-                playerToMill = this.turnManager.game.getPlayer(targetPlayer.ownerId);
-            }
+        targets.forEach(playerToMill => {
+            // resolvePlayerTargets returns Player objects
 
             // Check if it's actually a player object
-            if (!playerToMill.deck) {
-                // Try to find player by ID if target is just an ID string (unlikely)
-                // Or maybe targetPlayer IS the player.
-                // Let's assume it is.
+            if (!playerToMill || !playerToMill.deck) {
+                if (this.turnManager) {
+                    this.turnManager.logger.warn(`[EffectExecutor] executeMill: Invalid player target found.`);
+                }
+                return;
             }
 
             for (let i = 0; i < amount; i++) {
@@ -3346,9 +3423,16 @@ export class EffectExecutor {
             }
             if (this.turnManager) {
                 this.turnManager.logger.info(`[EffectExecutor] ${playerToMill.name} milled ${amount} cards`);
+                this.turnManager.logger.effect(
+                    playerToMill.name,
+                    `Milled ${amount} cards`,
+                    context.card?.name,
+                    { amount: amount, deckRemaining: playerToMill.deck.length }
+                );
             }
         });
     }
+
 
     /**
      * Look at top cards and move to top or bottom

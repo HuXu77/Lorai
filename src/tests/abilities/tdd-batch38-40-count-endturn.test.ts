@@ -45,9 +45,9 @@ describe('TDD Batches 38-40: Count, EndTurn, Global', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn()
             }
         };
 
@@ -83,7 +83,7 @@ describe('TDD Batches 38-40: Count, EndTurn, Global', () => {
                 };
 
                 // Mock resolveTargets to return correct targets
-                jest.spyOn(executor as any, 'resolveTargets').mockImplementation((targetSpec: any, ctx: any) => {
+                vi.spyOn(executor as any, 'resolveTargets').mockImplementation((targetSpec: any, ctx: any) => {
                     if (targetSpec.type === 'all_characters') {
                         return player.play; // Return all 3 characters
                     }
@@ -118,7 +118,7 @@ describe('TDD Batches 38-40: Count, EndTurn, Global', () => {
                 };
 
                 // Mock target resolution
-                jest.spyOn(executor as any, 'resolveTargets').mockReturnValue([discardCard]);
+                vi.spyOn(executor as any, 'resolveTargets').mockReturnValue([discardCard]);
 
                 await executor.execute(effect as any, context);
 

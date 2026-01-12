@@ -1,4 +1,3 @@
-import { describe, it, expect } from '@jest/globals';
 import { parseToAbilityDefinition } from '../../engine/ability-parser';
 
 describe('Batch 45: Remaining High-Frequency Patterns', () => {

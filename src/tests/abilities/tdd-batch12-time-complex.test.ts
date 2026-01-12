@@ -35,7 +35,7 @@ describe('TDD Batch 12: Time & Complex Triggers', () => {
                 activeEffects: [] as any[],
                 players: { 'p1': mockPlayer }
             },
-            addCardToZone: jest.fn((player, card, zone) => {
+            addCardToZone: vi.fn((player, card, zone) => {
                 // Simulate moving card for tests
                 if (zone === 'inkwell' || zone === 'Inkwell') {
                     player.play = player.play.filter((c: any) => c.instanceId !== card.instanceId);
@@ -49,15 +49,15 @@ describe('TDD Batch 12: Time & Complex Triggers', () => {
 
         mockTurnManager = {
             game: mockGame,
-            trackZoneChange: jest.fn(),
-            addActiveEffect: jest.fn((effect) => {
+            trackZoneChange: vi.fn(),
+            addActiveEffect: vi.fn((effect) => {
                 mockGame.state.activeEffects.push(effect);
             }),
             logger: {
                 info: console.log,
                 debug: console.log,
                 warn: console.warn,
-                error: jest.fn()
+                error: vi.fn()
             }
         };
 

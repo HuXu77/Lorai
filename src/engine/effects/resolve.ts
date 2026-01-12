@@ -799,7 +799,14 @@ export async function executeResolveEffect(
                 opponent.discard.push(discardedCard);
                 turnManager.trackZoneChange(discardedCard, ZoneType.Hand, ZoneType.Discard);
 
-                turnManager.logger.effect(opponent.name, `Discarded ${discardedCard.name} (forced by ${sourceCard?.name}).`);
+                // Log with causedBy context for ability tracking
+                const abilityName = effect.trigger === 'on_challenge' ? 'When challenged' : 'ability';
+                turnManager.logger.effect(
+                    opponent.name,
+                    `Discarded ${discardedCard.name}`,
+                    sourceCard?.name,
+                    { causedBy: { cardName: sourceCard?.name || 'Unknown', abilityName } }
+                );
             } else {
                 turnManager.logger.debug(`[${opponent.name}] No cards in hand to discard.`);
             }
@@ -1197,7 +1204,14 @@ export async function executeResolveEffect(
                     card.zone = ZoneType.Discard;
                     opp.discard.push(card);
                     turnManager.trackZoneChange(card, ZoneType.Hand, ZoneType.Discard);
-                    turnManager.logger.action(opp.name, `Discarded ${card.name}`);
+                    // Include causedBy context for ability tracking
+                    const abilityName = effect.trigger === 'on_challenge' ? 'When challenged' : 'ability';
+                    turnManager.logger.effect(
+                        opp.name,
+                        `Discarded ${card.name}`,
+                        sourceCard?.name,
+                        { causedBy: { cardName: sourceCard?.name || 'Unknown', abilityName } }
+                    );
                 }
             } else {
                 // Fallback: Random if forced
@@ -1209,7 +1223,14 @@ export async function executeResolveEffect(
                     card.zone = ZoneType.Discard;
                     opp.discard.push(card);
                     turnManager.trackZoneChange(card, ZoneType.Hand, ZoneType.Discard);
-                    turnManager.logger.action(opp.name, `Discarded ${card.name} (Random)`);
+                    // Include causedBy context for ability tracking (random fallback)
+                    const abilityNameRandom = effect.trigger === 'on_challenge' ? 'When challenged' : 'ability';
+                    turnManager.logger.effect(
+                        opp.name,
+                        `Discarded ${card.name}`,
+                        sourceCard?.name,
+                        { causedBy: { cardName: sourceCard?.name || 'Unknown', abilityName: abilityNameRandom } }
+                    );
                 }
             }
         });

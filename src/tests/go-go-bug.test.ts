@@ -60,7 +60,7 @@ describe('Go Go Tomago - Darting Dynamo Bugs', () => {
         // Mock requestChoice to catch the prompt
         let promptReceived: string | undefined;
         const originalRequestChoice = testHarness.turnManager.requestChoice.bind(testHarness.turnManager);
-        jest.spyOn(testHarness.turnManager, 'requestChoice').mockImplementation(async (request) => {
+        vi.spyOn(testHarness.turnManager, 'requestChoice').mockImplementation(async (request) => {
             promptReceived = request.prompt;
             // Auto-decline if prompted to avoid hanging
             return {

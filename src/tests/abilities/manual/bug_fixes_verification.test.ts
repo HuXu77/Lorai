@@ -146,7 +146,7 @@ describe('Bug Fix Verification: Ariel, Naveen, Raging Fire', () => {
         } as any;
 
         const executor = harness.turnManager.abilitySystem.executor as any;
-        const spyHandler = jest.spyOn(executor, 'executePlayForFree');
+        const spyHandler = vi.spyOn(executor, 'executePlayForFree');
 
         // Mocking resolveTargets is tricky as seen above, but for play_for_free we need to ensure checks pass
         // However, play_for_free internal logic does its own searching usually.
@@ -168,7 +168,7 @@ describe('Bug Fix Verification: Ariel, Naveen, Raging Fire', () => {
         // It should find song1 and song2 in player.hand.
         // So we DON'T need to mock it if the logic is correct!
 
-        const checkOptionalSpy = jest.spyOn(executor, 'checkOptional');
+        const checkOptionalSpy = vi.spyOn(executor, 'checkOptional');
 
         const context = {
             player: player,

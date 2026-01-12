@@ -106,8 +106,10 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
             owner.hand = owner.hand.filter((c: any) => c.instanceId !== target.instanceId);
             owner.deck = owner.deck.filter((c: any) => c.instanceId !== target.instanceId);
 
-            // Add to hand
+            // Reset card state when returning to hand
             target.zone = ZoneType.Hand;
+            target.ready = true;   // Cards in hand are always ready
+            target.damage = 0;     // Clear damage when leaving play
             owner.hand.push(target);
         });
 

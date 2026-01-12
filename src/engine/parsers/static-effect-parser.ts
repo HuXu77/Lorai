@@ -3421,6 +3421,22 @@ export function parseStaticEffects(text: string): any[] {
     }
 
     // BATCH 45: Can't ready (I'm Stuck!)
+    // "Up to 2 chosen characters can't ready at the start of their next turn" (They Never Come Back)
+    const upToNCharactersCantReadyMatch = text.match(/^(?:up to )?(\d+) chosen characters? can't ready at the start of their next turn/i);
+    if (upToNCharactersCantReadyMatch) {
+        const count = parseInt(upToNCharactersCantReadyMatch[1]);
+        effects.push({
+            type: 'cant_ready',
+            target: {
+                type: 'chosen_character',
+                count,       // Max number of targets
+                minCount: 0  // "Up to" means minimum 0
+            },
+            duration: 'next_turn_start'
+        });
+        return effects;
+    }
+
     // "chosen exerted character can't ready at the start of their next turn"
     if (text.match(/chosen (?:exerted )?character can't ready/i)) {
         effects.push({

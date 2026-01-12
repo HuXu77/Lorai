@@ -83,7 +83,7 @@ describe('Webby Premature Stat Buff Reproduction', () => {
         player.play = []; // Empty board initially
 
         // Mock requestChoice to inspect options
-        const requestChoiceSpy = jest.spyOn(turnManager, 'requestChoice').mockImplementation(async (request: any) => {
+        const requestChoiceSpy = vi.spyOn(turnManager, 'requestChoice').mockImplementation(async (request: any) => {
             console.log('REQUEST CHOICE CALLED');
             // INSPECT OPTIONS
             const webbyOption = request.options.find((o: any) => o.card.instanceId === 'webby-1');
@@ -103,11 +103,11 @@ describe('Webby Premature Stat Buff Reproduction', () => {
 
         // Mock Logger
         turnManager.logger = {
-            debug: jest.fn(),
-            info: jest.fn(),
-            action: jest.fn(),
-            effect: jest.fn(), // Helper
-            error: jest.fn()
+            debug: vi.fn(),
+            info: vi.fn(),
+            action: vi.fn(),
+            effect: vi.fn(), // Helper
+            error: vi.fn()
         } as any;
 
         // Execute Play

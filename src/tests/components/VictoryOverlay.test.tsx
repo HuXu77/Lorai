@@ -17,7 +17,7 @@ describe('VictoryOverlay', () => {
     });
 
     it('calls onDismiss when close button is clicked', () => {
-        const handleDismiss = jest.fn();
+        const handleDismiss = vi.fn();
         render(<VictoryOverlay winnerId="player1" currentPlayerId="player1" onDismiss={handleDismiss} />);
 
         const button = screen.getByText('Close');

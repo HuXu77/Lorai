@@ -66,7 +66,7 @@ describe('Mother Knows Best - Song Sing Cost', () => {
         harness.turnManager.startGame(harness.p1Id);
 
         // Spy on logger to detect warnings
-        const loggerSpy = jest.spyOn(harness.turnManager.logger, 'warn');
+        const loggerSpy = vi.spyOn(harness.turnManager.logger, 'warn');
 
         // Play Mother Knows Best
         const played = await harness.turnManager.playCard(
@@ -128,7 +128,7 @@ describe('Mother Knows Best - Song Sing Cost', () => {
 
             harness.turnManager.startGame(harness.p1Id);
 
-            const loggerSpy = jest.spyOn(harness.turnManager.logger, 'warn');
+            const loggerSpy = vi.spyOn(harness.turnManager.logger, 'warn');
 
             // Play the song
             await harness.turnManager.playCard(p1, song.instanceId);

@@ -38,12 +38,12 @@ describe('Tramp/Lady Cost Reduction Bug', () => {
     beforeEach(() => {
         stateManager = new GameStateManager();
         const mockLogger = {
-            info: jest.fn(),
-            action: jest.fn(),
-            effect: jest.fn(),
-            debug: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn(),
+            info: vi.fn(),
+            action: vi.fn(),
+            effect: vi.fn(),
+            debug: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
             getLogs: () => []
         };
         turnManager = new TurnManager(stateManager, mockLogger as any);

@@ -22,6 +22,11 @@ export interface LogEntry {
         from?: ZoneType;
         to?: ZoneType;
         ability?: string;
+        /** Tracks which card/ability caused this action (for forced effects like Cursed Merfolk's discard) */
+        causedBy?: {
+            cardName: string;
+            abilityName?: string;
+        };
         [key: string]: any;
     };
     debugInfo?: any;

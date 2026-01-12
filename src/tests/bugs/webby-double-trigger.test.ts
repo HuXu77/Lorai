@@ -57,7 +57,7 @@ describe('Webby Double Trigger Bug', () => {
         harness.setTurn(harness.p1Id);
 
         // Spy on requestChoice to detect triggers
-        const requestChoiceSpy = jest.spyOn(harness.turnManager, 'requestChoice');
+        const requestChoiceSpy = vi.spyOn(harness.turnManager, 'requestChoice');
 
         console.log('Webby Parsed Effects:', JSON.stringify(webby.parsedEffects, null, 2));
 

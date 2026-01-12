@@ -46,12 +46,12 @@ describe('TDD Batches 29-31: Opponent Choice & Conditions', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                action: vi.fn()
             },
-            applyDamage: jest.fn((player, target, amount) => {
+            applyDamage: vi.fn((player, target, amount) => {
                 target.damage = (target.damage || 0) + amount;
             })
         };
@@ -83,7 +83,7 @@ describe('TDD Batches 29-31: Opponent Choice & Conditions', () => {
                 };
 
                 // Mock the chosen character resolution
-                jest.spyOn(executor as any, 'resolveTargets').mockImplementation((target: any, ctx: any) => {
+                vi.spyOn(executor as any, 'resolveTargets').mockImplementation((target: any, ctx: any) => {
                     if (target.type === 'opponent') {
                         return [opponent];
                     }

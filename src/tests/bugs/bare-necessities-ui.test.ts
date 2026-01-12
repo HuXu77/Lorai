@@ -91,7 +91,7 @@ describe('The Bare Necessities UI Data Integrity', () => {
         (controller as any).stateManager.state.phase = 'Main';
 
         // Spy on turnManager.requestChoice to intercept data before it hits UI
-        const requestChoiceSpy = jest.spyOn((controller as any).turnManager, 'requestChoice');
+        const requestChoiceSpy = vi.spyOn((controller as any).turnManager, 'requestChoice');
 
         // Play card directly via TurnManager to trigger effect
         // We need to pass the player state object

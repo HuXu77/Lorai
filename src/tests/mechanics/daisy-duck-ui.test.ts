@@ -46,14 +46,14 @@ describe('Daisy Duck - Donald\'s Date Execution', () => {
         };
 
         // Mock requestChoice
-        turnManager.requestChoice = jest.fn().mockResolvedValue({
+        turnManager.requestChoice = vi.fn().mockResolvedValue({
             selectedIds: ['hand']
         });
 
         await executor.execute(effect, context);
 
         expect(turnManager.requestChoice).toHaveBeenCalled();
-        const call = (turnManager.requestChoice as jest.Mock).mock.calls[0][0];
+        const call = (turnManager.requestChoice as vi.Mock).mock.calls[0][0];
         expect(call.type).toBe('reveal_and_decide');
         expect(call.context.revealedCard.name).toBe('Mickey');
         // New behavior: opponent gets 'acknowledge' option (informational reveal)
@@ -91,13 +91,13 @@ describe('Daisy Duck - Donald\'s Date Execution', () => {
         };
 
         // Mock requestChoice
-        turnManager.requestChoice = jest.fn().mockResolvedValue({
+        turnManager.requestChoice = vi.fn().mockResolvedValue({
             selectedIds: ['bottom']
         });
 
         await executor.execute(effect, context);
 
-        const call = (turnManager.requestChoice as jest.Mock).mock.calls[0][0];
+        const call = (turnManager.requestChoice as vi.Mock).mock.calls[0][0];
         // Expect only bottom option or visual confirmation
         // New behavior: opponent gets 'acknowledge' option (informational reveal)
         expect(call.options[0].id).toBe('acknowledge');

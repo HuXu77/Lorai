@@ -5,7 +5,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Opponent Interactions', () => {
     let executor: EffectExecutor;
@@ -41,7 +41,7 @@ describe('Executor: Opponent Interactions', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1', 'Player 1');
         p2 = setupPlayer('p2', 'Player 2'); // Opponent
@@ -55,9 +55,9 @@ describe('Executor: Opponent Interactions', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
 
         executor = new EffectExecutor(turnManager);

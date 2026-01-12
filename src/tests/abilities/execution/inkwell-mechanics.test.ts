@@ -5,7 +5,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Inkwell & Special Mechanics', () => {
     let executor: EffectExecutor;
@@ -35,7 +35,7 @@ describe('Executor: Inkwell & Special Mechanics', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1');
         game = new GameStateManager();
@@ -48,9 +48,9 @@ describe('Executor: Inkwell & Special Mechanics', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
 
         executor = new EffectExecutor(turnManager);

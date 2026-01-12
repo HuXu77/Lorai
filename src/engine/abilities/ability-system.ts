@@ -7,12 +7,13 @@
 
 import { EventBus } from './event-bus';
 import { EffectExecutor, GameContext } from './executor';
+import { ActionType, Card, CardInstance, ContinuousEffect, GameAction, ZoneType } from '../models';
 import { parseToAbilityDefinition } from '../ability-parser';
+import { AbilityBag } from './bag';
 import { GameEvent, EventContext } from './events';
 import { AbilityDefinition, TriggeredAbility, QueuedAbility, StaticAbility } from './types';
 import { EffectAST } from './effect-ast';
 import { getCurrentStrength, getCurrentWillpower, getCurrentLore, ActiveEffect } from '../stat-calculator';
-import { ZoneType } from '../models';
 
 export class AbilitySystemManager {
     private eventBus: EventBus;
@@ -480,7 +481,6 @@ export class AbilitySystemManager {
         // This fixes bugs where newly drawn cards (like second Kristoff) have empty parsedEffects
         if ((!card.parsedEffects || card.parsedEffects.length === 0) &&
             (card.abilities?.length > 0 || card.fullTextSections?.length > 0)) {
-            const { parseToAbilityDefinition } = require('../ability-parser');
             card.parsedEffects = parseToAbilityDefinition(card);
             this.turnManager.logger.debug(`[AbilitySystem] On-demand parse for ${card.name}: ${card.parsedEffects.length} effects`);
         }

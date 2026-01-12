@@ -60,7 +60,7 @@ describe('Mother Knows Best Bug', () => {
         harness.turnManager.startGame(harness.p1Id);
 
         // Spy on choice request to auto-select target
-        const requestChoiceSpy = jest.spyOn(harness.turnManager, 'requestChoice');
+        const requestChoiceSpy = vi.spyOn(harness.turnManager, 'requestChoice');
 
         // Mock the choice response to select P2's character
         // We need to intercept the *next* call.

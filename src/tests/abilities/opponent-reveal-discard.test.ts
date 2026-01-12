@@ -74,12 +74,12 @@ describe('Opponent Reveal and Discard Family', () => {
                 state: mockGameState
             },
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn()
             },
-            trackZoneChange: jest.fn(),
-            requestChoice: jest.fn().mockImplementation(async (request) => {
+            trackZoneChange: vi.fn(),
+            requestChoice: vi.fn().mockImplementation(async (request) => {
                 // Default behavior: pick the first VALID option
                 const validOptions = request.options.filter((o: any) => o.valid);
                 if (validOptions.length > 0) {
@@ -88,7 +88,7 @@ describe('Opponent Reveal and Discard Family', () => {
                 return { selectedIds: [] };
             }),
             eventBus: {
-                emit: jest.fn()
+                emit: vi.fn()
             }
         };
 
@@ -235,7 +235,7 @@ describe('Opponent Reveal and Discard Family', () => {
 
             it('should include ALL cards in options but mark non-matching ones as invalid', async () => {
                 // Setup mock requestChoice
-                const choiceSpy = jest.fn().mockResolvedValue({
+                const choiceSpy = vi.fn().mockResolvedValue({
                     selectedIds: [player2.hand[0].instanceId] // Select valid card
                 });
                 mockTurnManager.requestChoice = choiceSpy;

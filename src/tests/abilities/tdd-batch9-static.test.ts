@@ -35,12 +35,12 @@ describe('TDD Batch 9: Static & Name Synergies', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn()
             },
             // Mock other methods if needed
-            addActiveEffect: jest.fn((effect) => {
+            addActiveEffect: vi.fn((effect) => {
                 game.state.activeEffects.push(effect);
             })
         };
@@ -92,7 +92,7 @@ describe('TDD Batch 9: Static & Name Synergies', () => {
             };
 
             // Mock resolveTargets
-            jest.spyOn(executor as any, 'resolveTargets').mockReturnValue([target]);
+            vi.spyOn(executor as any, 'resolveTargets').mockReturnValue([target]);
 
             await executor.execute(effect as any, context);
 

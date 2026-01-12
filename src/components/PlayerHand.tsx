@@ -44,7 +44,7 @@ const PlayerHand = React.memo(function PlayerHand({
             // Compact mode - just show count badge
             return (
                 <div data-testid="opponent-hand" className="flex justify-center items-center py-2 px-4">
-                    <div className="flex items-center gap-2 bg-black bg-opacity-40 rounded-full px-4 py-2 border border-gray-600">
+                    <div className="flex items-center gap-2 px-4 py-2">
                         <div className="w-8 h-10 rounded overflow-hidden border border-gray-500">
                             <img
                                 src="/images/card-back.png"

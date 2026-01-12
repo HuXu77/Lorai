@@ -43,23 +43,23 @@ describe('TDD Batches 16-19: Common & Final Patterns', () => {
         turnManager = {
             game: game,
             logger: {
-                info: jest.fn(),
-                debug: jest.fn(),
-                warn: jest.fn(),
-                action: jest.fn()
+                info: vi.fn(),
+                debug: vi.fn(),
+                warn: vi.fn(),
+                action: vi.fn()
             },
-            trackZoneChange: jest.fn(),
-            applyDamage: jest.fn((player, target, amount) => {
+            trackZoneChange: vi.fn(),
+            applyDamage: vi.fn((player, target, amount) => {
                 target.damage = (target.damage || 0) + amount;
             }),
-            checkWinCondition: jest.fn(),
-            addActiveEffect: jest.fn((effect) => {
+            checkWinCondition: vi.fn(),
+            addActiveEffect: vi.fn((effect) => {
                 game.state.activeEffects.push(effect);
             })
         };
 
         // Add addCardToZone to game
-        game.addCardToZone = jest.fn((player, card, zone) => {
+        game.addCardToZone = vi.fn((player, card, zone) => {
             if (zone === 'hand') {
                 const index = player.discard.findIndex((c: any) => c.instanceId === card.instanceId);
                 if (index !== -1) {
@@ -167,7 +167,7 @@ describe('TDD Batches 16-19: Common & Final Patterns', () => {
                 };
 
                 // Mock resolveTargets
-                jest.spyOn(executor as any, 'resolveTargets').mockReturnValue([target]);
+                vi.spyOn(executor as any, 'resolveTargets').mockReturnValue([target]);
 
                 await executor.execute(effect as any, context);
 

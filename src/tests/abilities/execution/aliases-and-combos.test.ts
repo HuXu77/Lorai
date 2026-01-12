@@ -5,7 +5,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Aliases and Combos', () => {
     let executor: EffectExecutor;
@@ -37,7 +37,7 @@ describe('Executor: Aliases and Combos', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1', 'Player 1');
         p2 = setupPlayer('p2', 'Player 2');
@@ -50,11 +50,11 @@ describe('Executor: Aliases and Combos', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
-        turnManager.drawCards = jest.fn((playerOrId, amt) => {
+        turnManager.drawCards = vi.fn((playerOrId, amt) => {
             // Handler passes player.id, not player object
             const p = typeof playerOrId === 'string' ? (playerOrId === p1.id ? p1 : p2) : playerOrId;
             if (!p || !p.deck) return; // Guard against undefined player
@@ -74,7 +74,7 @@ describe('Executor: Aliases and Combos', () => {
 
             // Mock resolveTargets to return the card
             // Mock resolveTargets directly on executor
-            jest.spyOn(executor as any, 'resolveTargets').mockReturnValue([card]);
+            vi.spyOn(executor as any, 'resolveTargets').mockReturnValue([card]);
 
             const effect = {
                 type: 'remove_damage',

@@ -1,5 +1,6 @@
 import { SharedTestFixture } from '../test-fixtures';
 import { CardType, ZoneType } from '../../engine/models';
+import { EffectExecutor } from '../../engine/abilities/executor';
 
 describe('Mother Knows Best Reproduction', () => {
     let fixture: any;
@@ -61,7 +62,6 @@ describe('Mother Knows Best Reproduction', () => {
         console.log('[DEBUG] Parsed effects:', JSON.stringify(parsedAbilities, null, 2));
 
         // Manually create a context to execute the effect
-        const { EffectExecutor } = require('../../engine/abilities/executor');
         const executor = new EffectExecutor(turnManager);
 
         // Find return_to_hand effect
@@ -81,7 +81,7 @@ describe('Mother Knows Best Reproduction', () => {
         (turnManager as any).mockPendingChoice = ['opp-char-1'];
 
         // Mock resolveTargets directly (like other executor tests)
-        (executor as any).resolveTargets = jest.fn().mockReturnValue([opponentChar]);
+        (executor as any).resolveTargets = vi.fn().mockReturnValue([opponentChar]);
 
         const context = {
             player: player1,

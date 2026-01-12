@@ -5,8 +5,8 @@ import { EffectExecutor } from '../../engine/abilities/executor';
 
 // Mock Game
 const mockGame = {
-    getOpponents: jest.fn().mockReturnValue([]),
-    getPlayers: jest.fn().mockReturnValue([])
+    getOpponents: vi.fn().mockReturnValue([]),
+    getPlayers: vi.fn().mockReturnValue([])
 } as any;
 
 describe('Shift Mechanic Reproduction', () => {
@@ -38,9 +38,9 @@ describe('Shift Mechanic Reproduction', () => {
         // Mock game object to wrap state
         const game = {
             state: gameState,
-            getOpponents: jest.fn().mockReturnValue([]),
-            getPlayer: jest.fn().mockImplementation((id: string) => gameState.players[id]),
-            logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() }
+            getOpponents: vi.fn().mockReturnValue([]),
+            getPlayer: vi.fn().mockImplementation((id: string) => gameState.players[id]),
+            logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
         } as any;
 
         turnManager = new TurnManager(gameState);
@@ -48,15 +48,15 @@ describe('Shift Mechanic Reproduction', () => {
 
         player = gameState.players['p1'];
         // Mock logger with debug and action
-        turnManager.logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn(), action: jest.fn() } as any;
+        turnManager.logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), action: vi.fn() } as any;
         executor = new EffectExecutor(turnManager);
         (turnManager as any).abilitySystem = {
             executor: executor,
-            registerCardAbilities: jest.fn(),
-            registerCard: jest.fn(),
-            getModifiedShiftCost: jest.fn((card: any, player: any, baseCost: number) => baseCost), // Return base cost unchanged
-            unregisterCard: jest.fn(),
-            emitEvent: jest.fn()
+            registerCardAbilities: vi.fn(),
+            registerCard: vi.fn(),
+            getModifiedShiftCost: vi.fn((card: any, player: any, baseCost: number) => baseCost), // Return base cost unchanged
+            unregisterCard: vi.fn(),
+            emitEvent: vi.fn()
         };
     });
 

@@ -5,7 +5,7 @@ import { Player, ZoneType } from '../../../engine/models';
 import { GameEvent } from '../../../engine/abilities/events';
 
 // Mock dependencies
-jest.mock('../../../engine/actions');
+vi.mock('../../../engine/actions');
 
 describe('Executor: Recursion & Zone Transitions', () => {
     let executor: EffectExecutor;
@@ -38,7 +38,7 @@ describe('Executor: Recursion & Zone Transitions', () => {
     } as any);
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         p1 = setupPlayer('p1', 'Player 1');
 
@@ -51,12 +51,12 @@ describe('Executor: Recursion & Zone Transitions', () => {
         turnManager = new TurnManager(game);
         turnManager.game = game;
         turnManager.logger = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn()
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
         };
         // Mock game.addCardToZone
-        game.addCardToZone = jest.fn((player, card, zone) => {
+        game.addCardToZone = vi.fn((player, card, zone) => {
             card.zone = zone;
             if (zone === ZoneType.Hand) player.hand.push(card);
             if (zone === ZoneType.Play) player.play.push(card);
@@ -82,7 +82,7 @@ describe('Executor: Recursion & Zone Transitions', () => {
             } as any;
 
             // Mock resolveTargets on the executor (which is what the family handler calls)
-            (executor as any).resolveTargets = jest.fn().mockReturnValue([card]);
+            (executor as any).resolveTargets = vi.fn().mockReturnValue([card]);
 
             await executor.execute(effect, {
                 player: p1,
@@ -107,7 +107,7 @@ describe('Executor: Recursion & Zone Transitions', () => {
                 exerted: true
             } as any;
 
-            (executor as any).resolveTargets = jest.fn().mockReturnValue([card]);
+            (executor as any).resolveTargets = vi.fn().mockReturnValue([card]);
 
             await executor.execute(effect, {
                 player: p1,

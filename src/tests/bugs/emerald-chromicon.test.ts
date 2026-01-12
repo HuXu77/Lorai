@@ -49,7 +49,7 @@ describe('Emerald Chromicon Bug', () => {
         };
 
         abilitySystem.registerCard(chromicon);
-        const executeSpy = jest.spyOn(abilitySystem['executor'], 'execute');
+        const executeSpy = vi.spyOn(abilitySystem['executor'], 'execute');
 
         // Simulating Opponent's Turn
         game.state.turnPlayerId = opponent.id;
@@ -102,7 +102,7 @@ describe('Emerald Chromicon Bug', () => {
         };
 
         abilitySystem.registerCard(chromicon);
-        const executeSpy = jest.spyOn(abilitySystem['executor'], 'execute');
+        const executeSpy = vi.spyOn(abilitySystem['executor'], 'execute');
 
         // Simulating Opponent's Turn
         game.state.turnPlayerId = opponent.id;
