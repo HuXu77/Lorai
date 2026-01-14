@@ -91,9 +91,9 @@ export default function ModalChoice({ choice, onResponse }: ModalChoiceProps) {
     return (
         <ChoiceContainer
             prompt={choice.prompt}
-            sourceCard={choice.source.card}
-            sourceAbilityName={choice.source.abilityName}
-            sourceAbilityText={choice.source.abilityText}
+            sourceCard={choice.source?.card}
+            sourceAbilityName={choice.source?.abilityName}
+            sourceAbilityText={choice.source?.abilityText}
             isOptional={isOptional}
             onCancel={isOptional ? handleDecline : undefined}
             onConfirm={isMultiSelect ? handleConfirm : undefined}

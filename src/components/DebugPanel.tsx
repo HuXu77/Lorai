@@ -26,6 +26,10 @@ declare global {
             addToInkwell: (playerId: string, cardName: string) => any;
             setLore: (playerId: string, amount: number) => boolean;
             setTurn: (playerId: string) => boolean;
+            setDeck: (playerId: string, cardNames: string[]) => boolean;
+            setDamage: (instanceId: string, amount: number) => boolean;
+            findCard: (name: string) => any;
+            clearHand: (playerId: string) => any;
             // Player IDs for test access
             player1Id: string;
             player2Id: string;
@@ -96,6 +100,12 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                     refreshState();
                     return result;
                 },
+                findCard: (name: string) => manipulator.findCard(name),
+                clearHand: (playerId: string) => {
+                    const result = manipulator.clearZone(playerId, ZoneType.Hand);
+                    refreshState();
+                    return result;
+                },
                 addToInkwell: (playerId: string, cardName: string) => {
                     const result = manipulator.addToInkwell(playerId, cardName);
                     refreshState();
@@ -108,6 +118,16 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                 },
                 setTurn: (playerId: string) => {
                     const success = manipulator.setTurn(playerId);
+                    refreshState();
+                    return success;
+                },
+                setDeck: (playerId: string, cardNames: string[]) => {
+                    const success = manipulator.setDeckTop(playerId, cardNames);
+                    refreshState();
+                    return success;
+                },
+                setDamage: (instanceId: string, amount: number) => {
+                    const success = manipulator.setDamage(instanceId, amount);
                     refreshState();
                     return success;
                 },
@@ -366,6 +386,33 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                                             >
                                                                 {isDrying ? 'Drying' : 'Dry'}
                                                             </button>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-1 bg-gray-900/50 p-1 rounded">
+                                                            <span className="text-red-400 text-[10px] uppercase font-bold">Damage</span>
+                                                            <input
+                                                                key={card.damage} /* Force reset when external damage changes */
+                                                                type="number"
+                                                                min="0"
+                                                                className="flex-1 bg-gray-700 text-white rounded px-2 py-0.5 text-right border border-gray-600 focus:border-yellow-500 outline-none"
+                                                                defaultValue={card.damage}
+                                                                onBlur={(e) => {
+                                                                    const val = parseInt(e.target.value);
+                                                                    if (!isNaN(val) && val !== card.damage) {
+                                                                        manipulator.setDamage(card.instanceId, val);
+                                                                        refreshState();
+                                                                    }
+                                                                }}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        const val = parseInt(e.currentTarget.value);
+                                                                        if (!isNaN(val) && val !== card.damage) {
+                                                                            manipulator.setDamage(card.instanceId, val);
+                                                                            refreshState();
+                                                                        }
+                                                                        e.currentTarget.blur();
+                                                                    }
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
                                                 );

@@ -430,6 +430,9 @@ export class ConditionEvaluator {
             case 'deck_building':
                 return true;
 
+            case 'has_target':
+                return !!(context.targets && context.targets.length > 0);
+
             default:
                 return false;
         }

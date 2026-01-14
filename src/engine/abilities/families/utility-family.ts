@@ -126,9 +126,19 @@ export class UtilityFamilyHandler extends BaseFamilyHandler {
                 break;
 
             case 'choice':
-                // Present choice to player (stub for now)
-                this.turnManager.logger.info(`[Utility] 🤔 Choice presented with ${effect.options?.length || 0} options (stub)`);
-                // In a real implementation, this would trigger UI choice selection
+                if (effect.target) {
+                    // Resolve targets (triggers UI if needed via resolveTargets -> requestChoice)
+                    const targets = await this.resolveTargets(effect.target, context);
+                    this.turnManager.logger.info(`[Utility] ✅ Choice made: selected ${targets.length} target(s)`);
+
+                    // Store in context for immediate use by subsequent effects in the chain
+                    context.targets = targets;
+                    (context as any).lastResolvedTargets = targets;
+                } else if (effect.options) {
+                    // Present choice to player (stub for now)
+                    this.turnManager.logger.info(`[Utility] 🤔 Choice presented with ${effect.options?.length || 0} options (stub)`);
+                    // In a real implementation, this would trigger UI choice selection
+                }
                 break;
 
             case 'event_target':

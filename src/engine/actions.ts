@@ -1,5 +1,6 @@
 import { GameStateManager, PlayerState } from './state';
 import { CardInstance, ZoneType, CardType, ContinuousEffect, ActionType, GameAction, ActivationCost, ChoiceRequest, ChoiceType } from './models';
+import { canBeChallenged, canInitiateChallenge } from './turn-manager/combat-helpers';
 import { EventBus, AbilityBag, EffectExecutor, GameEvent, EventContext } from './abilities';
 import { AbilitySystemManager } from './abilities/ability-system';
 import type { ILogger } from './logger';
@@ -840,8 +841,22 @@ export class TurnManager {
      * Check validity of challenge
      */
     public canChallenge(attacker: CardInstance, target: CardInstance): boolean {
-        // Evasive Check
-        if (target.keywords?.includes('Evasive') && !attacker.keywords?.includes('Evasive')) {
+        // Use shared helper for Evasive and Exerted checks
+        // We assume 'attackerCanChallengeReady' is false unless specific effects are active (not passed here yet, but we can check effects)
+        // Check for "can challenge ready characters" effect on attacker
+        const canChallengeReady = attacker.keywords?.includes('Charge') || // Not Charge, maybe specific ability?
+            attacker.parsedEffects?.some((e: any) => e.type === 'can_challenge_ready');
+
+        const attackerHasEvasive = attacker.keywords?.some(k => k.toLowerCase().includes('evasive')) || false;
+
+        const validation = canBeChallenged(target, attackerHasEvasive, !!canChallengeReady);
+        if (!validation.valid) {
+            // Need to allow Bodyguard to override "not exerted" check? No, Bodyguard must be exerted.
+            // Need to allow "can challenge ready" override? Passed above.
+
+            // Only return false if the reason is NOT "Target is not exerted" OR if we care about exerted state here.
+            // valid-actions.ts filters for Exerted targets anyway.
+            // But strict validation should check it.
             return false;
         }
 

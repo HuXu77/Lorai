@@ -61,6 +61,7 @@ export type TargetAST =
     | { type: 'all_players' }
     | { type: 'each_player' }
     | { type: 'all_opposing_cards', filter?: any }
+    | { type: 'owner_of_chosen' }
     | { type: 'same_target' };
 
 /**
@@ -105,6 +106,7 @@ export type ConditionAST =
     | { type: 'relative_hand_size', comparison: string, opponent: string }
     | { type: 'relative_hand_size', comparison: string, opponent: string }
     | { type: 'has_card_under' }
+    | { type: 'has_target' }
     | { type: 'has_no_damage', target?: 'self' };
 /**
  * Effect AST - All possible effect types
@@ -120,6 +122,7 @@ export type EffectAST =
     | { type: 'draw', amount: number | Expression, optional?: boolean, target?: TargetAST }
     | { type: 'reveal_hand', target: TargetAST }
     | { type: 'discard_chosen', target: TargetAST, filter: any, chooser: 'self' | 'opponent' }
+    | { type: 'draw_until', threshold: number, target?: TargetAST }
 
     // Damage & healing
     | { type: 'damage', target: TargetAST, amount: number | Expression }
@@ -548,7 +551,7 @@ export type EffectAST =
     | { type: 'mill', amount: number, target: TargetAST }
     | { type: 'look_and_move_to_top_or_bottom', amount: number, target: TargetAST }
     | { type: 'play_revealed_card_for_free' }
-    | { type: 'modal', options: { effects: EffectAST[] }[] }
+    | { type: 'modal', options: { description?: string, effects: EffectAST[] }[] }
     | { type: 'opponent_choice_damage', amount: number }
     | { type: 'one_to_hand_rest_bottom', amount: number }
     | { type: 'exert_ally_for_damage', target: TargetAST }

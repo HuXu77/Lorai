@@ -1,0 +1,116 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "🎮 Lorai • Lorcana" [level=1] [ref=e4]
+      - generic [ref=e5]:
+        - button "🎴" [ref=e6] [cursor=pointer]
+        - button "⚡" [ref=e7] [cursor=pointer]
+        - button "⚔️" [ref=e8] [cursor=pointer]
+        - button "◆" [ref=e9] [cursor=pointer]
+        - button "🔄" [ref=e10] [cursor=pointer]
+        - button "🎴 Test Modal" [ref=e12] [cursor=pointer]
+        - button "🎯 Test Targeting" [ref=e13] [cursor=pointer]
+        - button "🔍 Reveal Opp Hand" [ref=e14] [cursor=pointer]
+        - button "🎬 Animations" [ref=e15] [cursor=pointer]
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: 🟢
+        - generic [ref=e20]: Your Turn
+        - generic [ref=e21]: •
+        - generic [ref=e22]: Turn 1
+      - generic [ref=e25]:
+        - img "Card back" [ref=e27]
+        - generic [ref=e28]: "Opponent Hand: 7"
+      - button "End Turn ▶" [ref=e29] [cursor=pointer]
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - heading "Bot" [level=3] [ref=e34]
+          - generic [ref=e36]:
+            - generic [ref=e37]: Lore
+            - generic [ref=e38]:
+              - text: "0"
+              - generic [ref=e39]: / 20
+          - generic [ref=e42]:
+            - generic [ref=e43]: Deck
+            - generic [ref=e44]: "3"
+        - generic [ref=e45]:
+          - generic [ref=e46]: Opponent Ink
+          - generic [ref=e47]:
+            - generic [ref=e48]: "0"
+            - generic [ref=e49]: /
+            - generic [ref=e50]: "0"
+            - generic [ref=e51]: ◆
+        - generic [ref=e52] [cursor=pointer]:
+          - generic [ref=e53]: Opponent Discard
+          - generic [ref=e54]:
+            - generic [ref=e56]: Empty
+            - generic [ref=e57]: "0"
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e62]:
+            - generic [ref=e63]: ⚔️ Opponent Characters
+            - generic [ref=e67] [cursor=pointer]:
+              - img "Mickey Mouse - Steamboat Pilot" [ref=e70]
+              - generic:
+                - generic "Just played - drying (can't act this turn)": 💧
+          - generic [ref=e74]:
+            - generic [ref=e75]: ⚔️ Your Characters
+            - generic [ref=e79] [cursor=pointer]:
+              - img "Hades - Looking for a Deal" [ref=e82]
+              - generic:
+                - generic "Just played - drying (can't act this turn)": 💧
+        - generic [ref=e86]: No cards in hand
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - heading "You(Active)" [level=3] [ref=e90]
+          - generic [ref=e92]:
+            - generic [ref=e93]: Lore
+            - generic [ref=e94]:
+              - text: "0"
+              - generic [ref=e95]: / 20
+          - generic [ref=e98]:
+            - generic [ref=e99]: Deck
+            - generic [ref=e100]: "3"
+        - generic [ref=e101]:
+          - generic [ref=e102]: Your Ink
+          - generic [ref=e103]:
+            - generic [ref=e104]: "1"
+            - generic [ref=e105]: /
+            - generic [ref=e106]: "6"
+            - generic [ref=e107]: ◆
+          - generic [ref=e108]:
+            - generic "Available ink" [ref=e109]
+            - generic "Used ink" [ref=e110]
+            - generic "Used ink" [ref=e111]
+            - generic "Used ink" [ref=e112]
+            - generic "Used ink" [ref=e113]
+            - generic "Used ink" [ref=e114]
+        - generic [ref=e115] [cursor=pointer]:
+          - generic [ref=e116]: Your Discard
+          - generic [ref=e117]:
+            - generic [ref=e119]: Empty
+            - generic [ref=e120]: "0"
+    - button "📜 3" [ref=e121] [cursor=pointer]:
+      - generic [ref=e122]:
+        - generic [ref=e123]: 📜
+        - generic [ref=e124]: "3"
+    - generic [ref=e126]:
+      - generic [ref=e128]:
+        - img "Hades - Looking for a Deal" [ref=e132]
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - generic [ref=e135]: ✨
+            - generic [ref=e136]: Optional Effect
+          - heading "When you play this character, you may choose an opposing character. If you do, draw 2 cards unless that character's player puts that card on the bottom of their deck." [level=2] [ref=e137]
+          - generic [ref=e138]: from Hades - Looking for a Deal
+      - generic [ref=e140]:
+        - button "No, Skip" [ref=e141] [cursor=pointer]
+        - button "Yes!" [ref=e142] [cursor=pointer]
+      - paragraph [ref=e144]: This is an optional "may" ability. You can choose to skip it.
+    - button "🔧 Debug" [ref=e145] [cursor=pointer]
+  - alert [ref=e146]
+```

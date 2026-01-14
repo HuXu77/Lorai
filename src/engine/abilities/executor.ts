@@ -93,6 +93,7 @@ export interface GameContext {
     abilityText?: string; // Full text of the ability (for UI display)
     modalChoice?: number; // Selected option for modal effects
     payload?: any; // Action payload (choices, targets, etc.);
+    targets?: any[]; // Resolved targets available for current effect chain
     variables?: Record<string, any>; // Local variables for loops and complex effects
 }
 
@@ -214,6 +215,9 @@ export class EffectExecutor {
                 return;
             case 'draw':
                 return await this.executeDraw(effect, context);
+            case 'draw_until':
+                await this.executeDrawUntil(effect, context);
+                break;
             case 'damage':
                 return await this.executeDamage(effect, context);
             case 'remove_damage':
@@ -1125,6 +1129,32 @@ export class EffectExecutor {
         }
 
         return shouldExecute;
+    }
+
+    /**
+     * Draw cards until hand reaches threshold
+     */
+    private async executeDrawUntil(effect: any, context: GameContext): Promise<void> {
+        const threshold = effect.threshold || 3;
+        const targetPlayers = await this.resolvePlayerTargets(effect.target, context);
+
+        for (const player of targetPlayers) {
+            const currentHand = player.hand.length;
+            if (currentHand < threshold) {
+                const amount = threshold - currentHand;
+
+                // Use standard drawCards helper
+                const drawn = this.drawCards(player, amount);
+
+                // Use standard logger action for UI visibility
+                this.turnManager?.logger.action(
+                    player.name,
+                    `Drew ${drawn} card(s)`,
+                    context.card?.name,
+                    { amount: drawn, deckRemaining: player.deck.length }
+                );
+            }
+        }
     }
 
     /**
@@ -2740,6 +2770,14 @@ export class EffectExecutor {
 
             case 'all_opponents':
                 return Object.values(this.turnManager.game.state.players).filter((p: any) => p.id !== context.player.id);
+
+            case 'owner_of_chosen':
+                const chosen = context.targets && context.targets[0];
+                if (chosen && chosen.ownerId) {
+                    const owner = this.turnManager.game.state.players[chosen.ownerId];
+                    if (owner) return [owner];
+                }
+                return [];
         }
 
         return [context.player];

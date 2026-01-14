@@ -42,6 +42,69 @@ export class OpponentInteractionFamilyHandler extends BaseFamilyHandler {
         }
 
         switch (effect.type) {
+            case 'opponent_choice':
+                const subAction = effect.action;
+                if (subAction && subAction.type === 'modal') {
+                    // Handle modal choice for opponent
+                    const options = subAction.options.map((opt: any, index: number) => ({
+                        id: index.toString(),
+                        display: opt.description || `Option ${index + 1}`,
+                        valid: true,
+                        value: index
+                    }));
+
+                    if (this.turnManager.requestChoice) {
+                        const choiceRequest = {
+                            id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                            type: 'modal' as any,
+                            playerId: opponent.id,
+                            prompt: context.abilityName ? `${context.abilityName} - Opponent Choice` : 'Choose an option',
+                            options: options,
+                            source: {
+                                card: context.card,
+                                abilityName: context.abilityName || 'Opponent Choice',
+                                player: player
+                            },
+                            min: 1,
+                            max: 1 // Modal is single choice
+                        };
+
+                        const response = await this.turnManager.requestChoice(choiceRequest);
+                        if (response && response.selectedIds && response.selectedIds.length > 0) {
+                            const selectedIndex = parseInt(response.selectedIds[0]);
+                            const selectedOption = subAction.options[selectedIndex];
+                            if (selectedOption) {
+                                this.turnManager.logger.info(`[OpponentInteraction] Opponent chose: ${options[selectedIndex].display}`);
+
+                                // Execute as OPPONENT
+                                const oppContext = { ...context, player: opponent };
+
+                                for (const subEffect of selectedOption.effects) {
+                                    // Use the executor passed in constructor
+                                    if (this.executor && this.executor.execute) {
+                                        await this.executor.execute(subEffect, oppContext);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Bot fallback: Default to first option
+                        // TODO: sophisticated logic
+                        if (subAction.options.length > 0) {
+                            const selectedOption = subAction.options[0];
+                            const oppContext = { ...context, player: opponent };
+                            for (const subEffect of selectedOption.effects) {
+                                if (this.executor && this.executor.execute) {
+                                    await this.executor.execute(subEffect, oppContext);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    this.turnManager.logger.warn(`[OpponentInteraction] Unknown sub-action type: ${subAction?.type}`);
+                }
+                break;
+
             case 'opponent_choice_discard':
                 // Opponent chooses cards to discard from their hand
                 const discardAmount = effect.amount || 1;

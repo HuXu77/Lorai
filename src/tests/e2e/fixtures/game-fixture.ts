@@ -70,14 +70,19 @@ export class GamePage {
         await this.page.evaluate((cfg) => {
             const debug = (window as any).lorcanaDebug;
             if (debug) {
-                debug.loadPreset({
+                const success = debug.loadPreset({
                     id: 'injected',
                     name: 'Injected State',
                     setup: cfg
                 });
+                if (!success) {
+                    throw new Error('Failed to load injected state via lorcanaDebug');
+                }
+            } else {
+                throw new Error('lorcanaDebug not found during injectState');
             }
         }, config);
-        await this.page.waitForTimeout(500); // Allow state to update
+        await this.page.waitForTimeout(1000); // Increased wait time
     }
 
     /**
@@ -135,8 +140,9 @@ export class GamePage {
      * Click a card in hand by name (partial match)
      */
     async clickCardInHand(cardName: string) {
-        // Use broader selector since data-testid may not exist
-        const card = this.page.locator(`[data-card-name*="${cardName}"], [title*="${cardName}"], img[alt*="${cardName}"]`).first();
+        // Scope to player hand to avoid clicking matching cards in play
+        const hand = this.page.locator('[data-testid="player-hand"]');
+        const card = hand.locator(`[data-card-name*="${cardName}"], [title*="${cardName}"], img[alt*="${cardName}"]`).first();
         await card.click();
     }
 
@@ -314,8 +320,9 @@ export interface GameStateConfig {
 
 export interface PlayerConfig {
     hand?: string[];
-    play?: (string | { name: string; ready?: boolean; exerted?: boolean })[];
+    play?: (string | { name: string; ready?: boolean; exerted?: boolean; damage?: number })[];
     inkwell?: string[];
+    deck?: string[];
     discard?: string[];
     lore?: number;
 }

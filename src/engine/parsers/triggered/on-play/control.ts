@@ -2,6 +2,58 @@ import { TriggerPattern } from '../types';
 import { generateAbilityId, GameEvent } from '../../parser-utils';
 
 export const CONTROL_PATTERNS: TriggerPattern[] = [
+    // Hades - Looking for a Deal (Draw unless opponent puts on bottom)
+    {
+        pattern: /^when you play this character, you may choose an opposing character\. if you do, draw 2 cards unless that character's player puts that card on the bottom of their deck/i,
+        handler: (match, card, text) => {
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects: [
+                    {
+                        type: 'choice',
+                        target: {
+                            type: 'chosen_character',
+                            filter: { opponent: true }
+                        },
+                        optional: true
+                    },
+                    {
+                        type: 'conditional_action',
+                        condition: { type: 'has_target' },
+                        effect: {
+                            type: 'opponent_choice',
+                            target: { type: 'owner_of_chosen' },
+                            action: {
+                                type: 'modal',
+                                options: [
+                                    {
+                                        description: "Put character on bottom of deck",
+                                        effects: [{
+                                            type: 'put_on_bottom',
+                                            target: { type: 'chosen' }
+                                        }]
+                                    },
+                                    {
+                                        description: "Let opponent draw 2 cards",
+                                        effects: [{
+                                            type: 'draw',
+                                            target: { type: 'opponent' },
+                                            amount: 2
+                                        }]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                rawText: text
+            } as any;
+        }
+    },
+
     // Opponents can't play actions (Pete - Games Referee)
     {
         pattern: /^when you play this character, opponents (?:can't|cannot) play actions until the start of your next turn/i,
@@ -118,6 +170,30 @@ export const CONTROL_PATTERNS: TriggerPattern[] = [
                         filter: { exerted: true }
                     }
                 }],
+                rawText: text
+            } as any;
+        }
+    },
+    // Demona - Scourge of the Wyvern Clan (Exert All + Draw Until)
+    {
+        pattern: /^(?:when you play this character, )?exert all opposing characters\. then, each player with fewer than 3 cards in their hand draws until they have 3/i,
+        handler: (match, card, text) => {
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects: [
+                    {
+                        type: 'exert',
+                        target: { type: 'all_opposing_characters' }
+                    },
+                    {
+                        type: 'draw_until',
+                        target: { type: 'all_players' },
+                        threshold: 3
+                    }
+                ],
                 rawText: text
             } as any;
         }
