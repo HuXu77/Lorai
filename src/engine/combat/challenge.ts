@@ -250,6 +250,29 @@ export async function executeChallenge(
     turnManager.applyDamage(player, attacker, targetDmg, target.instanceId);
     turnManager.applyDamage(opponent, target, attackerDmg, attacker.instanceId);
 
+    // Emit CARD_DEALS_DAMAGE events (for triggers like Mulan)
+    if (attackerDmg > 0) {
+        // Attacker deals damage to target
+        await abilitySystem.emitEvent(GameEvent.CARD_DEALS_DAMAGE, {
+            card: attacker,
+            target: target,
+            amount: attackerDmg,
+            source: 'challenge',
+            player: player
+        });
+    }
+
+    if (targetDmg > 0) {
+        // Defender deals damage to attacker
+        await abilitySystem.emitEvent(GameEvent.CARD_DEALS_DAMAGE, {
+            card: target,
+            target: attacker,
+            amount: targetDmg,
+            source: 'challenge',
+            player: opponent
+        });
+    }
+
     turnManager.recalculateEffects();
 
     // Emit CARD_CHALLENGES event

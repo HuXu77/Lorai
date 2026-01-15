@@ -299,6 +299,46 @@ export class DamageFamilyHandler extends BaseFamilyHandler {
                 });
                 break;
 
+            case 'damage_from_trigger':
+                // Deal damage equal to the amount in the trigger event (e.g. Mulan)
+                const triggerAmount = context.eventContext?.amount || 0;
+                // 'target' from challenge.ts emission, 'targetCard' from other contexts
+                const triggerVictim = (context.eventContext as any)?.target || (context.eventContext as any)?.targetCard;
+
+                if (triggerAmount <= 0) {
+                    this.turnManager.logger.debug(`[DamageFamily] Trigger amount was 0, skipping damage.`);
+                    return;
+                }
+
+                // Clone target definition to avoid mutating AST
+                const modifiedTarget = { ...effect.target };
+                if (!modifiedTarget.filter) {
+                    modifiedTarget.filter = {};
+                } else {
+                    modifiedTarget.filter = { ...modifiedTarget.filter };
+                }
+
+                // Add victim exclusion if present
+                if (triggerVictim) {
+                    const excludeIds = modifiedTarget.filter.excludeIds || [];
+                    modifiedTarget.filter.excludeIds = [...excludeIds, triggerVictim.instanceId];
+                }
+
+                const triggerTargets = await this.resolveTargets(modifiedTarget, context);
+
+                triggerTargets.forEach((target: any) => {
+                    if (target.willpower !== undefined) {
+                        target.damage = (target.damage || 0) + triggerAmount;
+                    }
+                });
+
+                this.turnManager.logger.effect(context.player.name, 'Damage', `Dealt ${triggerAmount} splash damage to ${triggerTargets.length} targets`, {
+                    type: 'damage_from_trigger',
+                    amount: triggerAmount,
+                    targets: triggerTargets.map((t: any) => t.name)
+                });
+                break;
+
             default:
                 this.turnManager.logger.warn(`[DamageFamily] Unhandled damage effect: ${effect.type}`);
                 break;

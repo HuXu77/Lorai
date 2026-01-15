@@ -50,12 +50,16 @@ export function parseTriggered(text: string, card: Card, abilities: AbilityDefin
                         abilities.push(result);
                     }
                     return true;
+                } else {
+                    console.log(`[DEBUG-PARSER] Handler returned NULL for pattern ${i}`);
                 }
             } catch (e) {
+                console.log(`[DEBUG-PARSER] CAUGHT ERROR pattern ${i}:`, e);
                 console.error(`[TRIGGER-ERROR] Handler ${i} failed for text "${text}":`, e);
             }
         }
     }
 
+    console.log(`[DEBUG-PARSER] No match found for: "${cleanText}"`);
     return false;
 }

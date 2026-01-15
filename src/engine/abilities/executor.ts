@@ -641,6 +641,7 @@ export class EffectExecutor {
             case 'deal_damage_each_exerted':
             case 'play_trigger_damage_self':
             case 'location_damage_all_characters':
+            case 'damage_from_trigger':
                 {
                     const handler = this.familyHandlers.get('damage');
                     if (handler) {
@@ -1868,6 +1869,13 @@ export class EffectExecutor {
         // Check other (exclude self)
         if (filter.other || filter.excludeSelf) {
             if (context.card && card.instanceId === context.card.instanceId) {
+                return false;
+            }
+        }
+
+        // Check explicit ID exclusions
+        if (filter.excludeIds && Array.isArray(filter.excludeIds)) {
+            if (filter.excludeIds.includes(card.instanceId)) {
                 return false;
             }
         }

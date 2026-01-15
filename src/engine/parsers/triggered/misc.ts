@@ -218,6 +218,7 @@ export const MISC_PATTERNS: TriggerPattern[] = [
 
             // Re-verify specific match inside handler to be safe
             // "deal the same amount of damage to up to 2 other chosen characters"
+            console.log("DEBUG-MULAN: Checking inner regex...");
             if (text.match(/deal the same amount of damage/i)) {
                 return {
                     id: generateAbilityId(),
@@ -231,7 +232,7 @@ export const MISC_PATTERNS: TriggerPattern[] = [
                     // No, "During your turn" is a restriction.
                     condition: text.match(/during your turn/i) ? { type: 'during_your_turn' } : undefined,
                     effects: [{
-                        type: 'damage_reflection',
+                        type: 'damage_from_trigger',
                         target: {
                             type: 'chosen_character',
                             count: 2,
@@ -241,6 +242,8 @@ export const MISC_PATTERNS: TriggerPattern[] = [
                     }],
                     rawText: text
                 } as any;
+            } else {
+                console.log("DEBUG-MULAN: Inner regex FAILED.");
             }
             return null;
         }

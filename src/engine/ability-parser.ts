@@ -58,6 +58,7 @@ export type { AbilityDefinition, TriggeredAbility, StaticAbility, ActivatedAbili
 
 export function parseToAbilityDefinition(card: Card): AbilityDefinition[] {
     const abilities: AbilityDefinition[] = [];
+    console.error(`[DEBUG-FLOW] parseToAbilityDefinition called for ${card.name}`);
     if (PARSER_LOG) {
         log(`\n=== PARSING CARD: ${card.name}  ===`);
     }

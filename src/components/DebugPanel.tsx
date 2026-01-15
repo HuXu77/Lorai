@@ -48,7 +48,7 @@ export interface DebugPanelProps {
     onStateChange: (newState: GameState) => void;
 }
 
-type Tab = 'cards' | 'state' | 'presets';
+type Tab = 'cards' | 'state' | 'presets' | 'combat';
 type TargetZone = 'hand' | 'play' | 'inkwell' | 'deck';
 type TargetPlayer = 'player1' | 'player2';
 
@@ -63,6 +63,8 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
     const [importInput, setImportInput] = useState('');
     const [showImportModal, setShowImportModal] = useState(false);
     const [presetCategory, setPresetCategory] = useState<string>('');
+    const [combatAttackerId, setCombatAttackerId] = useState<string>('');
+    const [combatDefenderId, setCombatDefenderId] = useState<string>('');
 
     // Create manipulator instance
     const manipulator = new StateManipulator(gameEngine);
@@ -262,7 +264,7 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
 
                     {/* Tabs */}
                     <div className="flex border-b border-gray-700">
-                        {(['cards', 'state', 'presets'] as Tab[]).map(tab => (
+                        {(['cards', 'state', 'presets', 'combat'] as Tab[]).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -603,6 +605,66 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Combat Tab */}
+                        {activeTab === 'combat' && (
+                            <div className="space-y-4">
+                                <div className="bg-yellow-900/30 p-3 rounded border border-yellow-700/50 text-xs text-yellow-200 mb-4">
+                                    <p>Simulate a challenge between characters. This bypasses some UI checks but enforces game rules (ready, extensive, etc).</p>
+                                </div>
+
+                                {/* Attacker Selection (Bot) */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-300">Attacker (Bot/P2)</label>
+                                    <select
+                                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                        value={combatAttackerId}
+                                        onChange={e => setCombatAttackerId(e.target.value)}
+                                    >
+                                        <option value="">Select Attacker...</option>
+                                        {engineState.players.player2?.play.map(c => (
+                                            <option key={c.instanceId} value={c.instanceId}>
+                                                {c.name} ({c.strength}/{c.willpower}) {c.ready ? 'Ready' : 'Exerted'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Defender Selection (Player) */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-300">Defender (You/P1)</label>
+                                    <select
+                                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                        value={combatDefenderId}
+                                        onChange={e => setCombatDefenderId(e.target.value)}
+                                    >
+                                        <option value="">Select Defender...</option>
+                                        {engineState.players.player1?.play.map(c => (
+                                            <option key={c.instanceId} value={c.instanceId}>
+                                                {c.name} ({c.strength}/{c.willpower}) {c.ready ? 'Ready' : 'Exerted'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        manipulator.challenge(combatAttackerId, combatDefenderId).then(() => {
+                                            refreshState();
+                                        });
+                                    }}
+                                    disabled={!combatAttackerId || !combatDefenderId}
+                                    className={`
+                                        w-full py-2 font-bold rounded shadow-md transition-all active:scale-95
+                                        ${!combatAttackerId || !combatDefenderId
+                                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                            : 'bg-red-600 hover:bg-red-700 text-white'}
+                                    `}
+                                >
+                                    ⚔️ Force Challenge
+                                </button>
                             </div>
                         )}
                     </div>

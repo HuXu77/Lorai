@@ -4044,6 +4044,28 @@ export class TurnManager {
                 amount: finalAmount,
                 sourceId: sourceId
             });
+
+            // Emit CARD_DAMAGED event
+            this.abilitySystem.emitEvent(GameEvent.CARD_DAMAGED, {
+                event: GameEvent.CARD_DAMAGED,
+                card: card,
+                player: player,
+                amount: finalAmount,
+                sourceId: sourceId,
+                timestamp: Date.now()
+            });
+
+            // Emit CHARACTER_DAMAGED if it's a character
+            if (card.type === 'Character') {
+                this.abilitySystem.emitEvent(GameEvent.CHARACTER_DAMAGED, {
+                    event: GameEvent.CHARACTER_DAMAGED,
+                    card: card,
+                    player: player,
+                    amount: finalAmount,
+                    sourceId: sourceId,
+                    timestamp: Date.now()
+                });
+            }
         }
     }
 

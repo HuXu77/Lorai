@@ -265,7 +265,10 @@ export class AbilitySystemManager {
             gameState: this.turnManager.game,
             eventContext: eventContext as EventContext,
             abilityName: ability.abilityName,
-            abilityText: ability.rawText
+            abilityText: ability.rawText,
+            variables: {
+                damage_dealt: (eventContext as any).amount || 0
+            }
         };
 
         // DEBUG: Log context for triggered abilities

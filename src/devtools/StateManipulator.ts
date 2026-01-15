@@ -479,4 +479,38 @@ export class StateManipulator {
     getAllCards(): any[] {
         return allCards.cards;
     }
+    /**
+     * Force a challenge between two cards
+     */
+    async challenge(attackerId: string, defenderId: string): Promise<boolean> {
+        // Find attacker and owner
+        let attacker: CardInstance | undefined;
+        let attackerPlayer: PlayerState | undefined;
+        let defender: CardInstance | undefined;
+
+        for (const player of Object.values(this.engine.stateManager.state.players)) {
+            const card = (player as PlayerState).play.find(c => c.instanceId === attackerId);
+            if (card) {
+                attacker = card;
+                attackerPlayer = player as PlayerState;
+                break;
+            }
+        }
+
+        for (const player of Object.values(this.engine.stateManager.state.players)) {
+            const card = (player as PlayerState).play.find(c => c.instanceId === defenderId);
+            if (card) {
+                defender = card;
+                break;
+            }
+        }
+
+        if (!attacker || !defender || !attackerPlayer) {
+            console.error('[StateManipulator] Could not find attacker or defender');
+            return false;
+        }
+
+        console.log(`[StateManipulator] Forcing challenge: ${attacker.name} -> ${defender.name}`);
+        return await this.engine.turnManager.challenge(attackerPlayer, attacker.instanceId, defender.instanceId);
+    }
 }

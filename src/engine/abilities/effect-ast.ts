@@ -128,6 +128,7 @@ export type EffectAST =
     | { type: 'damage', target: TargetAST, amount: number | Expression }
 
     | { type: 'heal', target: TargetAST, amount: number | Expression }
+    | { type: 'damage_from_trigger', target: TargetAST }
 
     // Card movement
     | { type: 'banish', target: TargetAST }

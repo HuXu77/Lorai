@@ -155,6 +155,23 @@ export class EventBus {
                             return false;
                         }
                     }
+
+                    // "When this character deals damage" - only trigger when THIS card deals damage
+                    if (triggeredAbility.event === GameEvent.CARD_DEALS_DAMAGE &&
+                        rawText.match(/whenever (this character|he|she|they) deals damage/)) {
+                        // sourceCard is the dealer
+                        if (eventSourceCard !== this.card) {
+                            return false;
+                        }
+                    }
+
+                    // "When this character is dealt damage" - only trigger when THIS card takes damage
+                    if ((triggeredAbility.event === GameEvent.CARD_DAMAGED || triggeredAbility.event === GameEvent.CHARACTER_DAMAGED) &&
+                        rawText.match(/whenever (this character|he|she|they) is dealt damage/)) {
+                        if (eventSourceCard !== this.card) {
+                            return false;
+                        }
+                    }
                 }
 
                 // Check conditions
