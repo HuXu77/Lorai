@@ -1433,34 +1433,50 @@ export class AbilitySystemManager {
         if (effect.stat === stat && effect.amount !== undefined) {
             // Handle dynamic per_character amount (e.g., Hades - King of Olympus)
             // "This character gets +1 ◊ for each other Villain character you have in play."
-            if (typeof effect.amount === 'object' && effect.amount.type === 'per_character') {
-                const multiplier = effect.multiplier || 1;
-                const subtype = effect.amount.subtype;
-                const yours = effect.amount.yours !== false; // default true
-                const other = effect.amount.other !== false; // default true - exclude self
+            if (typeof effect.amount === 'object') {
+                if (effect.amount.type === 'cards_in_opponents_hands') {
+                    if (!sourceCard || !this.turnManager?.game?.state) return 0;
 
-                // Count matching characters in play
-                if (!sourceCard || !this.turnManager?.game?.state) return 0;
+                    const multiplier = effect.multiplier || 1;
+                    const opponents = Object.values(this.turnManager.game.state.players).filter((p: any) => p.id !== sourceCard.ownerId);
 
-                const ownerId = sourceCard.ownerId;
-                let count = 0;
+                    let totalCards = 0;
+                    opponents.forEach((opponent: any) => {
+                        totalCards += opponent.hand.length;
+                    });
 
-                for (const [playerId, player] of Object.entries(this.turnManager.game.state.players)) {
-                    if (yours && playerId === ownerId) {
-                        const playerState = player as any;
-                        for (const card of playerState.play || []) {
-                            if (card.type !== 'Character') continue;
-                            // Skip self if 'other' is true
-                            if (other && card.instanceId === sourceCard.instanceId) continue;
-                            // Check subtype match (classifications include subtype)
-                            const classifications = (card.classifications || []).map((c: string) => c.toLowerCase());
-                            if (subtype && !classifications.includes(subtype.toLowerCase())) continue;
-                            count++;
-                        }
-                    }
+                    return totalCards * multiplier;
                 }
 
-                return count * multiplier;
+                if (effect.amount.type === 'per_character') {
+                    const multiplier = effect.multiplier || 1;
+                    const subtype = effect.amount.subtype;
+                    const yours = effect.amount.yours !== false; // default true
+                    const other = effect.amount.other !== false; // default true - exclude self
+
+                    // Count matching characters in play
+                    if (!sourceCard || !this.turnManager?.game?.state) return 0;
+
+                    const ownerId = sourceCard.ownerId;
+                    let count = 0;
+
+                    for (const [playerId, player] of Object.entries(this.turnManager.game.state.players)) {
+                        if (yours && playerId === ownerId) {
+                            const playerState = player as any;
+                            for (const card of playerState.play || []) {
+                                if (card.type !== 'Character') continue;
+                                // Skip self if 'other' is true
+                                if (other && card.instanceId === sourceCard.instanceId) continue;
+                                // Check subtype match (classifications include subtype)
+                                const classifications = (card.classifications || []).map((c: string) => c.toLowerCase());
+                                if (subtype && !classifications.includes(subtype.toLowerCase())) continue;
+                                count++;
+                            }
+                        }
+                    }
+
+                    return count * multiplier;
+                }
             }
 
             // Static numeric amount

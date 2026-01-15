@@ -1,6 +1,6 @@
 # Lorai Engine - Project Status
 
-**Last Updated:** January 9, 2026
+**Last Updated:** January 14, 2026
 
 ## 🎯 Overall Progress
 
@@ -88,6 +88,11 @@
 - ✅ Mother Knows Best: executor nested effect handling
 - ✅ Victory overlay dismiss functionality
 - ✅ Boost keyword re-use prevention
+
+### Test Organization (January 2026) 🧹
+- **Cleaned up `src/tests` root**: Moved files to appropriate subdirectories (`cards/`, `mechanics/`, `parser/`, `ui/`).
+- **Standardized Naming**: Renamed reproduction tests to descriptive feature tests (e.g., `sisu-strength.test.ts`).
+- **Deleted Obsolete Tests**: Removed temporary reproduction files that are no longer needed.
 
 ---
 

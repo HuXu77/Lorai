@@ -15,7 +15,7 @@ npx ts-node src/scripts/generate-ability-tests.ts
 This command will:
 1.  Read `allCards.json`.
 2.  Process every card with abilities (2,186 cards).
-3.  Generate 22 batched test files (100 cards each) in `src/tests/abilities/auto/`.
+3.  Generate 22 batched test files (100 cards each) in `src/tests/generated/`.
 
 ## Pre-Validation Logic
 

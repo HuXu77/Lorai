@@ -517,6 +517,20 @@ export function parseStaticEffects(text: string): any[] {
 
     // Handle compound effects: split on "then" and parse each part
     // Special case: "Name a card, then reveal" should be treated as one unit
+    // Sisu - Emboldened Warrior: "This character gets +1 ¤ for each card in opponents' hands."
+    const opponentsHandBoostMatch = text.match(/^this character gets ([+\-]\d+) [¤◊⛉] for each card in opponents' hands/i);
+    if (opponentsHandBoostMatch) {
+        const amount = parseInt(opponentsHandBoostMatch[1]);
+        effects.push({
+            type: 'modify_stats',
+            stat: 'strength',
+            amount: { type: 'cards_in_opponents_hands' },
+            multiplier: amount,
+            target: { type: 'self' }
+        });
+        return effects;
+    }
+
     // Conditional Scaling (Hades - King of Olympus)
     // "This character gets +1 ◊ for each other Villain character you have in play."
     const conditionalScalingMatch = text.match(/^this character gets \+(\d+) ([◊¤]) for each other (.+?) character(?:s)? you have in play/i);
