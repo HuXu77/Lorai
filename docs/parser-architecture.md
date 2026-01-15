@@ -331,7 +331,7 @@ it('should parse gain lore for each', () => {
 | Add static effect | `static-effect-parser.ts` | "While" / passive effects |
 | Add activated ability | `activated-parser.ts` | Cost → Effect abilities |
 | Parse stat symbol | `pattern-matchers.ts` | `parseStat(symbol)` |
-| Test pattern | `src/tests/abilities/auto/` | Batch test files |
+| Test pattern | `src/tests/generated/` | Batch test files |
 
 ---
 
