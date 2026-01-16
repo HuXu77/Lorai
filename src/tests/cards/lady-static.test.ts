@@ -1,4 +1,4 @@
-import { TestHarness } from './engine-test-utils';
+import { TestHarness } from "../engine-test-utils";
 import { ZoneType } from '../engine/models';
 
 describe('Lady - Elegant Spaniel Static Ability', () => {

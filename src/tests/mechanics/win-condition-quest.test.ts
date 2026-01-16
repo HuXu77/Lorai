@@ -1,5 +1,5 @@
-import { TestHarness } from './engine-test-utils';
-import { CardInstance, ZoneType, CardType } from '../engine/models';
+import { TestHarness } from "../engine-test-utils";
+import { CardType } from "../../engine/models";
 import { parseToAbilityDefinition } from '../engine/ability-parser';
 
 describe('Reproduction: Quest Victory', () => {

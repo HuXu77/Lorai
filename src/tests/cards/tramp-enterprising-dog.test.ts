@@ -1,6 +1,6 @@
-import { TestHarness } from './engine-test-utils';
-import { CardInstance, ZoneType, CardType } from '../engine/models';
-import { parseToAbilityDefinition } from '../engine/ability-parser';
+import { TestHarness } from "../engine-test-utils";
+import { CardType } from "../../engine/models";
+import { parseToAbilityDefinition } from "../../engine/ability-parser";
 
 describe('Reproduction: Tramp - Street-Smart Dog Draw Ability', () => {
     let testHarness: TestHarness;

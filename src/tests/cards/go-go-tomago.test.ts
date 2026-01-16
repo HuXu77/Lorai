@@ -1,7 +1,7 @@
 
-import { TestHarness } from './engine-test-utils';
-import { GameEvent } from '../engine/abilities/events';
-import { CardType, ZoneType } from '../engine/models';
+import { TestHarness } from "../engine-test-utils";
+import { GameEvent } from "../../engine/abilities/events";
+import { CardType, ZoneType } from "../../engine/models";
 
 describe('Go Go Tomago - Darting Dynamo Bugs', () => {
     let testHarness: TestHarness;

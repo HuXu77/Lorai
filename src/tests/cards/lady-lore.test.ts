@@ -1,5 +1,5 @@
 
-import { TestHarness } from './engine-test-utils';
+import { TestHarness } from "../engine-test-utils";
 import { CardInstance } from '../engine/models';
 
 describe('Reproduction: Lady - Elegant Spaniel Lore Update', () => {

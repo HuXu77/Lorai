@@ -1,7 +1,6 @@
-
-import { TestHarness } from './engine-test-utils';
+import { TestHarness } from "../engine-test-utils";
 import { GameEvent } from '../engine/abilities/events';
-import { CardType, ZoneType } from '../engine/models';
+import { CardType, ZoneType } from "../../engine/models";
 
 describe('Lady - Elegant Spaniel & Tramp Interaction', () => {
     let testHarness: TestHarness;

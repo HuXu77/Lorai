@@ -127,6 +127,8 @@ export abstract class BaseFamilyHandler {
                         abilityName: context.abilityName
                     },
                     optional: target.optional || false,
+                    min: target.upTo ? 1 : (target.count || 1),
+                    max: target.count || 1,
                     timestamp: Date.now()
                 };
 

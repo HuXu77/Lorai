@@ -1,7 +1,6 @@
-
-import { TestHarness } from './engine-test-utils';
+import { TestHarness } from "../engine-test-utils";
 import { GameEvent } from '../engine/abilities/events';
-import { CardType, ChoiceType } from '../engine/models';
+import { CardType, ChoiceType } from "../../engine/models";
 
 describe('Reproduction: Merryweather Ability', () => {
     let testHarness: TestHarness;

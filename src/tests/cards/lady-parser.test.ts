@@ -1,4 +1,4 @@
-import { parseToAbilityDefinition } from '../engine/ability-parser';
+import { parseToAbilityDefinition } from "../../engine/ability-parser";
 import { Card, CardType } from '../engine/models';
 
 describe('Lady Parser Check', () => {

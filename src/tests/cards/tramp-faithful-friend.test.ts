@@ -1,5 +1,5 @@
-import { TestHarness } from './engine-test-utils';
-import { CardInstance, ZoneType, CardType } from '../engine/models';
+import { TestHarness } from "../engine-test-utils";
+import { ZoneType, CardType } from "../../engine/models";
 
 describe('Reproduction: Tramp Ward Ability', () => {
     let testHarness: TestHarness;
@@ -18,6 +18,7 @@ describe('Reproduction: Tramp Ward Ability', () => {
 
         // Create Tramp with the static ability
         const tramp: CardInstance = {
+            id: 'tramp-id', // ID Required
             name: 'Tramp',
             fullName: 'Tramp - Street-Smart Dog',
             cost: 3,
@@ -28,6 +29,8 @@ describe('Reproduction: Tramp Ward Ability', () => {
             type: CardType.Character,
             parsedEffects: [
                 {
+                    id: 'ability-static',
+                    cardId: 'tramp-id',
                     type: 'static',
                     fullText: 'STREET SMART During your turn, this character has Ward.',
                     effects: [{
@@ -36,7 +39,8 @@ describe('Reproduction: Tramp Ward Ability', () => {
                         condition: {
                             type: 'during_your_turn'
                         }
-                    } as any]
+                    } as any],
+                    duration: 'continuous'
                 }
             ]
         };

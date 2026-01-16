@@ -1,4 +1,4 @@
-import { parseDeckText, parseDreambornUrl } from '../utils/deck-import';
+import { parseDeckText, parseDreambornUrl } from "../../utils/deck-import";
 
 describe('Deck Import Logic', () => {
     it('should parse text deck list correctly', () => {
