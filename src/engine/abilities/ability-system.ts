@@ -603,10 +603,13 @@ export class AbilitySystemManager {
                         // "song" is a subtype for Actions.
                         for (const checkCard of cardsToCheck) {
                             if (classification) {
-                                // Subtypes/Classifications check
                                 const subtypes = checkCard.subtypes || checkCard.classifications || [];
-                                // Also check exact type match if classification is 'item' etc. (handled loosely here)
-                                if (subtypes.some((s: string) => s.toLowerCase() === classification)) {
+
+                                // Fix: Check logic for primary types (Character, Item, Action, etc.)
+                                const isTypeMatch = checkCard.type.toLowerCase() === classification;
+                                const isSubtypeMatch = subtypes.some((s: string) => s.toLowerCase() === classification);
+
+                                if (isTypeMatch || isSubtypeMatch) {
                                     count++;
                                 }
                             }

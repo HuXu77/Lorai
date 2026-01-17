@@ -99,12 +99,17 @@ export class GamePage {
     /**
      * Add a card to play area via debug panel
      */
-    async addCardToPlay(cardName: string, player: 1 | 2 = 1, ready: boolean = true) {
-        await this.page.evaluate(({ name, p, r }) => {
+    async addCardToPlay(cardName: string, player: 1 | 2 = 1, ready: boolean = true, bypassSummoningSickness: boolean = false) {
+        await this.page.evaluate(({ name, p, r, bypass }) => {
             const debug = (window as any).lorcanaDebug;
             const playerId = p === 1 ? debug?.player1Id : debug?.player2Id;
-            debug?.addToPlay(playerId, name, { ready: r });
-        }, { name: cardName, p: player, r: ready });
+            const options: any = { ready: r };
+            if (bypass) {
+                // Set turnPlayed to -1 (or 0) to ensure it can act immediately
+                options.turnPlayed = 0;
+            }
+            debug?.addToPlay(playerId, name, options);
+        }, { name: cardName, p: player, r: ready, bypass: bypassSummoningSickness });
     }
 
     /**
@@ -320,7 +325,7 @@ export interface GameStateConfig {
 
 export interface PlayerConfig {
     hand?: string[];
-    play?: (string | { name: string; ready?: boolean; exerted?: boolean; damage?: number })[];
+    play?: (string | { name: string; ready?: boolean; exerted?: boolean; damage?: number; turnPlayed?: number })[];
     inkwell?: string[];
     deck?: string[];
     discard?: string[];

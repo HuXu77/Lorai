@@ -19,3 +19,5 @@ parser_failures.log
 parser_output.log
 debug_output/
 DEBUG
+playwright-report/
+test-results/

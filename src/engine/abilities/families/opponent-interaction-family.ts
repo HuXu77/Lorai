@@ -1,5 +1,6 @@
 import { BaseFamilyHandler } from './base-family-handler';
 import type { GameContext } from '../executor';
+import { ChoiceType } from '../../models';
 
 /**
  * Opponent Interaction Family Handler
@@ -893,7 +894,7 @@ export class OpponentInteractionFamilyHandler extends BaseFamilyHandler {
 
                     const choiceRequest = {
                         id: 'choice_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                        type: 'reveal_and_decide' as any, // Cast to any to avoid TS error until build update
+                        type: ChoiceType.REVEAL_AND_DECIDE,
                         playerId: opponent.id,
                         prompt: `Reveal: ${topCard.name}. ${matchesCondition ? 'Put into hand?' : 'Must go to bottom.'}`,
                         options: options,

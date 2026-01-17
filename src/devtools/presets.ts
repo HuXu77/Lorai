@@ -10,6 +10,7 @@ export interface CardSetup {
     ready?: boolean;
     damage?: number;
     exerted?: boolean; // Alias for ready: false
+    turnPlayed?: number;
 }
 
 export interface PlayerSetup {

@@ -6,7 +6,7 @@
  */
 
 import { CardInstance, ZoneType, CardType } from '../engine/models';
-import { TurnManager } from '../engine/actions';
+import { TurnManager, Phase } from '../engine/actions';
 import { GameStateManager, PlayerState } from '../engine/state';
 import { parseToAbilityDefinition } from '../engine/ability-parser';
 import { DebugPreset, CardSetup } from './presets';
@@ -102,7 +102,7 @@ export class StateManipulator {
         cardDef: any,
         playerId: string,
         zone: ZoneType,
-        options: { ready?: boolean; damage?: number } = {}
+        options: { ready?: boolean; damage?: number; turnPlayed?: number } = {}
     ): CardInstance {
         const instance: CardInstance = {
             ...cardDef,
@@ -111,7 +111,7 @@ export class StateManipulator {
             zone: zone,
             ready: options.ready !== undefined ? options.ready : true,
             damage: options.damage || 0,
-            turnPlayed: this.engine.stateManager.state.turnCount,
+            turnPlayed: options.turnPlayed !== undefined ? options.turnPlayed : this.engine.stateManager.state.turnCount,
             meta: {},
             baseStrength: cardDef.strength,
             baseWillpower: cardDef.willpower,
@@ -162,7 +162,7 @@ export class StateManipulator {
     addToPlay(
         playerId: string,
         cardName: string,
-        options: { ready?: boolean; damage?: number } = {}
+        options: { ready?: boolean; damage?: number; turnPlayed?: number } = {}
     ): CardInstance | null {
         const cardDef = this.findCard(cardName);
         if (!cardDef) {
@@ -415,11 +415,13 @@ export class StateManipulator {
                 cards: (string | CardSetup)[],
                 zone: 'hand' | 'play' | 'inkwell' | 'deck'
             ) => {
+                if (!cards) return;
                 for (const card of cards) {
                     const name = typeof card === 'string' ? card : card.name;
                     const options = typeof card === 'string' ? {} : {
                         ready: card.exerted === true ? false : (card.ready ?? true),
-                        damage: card.damage ?? 0
+                        damage: card.damage ?? 0,
+                        turnPlayed: card.turnPlayed
                     };
 
                     switch (zone) {
@@ -440,25 +442,36 @@ export class StateManipulator {
             };
 
             // Set up player 1
-            processCardSetup('player1', preset.setup.player1.hand, 'hand');
-            processCardSetup('player1', preset.setup.player1.play, 'play');
-            processCardSetup('player1', preset.setup.player1.inkwell, 'inkwell');
-            if (preset.setup.player1.deck) {
-                processCardSetup('player1', preset.setup.player1.deck, 'deck');
+            if (preset.setup.player1) {
+                processCardSetup('player1', preset.setup.player1.hand, 'hand');
+                processCardSetup('player1', preset.setup.player1.play, 'play');
+                processCardSetup('player1', preset.setup.player1.inkwell, 'inkwell');
+                if (preset.setup.player1.deck) {
+                    processCardSetup('player1', preset.setup.player1.deck, 'deck');
+                }
+                if (preset.setup.player1.lore !== undefined) {
+                    this.setLore('player1', preset.setup.player1.lore);
+                }
             }
-            this.setLore('player1', preset.setup.player1.lore);
 
             // Set up player 2
-            processCardSetup('player2', preset.setup.player2.hand, 'hand');
-            processCardSetup('player2', preset.setup.player2.play, 'play');
-            processCardSetup('player2', preset.setup.player2.inkwell, 'inkwell');
-            if (preset.setup.player2.deck) {
-                processCardSetup('player2', preset.setup.player2.deck, 'deck');
+            if (preset.setup.player2) {
+                processCardSetup('player2', preset.setup.player2.hand, 'hand');
+                processCardSetup('player2', preset.setup.player2.play, 'play');
+                processCardSetup('player2', preset.setup.player2.inkwell, 'inkwell');
+                if (preset.setup.player2.deck) {
+                    processCardSetup('player2', preset.setup.player2.deck, 'deck');
+                }
+                if (preset.setup.player2.lore !== undefined) {
+                    this.setLore('player2', preset.setup.player2.lore);
+                }
             }
-            this.setLore('player2', preset.setup.player2.lore);
 
             // Set active turn
             this.setTurn(preset.setup.turnPlayer);
+
+            // Set phase to Main to allow actions
+            this.engine.stateManager.state.phase = Phase.Main;
 
             // Set turn number if specified
             if (preset.setup.turnNumber) {

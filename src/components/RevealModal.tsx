@@ -29,12 +29,17 @@ export default function RevealModal({ choice, onResponse }: RevealModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4">
+        <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            data-testid="choice-modal"
+        >
 
             {/* Header / Prompt */}
             <div className="text-center mb-8 animate-fade-in-down">
                 <div className="text-purple-400 font-bold uppercase tracking-widest text-sm mb-2">
-                    {choice.source.card?.name || 'Card'} reveals
+                    {choice.source.abilityName || choice.source.card?.name || 'Card'} reveals
                 </div>
                 <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-500 drop-shadow-sm">
                     {choice.prompt || 'Top of Deck'}
