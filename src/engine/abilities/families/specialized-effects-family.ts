@@ -112,18 +112,71 @@ export class SpecializedEffectsFamilyHandler extends BaseFamilyHandler {
 
             case 'one_to_hand_rest_bottom':
                 // Look at top N, one to hand, rest to bottom
-                const looked = player.deck.splice(-effect.amount);
-                if (looked.length > 0) {
-                    const toHand = looked.pop();
-                    toHand.zone = ZoneType.Hand;
-                    player.hand.push(toHand);
+                {
+                    const amount = effect.amount || 1;
+                    const looked = player.deck.splice(-amount);
+                    if (looked.length === 0) return;
 
+                    let selectedId: string | null = null;
+
+                    // If we have cards to choose from
+                    if (looked.length > 0) {
+                        const executor = this.turnManager.abilitySystem?.executor;
+                        if (executor && executor.requestTargetChoice) {
+                            const options = looked.map((c: any) => ({
+                                id: c.instanceId,
+                                display: c.fullName || c.name,
+                                card: c,
+                                valid: true
+                            }));
+
+                            const response = await executor.requestTargetChoice({
+                                type: ChoiceType.TARGET_CARD,
+                                prompt: `Choose a card to put into your hand (the rest go to bottom of deck)`,
+                                options: options,
+                                min: 1,
+                                max: 1
+                            }, context);
+
+                            if (response && response.length > 0) {
+                                selectedId = response[0].id;
+                            }
+                        }
+                    }
+
+                    // Fallback or process selection
+                    const toHandIndex = selectedId ? looked.findIndex((c: any) => c.instanceId === selectedId) : looked.length - 1;
+                    const toHand = looked.splice(toHandIndex, 1)[0];
+
+                    if (toHand) {
+                        toHand.zone = ZoneType.Hand;
+                        player.hand.push(toHand);
+                        this.turnManager.logger.info(`[Specialized] 🔍 Put ${toHand.name} into hand`);
+                    }
+
+                    // Rest go to bottom
                     looked.forEach((c: any) => {
                         c.zone = ZoneType.Deck;
-                        player.deck.unshift(c);
+                        player.deck.unshift(c); // Unshift puts at "bottom" (index 0) if deck is stack? 
+                        // Wait, Lorcana deck array: push = top, unshift = bottom? 
+                        // Yes, usually draw from pop() (end/top), so unshift() is bottom.
                     });
+                    this.turnManager.logger.info(`[Specialized] 🔍 Put ${looked.length} cards on bottom`);
                 }
-                this.turnManager.logger.info(`[Specialized] 🔍 One to hand, rest to bottom`);
+                break;
+
+            case 'mill_to_inkwell':
+                {
+                    const amount = effect.amount || 1;
+                    const cards = player.deck.splice(-amount);
+                    cards.forEach((c: any) => {
+                        c.zone = ZoneType.Inkwell;
+                        if (effect.facedown) c.facedown = true;
+                        if (effect.exerted) c.ready = false;
+                        player.inkwell.push(c);
+                    });
+                    this.turnManager.logger.info(`[Specialized] 🎨 Milled ${cards.length} cards to inkwell`);
+                }
                 break;
 
             // === REVEAL & PLAY MECHANICS ===

@@ -261,13 +261,13 @@ function GamePageInner() {
     };
 
     // Handle generic ability use
-    const handleUseAbility = (abilityIndex: number) => {
+    const handleUseAbility = async (abilityIndex: number) => {
         if (!gameEngine || !playAreaMenuCard || !engineState) return;
         setPlayAreaMenuCard(null); // Dismiss menu first
 
         try {
             const player = gameEngine.stateManager.getPlayer(gameEngine.humanController.id);
-            gameEngine.turnManager.useAbility(player, playAreaMenuCard.instanceId, abilityIndex);
+            await gameEngine.turnManager.useAbility(player, playAreaMenuCard.instanceId, abilityIndex);
 
             // Note: Logging is handled by engine
             setEngineState({ ...gameEngine.stateManager.state });

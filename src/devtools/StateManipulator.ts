@@ -96,6 +96,16 @@ export class StateManipulator {
     }
 
     /**
+     * Normalize ability text to handle multi-line and whitespace variations
+     */
+    private normalizeAbilityText(text: string): string {
+        return text
+            .replace(/\n/g, ' ')          // Replace newlines with spaces
+            .replace(/\s+/g, ' ')          // Collapse multiple spaces into one
+            .trim();                       // Trim leading/trailing whitespace
+    }
+
+    /**
      * Create a CardInstance from a card definition
      */
     private createCardInstance(
@@ -104,8 +114,32 @@ export class StateManipulator {
         zone: ZoneType,
         options: { ready?: boolean; damage?: number; turnPlayed?: number } = {}
     ): CardInstance {
+        // Normalize abilities to ensure parser works (same as CardLoader)
+        const normalizedAbilities = (cardDef.abilities || []).map((ability: any) => {
+            if (typeof ability === 'string') {
+                return {
+                    fullText: this.normalizeAbilityText(ability),
+                    type: 'unknown'
+                };
+            } else if (ability.fullText) {
+                return {
+                    ...ability,
+                    fullText: this.normalizeAbilityText(ability.fullText),
+                    effect: ability.effect ? this.normalizeAbilityText(ability.effect) : ability.effect
+                };
+            }
+            return ability;
+        });
+
+        // Normalize fullTextSections if they exist (for cards like Friends on the Other Side)
+        const normalizedFullTextSections = (cardDef.fullTextSections || []).map((section: string) =>
+            this.normalizeAbilityText(section)
+        );
+
         const instance: CardInstance = {
             ...cardDef,
+            abilities: normalizedAbilities, // Use normalized abilities
+            fullTextSections: normalizedFullTextSections.length > 0 ? normalizedFullTextSections : cardDef.fullTextSections,
             instanceId: `debug-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
             ownerId: playerId,
             zone: zone,
@@ -124,6 +158,7 @@ export class StateManipulator {
         if (!instance.parsedEffects) {
             try {
                 instance.parsedEffects = parseToAbilityDefinition(instance) as any;
+
             } catch (e) {
                 console.warn(`[StateManipulator] Failed to parse abilities for ${cardDef.fullName}:`, e);
                 instance.parsedEffects = [];
@@ -232,10 +267,10 @@ export class StateManipulator {
             newTopCards.push(this.createCardInstance(cardDef, playerId, ZoneType.Deck));
         }
 
-        // Prepend to deck (top of deck is index 0)
-        player.deck = [...newTopCards, ...player.deck];
+        // Append to deck (top of deck is end of array / index length-1)
+        player.deck = [...player.deck, ...newTopCards];
 
-        console.log(`[StateManipulator] Set ${newTopCards.length} cards on top of ${playerId}'s deck`);
+        console.log(`[StateManipulator] Set ${newTopCards.length} cards on top of ${playerId}'s deck (Deck size: ${player.deck.length})`);
         return true;
     }
 
@@ -407,6 +442,7 @@ export class StateManipulator {
                 this.clearZone(playerId, ZoneType.Hand);
                 this.clearZone(playerId, ZoneType.Play);
                 this.clearZone(playerId, ZoneType.Inkwell);
+                this.clearZone(playerId, ZoneType.Deck);
             }
 
             // Helper to process card setup

@@ -439,6 +439,17 @@ export class EffectExecutor {
             case 'ink_from_hand':
                 await this.executeInkFromHand(effect as any, context);
                 break;
+            case 'mill_to_inkwell':
+            case 'one_to_hand_rest_bottom':
+                {
+                    const handler = this.familyHandlers.get('specialized');
+                    if (handler) {
+                        await handler.execute(effect, context);
+                    } else {
+                        this.turnManager?.logger.warn(`Specialized family handler not initialized for ${effect.type}`);
+                    }
+                }
+                break;
 
             // ====== TIER 2: SIMPLE STATE EFFECTS ======
             case 'prevent_next_damage':

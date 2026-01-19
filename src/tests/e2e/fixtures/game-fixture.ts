@@ -197,28 +197,39 @@ export class GamePage {
         // pattern for regex matching
         const pattern = new RegExp(optionText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 
-        // Priority 1: CardSelectionChoice custom option
-        const choiceOption = this.page.locator(`[data-testid="choice-option"]`).filter({ hasText: pattern }).first();
+        // Priority 1: Standard Button / Accessible Role
         try {
-            // click() auto-waits for visibility and actionability
-            await choiceOption.click({ timeout: 2000 });
+            const btn = this.page.getByRole('button', { name: pattern }).first();
+            // Wait briefly to see if it appears
+            await btn.waitFor({ state: 'visible', timeout: 2000 });
+            await btn.click();
             return;
         } catch (e) {
-            // Ignore failure, try next
+            // Ignore, try next
         }
 
-        // Priority 2: Standard Button (PlayAreaActionMenu, etc)
-        // Check finding button by role (handles aria-label)
+        // Priority 2: CardSelectionChoice custom option (manual iteration)
+        // This bypasses issues with hasText and sr-only visibility
         try {
-            await this.page.getByRole('button', { name: pattern }).first().click({ timeout: 2000 });
-            return;
+            const options = this.page.locator('[data-testid="choice-option"]');
+            const count = await options.count();
+
+            for (let i = 0; i < count; i++) {
+                const opt = options.nth(i);
+                const label = await opt.getAttribute('aria-label');
+                const text = await opt.textContent();
+
+                if ((label && pattern.test(label)) || (text && pattern.test(text))) {
+                    await opt.click();
+                    return;
+                }
+            }
         } catch (e) {
             // Ignore
         }
 
-        // Priority 3: Locator fallback (button with text content)
-        // Useful if role is missing or strange structure
-        await this.page.locator('button').filter({ hasText: pattern }).first().click({ timeout: 5000 });
+        // Priority 3: Locator fallback (button tag or role="button")
+        await this.page.locator('button, [role="button"]').filter({ hasText: pattern }).first().click({ timeout: 5000 });
     }
 
     /**

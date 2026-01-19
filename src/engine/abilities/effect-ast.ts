@@ -383,6 +383,7 @@ export type EffectAST =
     | { type: 'activated_return_subtype_from_discard', subtype: string }
     | { type: 'item_banish_return_item' }
     | { type: 'one_to_hand_rest_bottom', amount: number }
+    | { type: 'mill_to_inkwell', amount: number, facedown?: boolean, exerted?: boolean }
     // Reveal & Play Mechanics
     | { type: 'reveal_and_conditional', condition: any, effect: EffectAST }
     | { type: 'reveal_and_put_multiple', amount: number, destination: string }

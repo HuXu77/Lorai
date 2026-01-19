@@ -13,8 +13,6 @@ interface CardSelectionChoiceProps {
 export default function CardSelectionChoice({ choice, onResponse }: CardSelectionChoiceProps) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-    console.log('[CardSelectionChoice] Rendering for choice:', choice?.type);
-
     if (!choice) return null;
 
     const min = choice.min ?? 1;
