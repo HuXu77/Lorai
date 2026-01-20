@@ -2739,6 +2739,19 @@ export class EffectExecutor {
                     return;
                 }
 
+                // Ward Check: Opponents cannot choose characters with Ward
+                const isOpponent = context.player.id !== player.id;
+                // Only apply Ward check for "chosen" targets (abilities), not if we are just listing for other reasons?
+                // But getValidTargets is primarily for choices.
+                // Exception: "except to challenge". If targetType is for challenge, we might need to skip this.
+                // Asking: Is this method used for challenge targeting?
+                // Usually challenge targets are validated separately.
+                // Safe assumption: getValidTargets is for Ability/Effect choices.
+                if (isOpponent && hasAbilityKeyword(card, 'ward')) {
+                    console.log(`[getValidTargets] Skipping ${card.name} due to Ward`);
+                    return;
+                }
+
                 options.push({
                     id: card.instanceId,
                     display: `${card.name} (${player.name})`,

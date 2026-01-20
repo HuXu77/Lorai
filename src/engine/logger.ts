@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { LogEntry, LogCategory } from '../types/log';
+export { LogCategory };
+export type { LogEntry };
 
 export enum LogLevel {
     INFO = 'INFO',       // Major game events (Turn start, Winner)

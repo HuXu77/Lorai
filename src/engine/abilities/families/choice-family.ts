@@ -119,7 +119,9 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
 
                 if (this.turnManager) {
                     this.turnManager.trackZoneChange(cardToDiscard, 'hand', 'discard');
-                    this.turnManager.logger.info(`${player.name} discarded ${cardToDiscard.name}`);
+                    this.turnManager.logger.effect(player.name, 'discarded', cardToDiscard.name, {
+                        ability: context.abilityName
+                    });
                     this.turnManager.eventBus.emit(GameEvent.CARD_DISCARDED, {
                         card: cardToDiscard,
                         player: player,
@@ -171,7 +173,9 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 player.hand.push(chosen);
 
                 if (this.turnManager) {
-                    this.turnManager.logger.info(`${player.name} chose ${chosen.name} from discard`);
+                    this.turnManager.logger.effect(player.name, 'chose from discard', chosen.name, {
+                        ability: context.abilityName
+                    });
                     this.turnManager.trackZoneChange(chosen, 'discard', 'hand');
                 }
             }
@@ -211,7 +215,9 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
 
             if (chosen) {
                 if (this.turnManager) {
-                    this.turnManager.logger.info(`${player.name} may play ${chosen.name} for free`);
+                    this.turnManager.logger.effect(player.name, 'may play for free', chosen.name, {
+                        ability: context.abilityName
+                    });
                     chosen.freePlayToken = true;
                     // Trigger play logic? Or just mark it? 
                     // Executor implementation only marked it.
@@ -319,7 +325,10 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
         if (targets.length === 1) {
             targets[0].damage = (targets[0].damage || 0) + effect.totalDamage;
             if (this.turnManager) {
-                this.turnManager.logger.info(`${targets[0].name} takes ${effect.totalDamage} damage`);
+                this.turnManager.logger.effect(context.card.name, 'dealt damage', `${targets[0].name} (${effect.totalDamage})`, {
+                    ability: context.abilityName,
+                    amount: effect.totalDamage
+                });
             }
             return;
         }
@@ -363,7 +372,10 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
             const amount = distribution[target.instanceId] || 0;
             if (amount > 0) {
                 target.damage = (target.damage || 0) + amount;
-                this.turnManager.logger.info(`${target.name} takes ${amount} damage`);
+                this.turnManager.logger.effect(context.card.name, 'dealt damage', `${target.name} (${amount})`, {
+                    ability: context.abilityName,
+                    amount: amount
+                });
             }
         });
     }
@@ -624,7 +636,10 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                         opponent.discard.push(toDiscard);
 
                         if (this.turnManager) {
-                            this.turnManager.logger.info(`${context.player.name} chose: ${opponent.name} discards ${toDiscard.name}`);
+                            this.turnManager.logger.effect(context.player.name, 'chose opponent discard', toDiscard.name, {
+                                opponent: opponent.name,
+                                ability: context.abilityName
+                            });
                             this.turnManager.trackZoneChange(toDiscard, 'hand', 'discard');
                             this.turnManager.eventBus.emit(GameEvent.CARD_DISCARDED, {
                                 card: toDiscard,

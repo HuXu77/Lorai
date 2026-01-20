@@ -185,7 +185,8 @@ export class AbilitySystemManager {
         const triggered = this.eventBus.emit(event, context);
 
         if (triggered.length > 0) {
-            this.turnManager.logger.info(`🎭 [Triggered] ${triggered.length} ability(ies) triggered by ${event}`);
+            // Log as EFFECT so it shows in Ability tab
+            this.turnManager.logger.effect('AbilitySystem', `🎭 ${triggered.length} ability(ies) triggered by ${event}`, undefined, { triggeredCount: triggered.length, event });
 
             const filteredTriggers = triggered;
 
@@ -197,7 +198,7 @@ export class AbilitySystemManager {
             } else {
                 // IMMEDIATE MODE: Execute right away (current behavior)
                 for (const listener of filteredTriggers) {
-                    this.turnManager.logger.info(`   ↳ Executing: ${listener.card.name}'s "${listener.ability.abilityName || 'ability'}"`);
+                    this.turnManager.logger.effect(listener.card.name, `triggered ability: "${listener.ability.abilityName || listener.ability.rawText || 'Ability'}"`);
                     await this.executeAbility(listener.ability, listener.card, context);
                 }
             }
@@ -248,7 +249,7 @@ export class AbilitySystemManager {
             if (triggeredAbility.cost.ink) {
                 const readyInk = player.inkwell.filter((c: any) => !c.exerted).length;
                 if (readyInk < triggeredAbility.cost.ink) {
-                    this.turnManager.logger.info(`   [Cost] Skipping optional ability for ${card.name}: Insufficient ink (${readyInk}/${triggeredAbility.cost.ink})`);
+                    this.turnManager.logger.debug(`   [Cost] Skipping optional ability for ${card.name}: Insufficient ink (${readyInk}/${triggeredAbility.cost.ink})`);
                     return;
                 }
             }
@@ -293,7 +294,7 @@ export class AbilitySystemManager {
                 // If execute returns false, it means an optional effect was declined
                 // Stop executing remaining effects (implements "may X, then Y" logic)
                 if (shouldContinue === false) {
-                    this.turnManager.logger.info(`   ⏸️  Optional effect declined, skipping remaining effects`);
+                    this.turnManager.logger.effect(card.name, `declined optional effect`, undefined, { ability: ability.abilityName });
                     break;
                 }
             } catch (error) {

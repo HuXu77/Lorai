@@ -41,20 +41,36 @@ const PlayerHand = React.memo(function PlayerHand({
     if (isOpponent) {
         // Opponent hand - compact by default, expands when revealed
         if (!revealed) {
-            // Compact mode - just show count badge
+            // Compact mode - fanned cards
             return (
                 <div data-testid="opponent-hand" className="flex justify-center items-center py-2 px-4">
-                    <div className="flex items-center gap-2 px-4 py-2">
-                        <div className="w-8 h-10 rounded overflow-hidden border border-gray-500">
-                            <img
-                                src="/images/card-back.png"
-                                alt="Card back"
-                                className="w-full h-full object-cover"
-                            />
+                    <div className="flex flex-col items-center gap-1">
+                        {/* Fanned Cards */}
+                        <div className="flex justify-center items-center h-16 ml-8"> {/* ml-8 to offset the first negative margin if needed, or centering handles it */}
+                            {Array.from({ length: cards.length }).map((_, index) => (
+                                <div
+                                    key={index}
+                                    className="w-10 h-14 rounded overflow-hidden border border-gray-500 shadow-md transform hover:-translate-y-1 transition-transform duration-200"
+                                    style={{
+                                        marginLeft: index > 0 ? '-20px' : '0',
+                                        zIndex: index,
+                                        transform: `rotate(${(index - (cards.length - 1) / 2) * 5}deg)` // Subtle fan rotation
+                                    }}
+                                >
+                                    <img
+                                        src="/images/card-back.png"
+                                        alt="Card back"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ))}
                         </div>
-                        <span className="text-white text-sm font-semibold">
-                            Opponent Hand: <span className="text-blue-400">{cards.length}</span>
-                        </span>
+                        {/* Count Badge */}
+                        <div className="bg-black bg-opacity-60 px-2 py-0.5 rounded-full border border-gray-700">
+                            <span className="text-blue-200 text-xs font-semibold">
+                                {cards.length} Cards
+                            </span>
+                        </div>
                     </div>
                 </div>
             )

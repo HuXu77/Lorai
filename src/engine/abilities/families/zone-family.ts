@@ -115,8 +115,11 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
 
         if (this.turnManager) {
             const targetNames = targets.map((t: any) => t.name).join(', ');
-            const source = context.abilityName ? ` (Source: ${context.abilityName})` : '';
-            this.turnManager.logger.info(`↩️ Returned ${targetNames} to hand${source}`);
+            // Use logger.effect so it shows up in Ability/Action logs
+            this.turnManager.logger.effect(context.card.name, 'returned to hand', targetNames, {
+                category: 'ABILITY', // Ensure it maps to Ability log
+                ability: context.abilityName
+            });
         }
     }
 
@@ -148,7 +151,9 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
                 }
 
                 if (this.turnManager) {
-                    this.turnManager.logger.info(`[ZoneFamily] Returned ${card.name} from discard to ${destination}`);
+                    this.turnManager.logger.effect(player.name, `returned from discard to ${destination}`, card.name, {
+                        ability: context.abilityName
+                    });
                 }
             }
         });
@@ -177,8 +182,9 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
         });
 
         const targetNames = targets.map((t: any) => t.name).join(', ');
-        this.turnManager.logger.info(`🗑️  Banished ${targetNames}`, {
-            targets: targets.map((t: any) => t.name)
+        this.turnManager.logger.effect(context.card.name, 'banished', targetNames, {
+            targets: targets.map((t: any) => t.name),
+            ability: context.abilityName
         });
     }
 
@@ -208,7 +214,10 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
                 card.damage = 0;
                 player.hand.push(card);
 
-                this.turnManager!.logger.info(`${card.name} returned to ${player.name}'s hand`);
+                this.turnManager!.logger.effect(context.card.name, 'returned to hand', card.name, {
+                    player: player.name,
+                    ability: context.abilityName
+                });
             });
         });
     }
@@ -234,7 +243,9 @@ export class ZoneFamilyHandler extends BaseFamilyHandler {
                 owner.exile.push(target);
 
                 if (this.turnManager) {
-                    this.turnManager.logger.info(`${target.name} exiled`);
+                    this.turnManager.logger.effect(context.card.name, 'exiled', target.name, {
+                        ability: context.abilityName
+                    });
                 }
             }
         });
