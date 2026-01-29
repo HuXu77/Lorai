@@ -602,6 +602,27 @@ export function getOnQuestPatterns(): TriggerPattern[] {
             }
         },
 
+        // Genie - Supportive Friend
+        {
+            pattern: /whenever this character quests, you may shuffle this card into your deck to draw (\d+) cards/i,
+            handler: (match, card, text) => {
+                const amount = parseInt(match[1]);
+                return {
+                    id: generateAbilityId(),
+                    cardId: card.id.toString(),
+                    type: 'triggered',
+                    event: GameEvent.CARD_QUESTED,
+                    effects: [
+                        { type: 'shuffle_self_into_deck' },
+                        { type: 'draw', amount, target: { type: 'self' } }
+                    ],
+                    optional: true,
+                    rawText: text
+                } as any;
+            }
+        },
+
+
         // The Queen - Commanding Presence: "Whenever this character quests, chosen opposing character gets -4 ¤ and chosen character gets +4 ¤."
         {
             pattern: /whenever this character quests, (?:give )?chosen (opposing )?character (?:gets|gains) ([+-]\d+) (strength|willpower|lore|¤|◊|⛉)(?: this turn)? (?:and|to) (?:give )?chosen (opposing )?character (?:gets|gains) ([+-]\d+) (strength|willpower|lore|¤|◊|⛉)(?: this turn)?/i,

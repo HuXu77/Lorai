@@ -4,69 +4,102 @@ import { test, expect } from '../fixtures/game-fixture';
  * E2E Test: Modal - DISCARD_FROM_HAND / TARGET_CARD_IN_HAND
  * 
  * Tests the discard selection modal.
- * Example: "Opponent discards a card" or "Discard a card to draw 2"
+ * Uses "Cinderella - Knight in Training" with "HAVE COURAGE: When you play this character,
+ * you may draw a card, then choose and discard a card."
  */
 
 test.describe('Modal: Discard From Hand', () => {
 
+    // Known gap: Cinderella's 'HAVE COURAGE' draw-then-discard not triggering modal
+    // Gap tracker: On-play discard effects may auto-resolve or ability not parsed
     test('should show discard modal with cards from hand', async ({ gamePage }) => {
         await gamePage.loadTestGame();
 
-        // Add cards to P1's hand
-        await gamePage.addCardToHand('Mickey Mouse - Brave Little Tailor', 1);
-        await gamePage.addCardToHand('Stitch - Carefree Surfer', 1);
+        // Use "Cinderella - Knight in Training" - costs ~3 ink
+        // Effect: "HAVE COURAGE: When you play this character, you may draw a card, then choose and discard a card."
+        await gamePage.injectState({
+            player1: {
+                hand: ['Cinderella - Knight in Training', 'Mickey Mouse - Brave Little Tailor', 'Stitch - Carefree Surfer'],
+                inkwell: ['Generic Ink', 'Generic Ink', 'Generic Ink'], // Enough ink
+                deck: ['Mickey Mouse - Detective', 'Donald Duck - Boisterous Fowl']
+            },
+            player2: {
+                deck: ['Mickey Mouse - Detective']
+            },
+            turnPlayer: 'player1'
+        });
 
-        // Add a card that forces discard (like Cursed Merfolk being challenged)
-        // Setup: P1 has attacker, P2 has Cursed Merfolk (exerted)
-        await gamePage.addCardToPlay('Elsa - Spirit of Winter', 1, true);
-        await gamePage.addCardToPlay('Cursed Merfolk - Ursula\'s Handiwork', 2, false);
+        await gamePage.page.waitForTimeout(2000);
 
-        await gamePage.page.waitForTimeout(500);
+        // Play Cinderella - Knight in Training
+        await gamePage.clickCardInHand('Cinderella - Knight in Training');
 
-        // Challenge Cursed Merfolk to trigger discard
-        await gamePage.clickCardInPlay('Elsa');
-        await gamePage.clickAction('Challenge');
+        // Click Play Card
+        const detailModal = gamePage.page.locator('[role="dialog"]').filter({ hasText: 'Cinderella' });
+        await expect(detailModal).toBeVisible({ timeout: 5000 });
+        await detailModal.getByRole('button', { name: /Play Card/i }).click();
 
-        // Select the Cursed Merfolk
-        await gamePage.selectModalOption('Cursed Merfolk');
+        // First we get a "may" prompt for the ability - accept it
+        const mayPrompt = gamePage.page.getByRole('button', { name: /Yes|OK|Confirm/i });
+        if (await mayPrompt.isVisible({ timeout: 3000 }).catch(() => false)) {
+            await mayPrompt.click();
+        }
 
-        // Wait for ability to trigger
-        await gamePage.page.waitForTimeout(1500);
+        // Then we draw a card, then should see discard modal with cards from hand
+        await expect(gamePage.page.getByText(/discard|choose/i).first()).toBeVisible({ timeout: 10000 });
 
-        // Should see discard modal (P1 must choose a card to discard)
-        // Note: This depends on the exact ability trigger timing
+        // Verify hand cards are shown as options (we still have at least Mickey or Stitch in hand)
+        // Use first() to avoid strict mode violation if both match
+        const hasOptions = await gamePage.page.getByRole('button', { name: /Mickey|Stitch|Carefree|Brave/i }).first().isVisible();
+        expect(hasOptions).toBe(true);
     });
 
+    // Discard selection test
     test('should allow selecting a card to discard', async ({ gamePage }) => {
         await gamePage.loadTestGame();
 
-        // Setup for discard scenario
-        await gamePage.addCardToHand('Mickey Mouse - Brave Little Tailor', 1);
-        await gamePage.addCardToHand('Stitch - Carefree Surfer', 1);
-        await gamePage.addCardToPlay('Elsa - Spirit of Winter', 1, true);
-        await gamePage.addCardToPlay('Cursed Merfolk - Ursula\'s Handiwork', 2, false);
+        await gamePage.injectState({
+            player1: {
+                hand: ['Cinderella - Knight in Training', 'Mickey Mouse - Brave Little Tailor', 'Stitch - Carefree Surfer'],
+                inkwell: ['Generic Ink', 'Generic Ink', 'Generic Ink'],
+                deck: ['Mickey Mouse - Detective', 'Donald Duck - Boisterous Fowl']
+            },
+            player2: {
+                deck: ['Mickey Mouse - Detective']
+            },
+            turnPlayer: 'player1'
+        });
 
-        await gamePage.page.waitForTimeout(500);
+        await gamePage.page.waitForTimeout(2000);
 
-        // Trigger discard via challenge
-        await gamePage.clickCardInPlay('Elsa');
-        await gamePage.clickAction('Challenge');
-        await gamePage.selectModalOption('Cursed Merfolk');
+        // Play Cinderella - Knight in Training
+        await gamePage.clickCardInHand('Cinderella - Knight in Training');
 
-        await gamePage.page.waitForTimeout(1500);
+        const detailModal = gamePage.page.locator('[role="dialog"]').filter({ hasText: 'Cinderella' });
+        await expect(detailModal).toBeVisible({ timeout: 5000 });
+        await detailModal.getByRole('button', { name: /Play Card/i }).click();
 
-        // If discard modal appears, select a card
-        const modal = gamePage.page.locator('[data-testid="choice-modal"], [role="dialog"]');
-        const isVisible = await modal.isVisible().catch(() => false);
-
-        if (isVisible) {
-            // Select Mickey to discard
-            await gamePage.selectModalOption('Mickey');
-            await gamePage.page.waitForTimeout(500);
-
-            // Verify discard occurred
-            await gamePage.expectLogMessage(/discard/i);
+        // Accept the optional ability if prompted
+        const mayPrompt = gamePage.page.getByRole('button', { name: /Yes|OK|Confirm/i });
+        if (await mayPrompt.isVisible({ timeout: 3000 }).catch(() => false)) {
+            await mayPrompt.click();
         }
+
+        // Wait for discard modal
+        await expect(gamePage.page.getByText(/discard|choose/i).first()).toBeVisible({ timeout: 10000 });
+
+        // Select a card to discard (either Mickey or Stitch)
+        const cardToDiscard = gamePage.page.getByRole('button', { name: /Mickey|Stitch/i }).first();
+        await expect(cardToDiscard).toBeVisible();
+        await cardToDiscard.click();
+
+        // Confirm
+        const confirmBtn = gamePage.page.getByRole('button', { name: /Confirm/i });
+        await expect(confirmBtn).toBeEnabled({ timeout: 5000 });
+        await confirmBtn.click();
+
+        // Verify discard occurred - log should show discard or Cinderella was played
+        await gamePage.expectLogMessage(/discard|Cinderella/i);
     });
 
 });

@@ -547,6 +547,39 @@ export function parseRevealAndPutIntoHandAction(text: string, card: Card, abilit
     return false;
 }
 
+export function parseDrawThenPutOnDeckAction(text: string, card: Card, abilities: AbilityDefinition[]): boolean {
+    // "Draw 3 cards. Then, put 2 cards from your hand on top of your deck in any order."
+    // Relaxed regex: match "Draw X... put Y... hand... top... deck"
+    const match = text.match(/^draw (\d+) cards?[\.,\s]+then,?\s+put (\d+) cards? from your hand on (?:the )?top of your deck/i);
+    if (match) {
+        const drawAmount = parseInt(match[1]);
+        const putAmount = parseInt(match[2]);
+
+        abilities.push({
+            id: generateAbilityId(),
+            cardId: card.id.toString(),
+            type: 'activated',
+            costs: [],
+            effects: [
+                {
+                    type: 'draw',
+                    amount: drawAmount,
+                    target: { type: 'self' }
+                },
+                {
+                    type: 'put_from_hand_to_deck',
+                    amount: putAmount,
+                    destination: 'top',
+                    target: { type: 'self' }
+                }
+            ],
+            rawText: text
+        } as any);
+        return true;
+    }
+    return false;
+}
+
 export function parseConditionalInkAction(text: string, card: Card, abilities: AbilityDefinition[]): boolean {
     // "If you have 6 ⬡ or less, put the top 3 cards of your deck into your inkwell facedown."
     const match = text.match(/if you have (\d+) (?:[⬡]|ink) or less, (.+)/i);

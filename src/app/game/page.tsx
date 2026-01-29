@@ -184,19 +184,36 @@ function GamePageInner() {
     // Mock player data for choices
     const mockPlayer = { id: 'player1', name: 'You' } as any;
 
-    // Add log entry helper
+    // Log buffering to reduce re-renders
+    const logBufferRef = useRef<LogEntry[]>([]);
+    const flushLogTimeoutRef = useRef<any>(null);
+
+    // Add log entry helper (buffered)
     const addLogEntry = (entry: Omit<LogEntry, 'id' | 'timestamp'>) => {
-        setLogEntries(prev => [{
+        const newEntry = {
             ...entry,
             id: `log-${Date.now()}-${Math.random()}`,
             timestamp: Date.now()
-        }, ...prev]);
+        };
+
+        // Add to buffer (newest first)
+        logBufferRef.current = [newEntry, ...logBufferRef.current];
+
+        // Schedule flush if not already scheduled
+        if (!flushLogTimeoutRef.current) {
+            flushLogTimeoutRef.current = setTimeout(() => {
+                setLogEntries(prev => [...logBufferRef.current, ...prev]);
+                logBufferRef.current = [];
+                flushLogTimeoutRef.current = null;
+            }, 50); // Flush every 50ms (20fps cap for logs)
+        }
     };
 
     // Check if card can be played
 
     // Check if card can be played
     const canPlayCard = (card: CardInstance) => {
+        if (!gameEngine || !yourPlayer || !engineState) return { canPlay: false, reason: "Game not ready" };
         if (activePlayer !== 'player') {
             return { canPlay: false, reason: "Not your turn" };
         }
@@ -210,7 +227,12 @@ function GamePageInner() {
             ? gameEngine.turnManager.abilitySystem.getModifiedCost(card, yourPlayer)
             : card.cost;
 
-        if (modifiedCost > availableInk) {
+        // Use derived available ink from engine state
+        const derivedAvailableInk = yourPlayer.inkwell.filter((c: CardInstance) => c.ready).length;
+
+        console.log(`[UI-DEBUG] Checking ${card.name}: Cost=${modifiedCost}, Ink=${derivedAvailableInk}`);
+
+        if (modifiedCost > derivedAvailableInk) {
             return { canPlay: false, reason: `Need ${modifiedCost}◆` };
         }
 
@@ -218,7 +240,7 @@ function GamePageInner() {
     };
 
     // Handle playing a card
-    const handlePlayCard = (card: CardInstance) => {
+    const handlePlayCard = async (card: CardInstance) => {
         const { canPlay, reason } = canPlayCard(card);
 
         if (!canPlay) {
@@ -230,12 +252,33 @@ function GamePageInner() {
             return;
         }
 
-        // Deduct ink
-        setAvailableInk(prev => prev - card.cost);
+        // Call engine to play card
+        if (gameEngine && yourPlayer) {
+            try {
+                // CRITICAL FIX: Use the authoritative player object from the engine's state manager
+                // 'yourPlayer' here is a deep clone from the UI state, and if the engine mutates it (splice),
+                // the actual engine state remains unchanged!
+                const realPlayer = gameEngine.stateManager.state.players[yourPlayer.id];
+                if (realPlayer) {
+                    const success = await gameEngine.turnManager.playCard(realPlayer as any, card.instanceId);
+                    if (!success) {
+                        console.error("Engine returned failure for playCard");
+                        addLogEntry({
+                            category: LogCategory.SYSTEM,
+                            message: `Failed to play ${card.name} (Engine Validation)`,
+                            details: { card }
+                        });
+                    }
+                    // State update handled by engine trigger
+                    gameEngine.humanController.updateState(gameEngine.stateManager.state);
+                } else {
+                    console.error("Critical: Player not found in engine state during playCard");
+                }
+            } catch (e) {
+                console.error("Play card failed", e);
+            }
+        }
 
-        // Note: Logging is handled by the engine integration
-
-        // TODO: Actually move card to play area when we have mutable state
         console.log('Card played:', card);
     };
 
@@ -244,7 +287,7 @@ function GamePageInner() {
         if (!gameEngine || !actionMenuCard || !engineState) return;
         setActionMenuCard(null); // Dismiss menu first
 
-        const player = engineState.players[gameEngine.humanController.id];
+        const player = gameEngine.stateManager.state.players[gameEngine.humanController.id];
         if (!player) return;
 
         const success = gameEngine.turnManager.inkCard(player as any, actionMenuCard.instanceId);
@@ -283,13 +326,19 @@ function GamePageInner() {
 
     // Handle playing a card from the action menu
     const handlePlayCardAction = async () => {
-        if (!gameEngine || !actionMenuCard || !engineState) return;
+        console.log(`[DEBUG-UI] handlePlayCardAction called. GE=${!!gameEngine}, Menu=${!!actionMenuCard}, State=${!!engineState}`);
+        if (!gameEngine || !actionMenuCard || !engineState) {
+            console.error(`[DEBUG-UI] Missing dependencies: GE=${!!gameEngine}, Menu=${!!actionMenuCard}, State=${!!engineState}`);
+            return;
+        }
 
         // Cache card info before clearing state
         const cardToPlay = actionMenuCard;
         setActionMenuCard(null); // Dismiss menu BEFORE async call
 
-        const player = engineState.players[gameEngine.humanController.id];
+        // CRITICAL FIX: Use the authoritative player object from the engine's state manager
+        // engineState contains clones for UI rendering; we must pass the real engine object to mutations
+        const player = gameEngine.stateManager.state.players[gameEngine.humanController.id];
         if (!player) return;
 
         try {
@@ -331,7 +380,9 @@ function GamePageInner() {
             // Create game state manager
             const stateManager = new GameStateManager();
 
-            // Create human controller
+            // Hook for real-time UI updates from logger
+            let triggerUIUpdate = () => { };
+
             // Create browser-compatible logger (GameLogger uses fs which doesn't work in browser)
             const browserLogger = {
                 info: (msg: string, data?: any) => {
@@ -350,6 +401,11 @@ function GamePageInner() {
                                 setOpponentHandRevealed(false);
                             }, 4000);
                         }
+                    }
+
+                    // Also trigger update on critical info logs (like Draw)
+                    if (msg.includes('draw') || msg.includes('Turn') || msg.includes('Setup')) {
+                        triggerUIUpdate();
                     }
                 },
                 action: (player: string, action: string, details?: any) => {
@@ -426,6 +482,10 @@ function GamePageInner() {
                         message: `${player} ${action}`,
                         details
                     });
+
+                    // TRIGGER UI UPDATE
+                    // This ensures opponent actions (which log actions) update the visual state immediately
+                    triggerUIUpdate();
                 },
                 effect: (source: string, effect: string, target?: string) =>
                     console.log('[EFFECT]', `${source} -> ${effect}${target ? ' on ' + target : ''}`),
@@ -442,7 +502,8 @@ function GamePageInner() {
             const humanController = new HumanController(
                 'You',
                 (newState) => {
-                    console.log('[GamePage] State update from engine');
+                    const p1Hand = newState.players.player1?.hand?.length;
+                    console.log(`[GamePage] State update from engine. P1 Hand Size: ${p1Hand}`);
 
                     // CRITICAL FIX: Enrich state with effective stats for UI
                     // This ensures Lady shows 2 Lore when Tramp is in play, etc.
@@ -485,9 +546,34 @@ function GamePageInner() {
                         });
                     }
 
-                    setEngineState(newState);
+                    // FORCE REACT RE-RENDER by creating a new object reference
+                    // This is critical because newState is often the exact same object reference 
+                    // as the previous state (mutated in place by the engine)
+                    const clonedState = { ...newState };
+                    if (clonedState.players) {
+                        clonedState.players = { ...clonedState.players };
+                        Object.keys(clonedState.players).forEach(pid => {
+                            if (clonedState.players[pid]) {
+                                clonedState.players[pid] = {
+                                    ...clonedState.players[pid],
+                                    // Clone hand array to force PlayerHand re-render (since it is memoized)
+                                    hand: clonedState.players[pid].hand ? [...clonedState.players[pid].hand] : [],
+                                    // Clone other arrays for safety
+                                    inkwell: clonedState.players[pid].inkwell ? [...clonedState.players[pid].inkwell] : [],
+                                    discard: clonedState.players[pid].discard ? [...clonedState.players[pid].discard] : [],
+                                    play: clonedState.players[pid].play ? [...clonedState.players[pid].play] : []
+                                };
+                            }
+                        });
+                    }
+                    setEngineState(clonedState);
                 }
             );
+
+            // CONNECT UI TRIGGER
+            triggerUIUpdate = () => {
+                humanController.updateState({ ...stateManager.state });
+            };
 
             // Set up logging callback (RE-ADDED)
             humanController.setLogCallback((category, message, details) => {
@@ -623,6 +709,12 @@ function GamePageInner() {
 
             // Store engine
             setGameEngine({ turnManager, stateManager, humanController, botController });
+
+            // Expose for testing
+            if (isTestMode || isDebugMode) {
+                (window as any).gameEngine = { turnManager, stateManager, humanController, botController };
+                (window as any).lorcanaDebug = (window as any).lorcanaDebug || {}; // Ensure debug object exists
+            }
 
             // Trigger UI update to show initial hand
             setEngineState({ ...stateManager.state }); // Spread to ensure new reference
@@ -1284,20 +1376,8 @@ function GamePageInner() {
                                 cards={yourPlayer?.hand || []}
                                 handRef={handRef as any}
                                 onCardClick={(card) => setActionMenuCard(card)}
-                                canPlayCard={(card) => {
-                                    if (!gameEngine || !yourPlayer || !engineState) return { canPlay: false, reason: "Game not ready" };
-                                    if (!isYourTurn) return { canPlay: false, reason: "Not your turn" };
-                                    if (engineState.phase !== Phase.Main) return { canPlay: false, reason: "Wait for Main phase" };
-                                    const availInk = yourPlayer.inkwell.filter(c => c.ready).length;
-                                    if (card.cost > availInk) return { canPlay: false, reason: `Need ${card.cost - availInk} more◆` };
-                                    return { canPlay: true };
-                                }}
-                                onPlayCard={async (card) => {
-                                    if (gameEngine && yourPlayer) {
-                                        await gameEngine.turnManager.playCard(yourPlayer as any, card.instanceId);
-                                        gameEngine.humanController.updateState(gameEngine.stateManager.state);
-                                    }
-                                }}
+                                canPlayCard={canPlayCard}
+                                onPlayCard={handlePlayCard}
                             />
                         </div>
                     </div>
@@ -1718,7 +1798,14 @@ function GamePageInner() {
             {/* Player Choice Handler */}
             <PlayerChoiceHandler
                 choice={currentChoice}
-                onResponse={handleChoiceResponse}
+                onResponse={(response) => {
+                    console.log('[GamePage] onResponse triggered', response);
+                    if (gameEngine) {
+                        gameEngine.humanController.submitChoice(response);
+                    } else {
+                        console.error('[GamePage] gameEngine is null in onResponse!');
+                    }
+                }}
             />
 
             {/* Lore Gain Animation */}
@@ -1783,7 +1870,10 @@ function GamePageInner() {
                 <DebugPanel
                     gameEngine={gameEngine}
                     engineState={engineState}
-                    onStateChange={(newState) => setEngineState(newState)}
+                    onStateChange={(newState) => {
+                        console.log('[GamePage] Debug state update');
+                        gameEngine.humanController.updateState(newState);
+                    }}
                 />
             )}
         </div>

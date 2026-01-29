@@ -34,6 +34,7 @@ export interface GameEngine {
 
 export class StateManipulator {
     private engine: GameEngine;
+    private uniqueIdCounter = 0;
 
     constructor(engine: GameEngine) {
         this.engine = engine;
@@ -140,7 +141,7 @@ export class StateManipulator {
             ...cardDef,
             abilities: normalizedAbilities, // Use normalized abilities
             fullTextSections: normalizedFullTextSections.length > 0 ? normalizedFullTextSections : cardDef.fullTextSections,
-            instanceId: `debug-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            instanceId: `debug-${Date.now()}-${Math.random().toString(36).substring(2, 8)}-${this.uniqueIdCounter++}`,
             ownerId: playerId,
             zone: zone,
             ready: options.ready !== undefined ? options.ready : true,
@@ -186,8 +187,7 @@ export class StateManipulator {
 
         const instance = this.createCardInstance(cardDef, playerId, ZoneType.Hand);
         player.hand.push(instance);
-
-        console.log(`[StateManipulator] Added ${cardDef.fullName} to ${playerId}'s hand`);
+        console.log(`[StateManipulator] Added ${cardDef.fullName} to ${playerId}'s hand (ID: ${instance.instanceId})`);
         return instance;
     }
 
@@ -438,6 +438,8 @@ export class StateManipulator {
 
         try {
             // Clear current state
+            delete this.engine.stateManager.state.winnerId;
+
             for (const playerId of Object.keys(this.engine.stateManager.state.players)) {
                 this.clearZone(playerId, ZoneType.Hand);
                 this.clearZone(playerId, ZoneType.Play);

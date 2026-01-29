@@ -10,7 +10,10 @@ const mockTurnManager = {
     logger: {
         info: vi.fn(),
         warn: vi.fn(),
-        error: vi.fn()
+        error: vi.fn(),
+        debug: vi.fn(),
+        action: vi.fn(),
+        effect: vi.fn()
     },
     requestChoice: vi.fn(),
     game: {
@@ -55,7 +58,7 @@ describe('Interactive Choices Verification', () => {
             player,
             game: mockTurnManager.game,
             // Add missing GameContext props to satisfy type
-            card: null as any,
+            card: { instanceId: 'source', name: 'Source Card' } as any,
             gameState: {} as any,
             eventContext: undefined
         };

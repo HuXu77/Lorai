@@ -15,9 +15,9 @@ interface PlayAreaProps {
 
 /**
  * PlayArea - Displays characters in play
- * Memoized to prevent unnecessary re-renders when parent state changes
+ * Updated: Removed memoization to handle deep state mutations in card objects
  */
-const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, currentTurn }: PlayAreaProps) {
+function PlayArea({ cards, onCardClick, label, currentTurn }: PlayAreaProps) {
     const { hadCardsRecently } = useCardAnimations(cards);
 
     // Show empty state only when truly empty AND not recently had cards
@@ -86,7 +86,10 @@ const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, curre
     }
 
     return (
-        <div className="border-2 border-dashed border-gray-700 rounded-lg p-2 min-h-[80px] bg-black bg-opacity-20 relative">
+        <div
+            data-testid="play-area"
+            className="border-2 border-dashed border-gray-700 rounded-lg p-2 min-h-[80px] bg-black bg-opacity-20 relative"
+        >
             {label && (
                 <div className="text-xs text-gray-400 mb-1 font-semibold">{label}</div>
             )}
@@ -98,7 +101,7 @@ const PlayArea = React.memo(function PlayArea({ cards, onCardClick, label, curre
             </div>
         </div>
     );
-});
+}
 
 export default PlayArea;
 

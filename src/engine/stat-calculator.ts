@@ -72,7 +72,6 @@ export function getCurrentLore(card: Card, gameState: GameStateWithEffects): num
 
     for (const effect of gameState.activeEffects as any[]) {
         const canApply = canApplyEffect(effect, cardAny, gameState);
-        // console.log(`[StatCalc] Effect ${effect.id}, Type: ${effect.type}, CanApply: ${canApply}`);
 
         if (canApply) {
             if (effect.type === 'modify_lore') {

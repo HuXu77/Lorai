@@ -403,8 +403,8 @@ export class TurnManager {
      * Draw specific number of cards for a player
      * Generic helper for effects (like "Draw 2 cards")
      */
-    public drawCards(playerId: string, amount: number) {
-        drawCardsHelper(this, playerId, amount);
+    public async drawCards(playerId: string, amount: number) {
+        await drawCardsHelper(this, playerId, amount);
     }
 
     /**
@@ -427,6 +427,7 @@ export class TurnManager {
     }
 
     public async resolveAction(action: GameAction): Promise<boolean> {
+        console.error(`[DEBUG-SERVER] resolveAction called: ${action.type} from ${action.playerId}`);
         if (this.game.state.phase !== Phase.Main) {
             this.logger.debug('Actions can only be taken during Main Phase');
             return false;
@@ -4008,6 +4009,7 @@ export class TurnManager {
 
         // Check Resist - use getModifiedResist to include dynamically granted Resist (e.g., from "I'm Still Here")
         const resistAmount = this.abilitySystem.getModifiedResist(card, player);
+        this.logger.debug(`[TurnManager] applyDamage: resistAmount=${resistAmount}`);
         if (resistAmount > 0) {
             finalAmount = Math.max(0, finalAmount - resistAmount);
             this.logger.effect(player.name, 'Resist', `Reduces damage by ${resistAmount}`, {

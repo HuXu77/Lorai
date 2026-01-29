@@ -46,7 +46,9 @@ describe('TDD Batches 16-19: Common & Final Patterns', () => {
                 info: vi.fn(),
                 debug: vi.fn(),
                 warn: vi.fn(),
-                action: vi.fn()
+                action: vi.fn(),
+                effect: vi.fn(),
+                error: vi.fn()
             },
             trackZoneChange: vi.fn(),
             applyDamage: vi.fn((player, target, amount) => {

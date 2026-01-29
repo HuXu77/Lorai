@@ -27,20 +27,19 @@ test.describe('Modal: Yes/No Optional', () => {
 
         // Play the bodyguard character
         await gamePage.clickCardInHand('Simba');
-        await gamePage.clickAction('Play');
+        await gamePage.clickAction('Play Card');
 
         // Should see yes/no modal for Bodyguard
         const modal = await gamePage.expectModal();
         await expect(modal).toBeVisible();
 
         // Modal should have Yes/No options
-        const yesButton = gamePage.page.locator('button:has-text(/Yes|Exerted/i)');
-        const noButton = gamePage.page.locator('button:has-text(/No|Ready/i)');
+        const yesButton = gamePage.page.locator('button', { hasText: /Yes|Exerted/i }).first();
+        const noButton = gamePage.page.locator('button', { hasText: /No|Ready/i }).first();
 
         // At least one should be visible
-        const hasYes = await yesButton.isVisible().catch(() => false);
-        const hasNo = await noButton.isVisible().catch(() => false);
-        expect(hasYes || hasNo).toBe(true);
+        // Wait for visibility implicitly via assertion or explicitly
+        await expect(yesButton.or(noButton).first()).toBeVisible();
     });
 
     test('should allow declining optional ability', async ({ gamePage }) => {
@@ -59,7 +58,7 @@ test.describe('Modal: Yes/No Optional', () => {
 
         // Play bodyguard
         await gamePage.clickCardInHand('Simba');
-        await gamePage.clickAction('Play');
+        await gamePage.clickAction('Play Card');
 
         // Wait for modal
         await gamePage.expectModal();
@@ -90,7 +89,7 @@ test.describe('Modal: Yes/No Optional', () => {
 
         // Play bodyguard
         await gamePage.clickCardInHand('Simba');
-        await gamePage.clickAction('Play');
+        await gamePage.clickAction('Play Card');
 
         // Wait for modal
         await gamePage.expectModal();

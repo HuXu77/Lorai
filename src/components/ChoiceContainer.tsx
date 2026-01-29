@@ -40,7 +40,10 @@ export default function ChoiceContainer({
     children
 }: ChoiceContainerProps) {
     return (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[10000] flex items-center justify-center p-4"
+            onClick={(e) => e.stopPropagation()}
+        >
             {/* Modal Container */}
             <div data-testid={testId} className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-xl shadow-2xl max-w-5xl w-full border border-yellow-500/50 overflow-hidden flex flex-col max-h-[90vh]">
 
@@ -130,7 +133,10 @@ export default function ChoiceContainer({
                     {/* Confirm Button */}
                     {onConfirm && (
                         <button
-                            onClick={onConfirm}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onConfirm();
+                            }}
                             disabled={!canConfirm}
                             className={`
                                 px-8 py-3 rounded-lg font-bold text-base transition-all shadow-lg min-w-[180px]

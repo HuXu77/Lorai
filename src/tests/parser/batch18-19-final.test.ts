@@ -44,7 +44,7 @@ describe('Batches 18-19: Final Push Patterns', () => {
             const abilities = parseToAbilityDefinition(card);
             expect(abilities.length).toBe(1);
             expect((abilities[0] as any).effects[0].type).toBe('damage');
-            expect((abilities[0] as any).effects[0].target.type).toBe('each_opposing_character');
+            expect((abilities[0] as any).effects[0].target.type).toBe('all_opposing_characters');
         });
     });
 

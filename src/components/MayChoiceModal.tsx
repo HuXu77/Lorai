@@ -57,8 +57,8 @@ export default function MayChoiceModal({ choice, onResponse }: MayChoiceModalPro
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-amber-500/40 overflow-hidden">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000] flex items-center justify-center p-4">
+            <div data-testid="choice-modal" className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-amber-500/40 overflow-hidden">
 
                 {/* Header with Source Card */}
                 <div className="bg-gradient-to-r from-amber-900/30 to-slate-800/80 p-5 border-b border-amber-500/20">

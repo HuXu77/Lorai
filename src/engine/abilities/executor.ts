@@ -31,12 +31,12 @@
  * ```
  * 
  * ORGANIZATION:
- * - Lines 1-200: Initialization, helpers, targeting
- * - Lines 200-600: Main execute switch statement
- * - Lines 600-1800: Core effect handlers
- * - Lines 1800-2700: Advanced effect handlers
- * - Lines 2700-3500: Complex mechanics handlers
- * - Lines 3500-4100: Targeting and condition evaluation
+ * - Initialization & Helpers: Constructor, setup, and helper methods
+ * - Main Execution: Core switch statement routing to family handlers
+ * - Core Effect Handlers: Basic effects (damage, heal, etc.)
+ * - Advanced Effect Handlers: Complex interactions and state changes
+ * - Complex Mechanics: Nested effects, loops, and special logic
+ * - Targeting & Conditions: Target resolution and condition evaluation
  * 
  * TESTING:
  * See: src/tests/abilities/tdd-batch*.test.ts for comprehensive test coverage
@@ -196,7 +196,7 @@ export class EffectExecutor {
     async execute(effect: EffectAST, context: GameContext): Promise<boolean | void> {
         // Check optional
         // Skip check for effect types that handle optionality internally with specific prompts
-        const typesWithInternalCheck = ['draw', 'damage', 'banish', 'exert', 'ready', 'look_and_move', 'play_for_free'];
+        const typesWithInternalCheck = ['draw', 'damage', 'banish', 'exert', 'ready', 'ready_card', 'look_and_move', 'play_for_free', 'discard_chosen'];
         if ((effect as any).optional && !typesWithInternalCheck.includes(effect.type) && !(await this.checkOptional(effect, context))) {
             return false;
         }
@@ -209,7 +209,12 @@ export class EffectExecutor {
                 // Unwrap nested effects if present
                 if ((effect as any).effects && (effect as any).effects.length > 0) {
                     for (const innerEffect of (effect as any).effects) {
-                        await this.execute(innerEffect, context);
+                        const result = await this.execute(innerEffect, context);
+                        if (result === false) {
+                            // If an optional effect was declined, abort the sequence
+                            // This handles "You may X. Then Y." -> If X declined, Y doesn't happen.
+                            break;
+                        }
                     }
                 }
                 return;
@@ -219,6 +224,7 @@ export class EffectExecutor {
                 await this.executeDrawUntil(effect, context);
                 break;
             case 'damage':
+                console.log(`[Executor] Case damage hit`);
                 return await this.executeDamage(effect, context);
             case 'remove_damage':
             case 'heal':
@@ -407,9 +413,7 @@ export class EffectExecutor {
             case 'mill':
                 await this.executeMill(effect, context);
                 break;
-            case 'look_and_move_to_top_or_bottom':
-                await this.executeLookAndMoveToTopOrBottom(effect, context);
-                break;
+
             case 'play_revealed_card_for_free':
                 await this.executePlayRevealedCardForFree(effect, context);
                 break;
@@ -426,6 +430,7 @@ export class EffectExecutor {
                 await this.executeDiscardChosen(effect as any, context);
                 break;
             case 'choose_and_discard':
+            case 'choose_one': // Added support for choose_one effects
                 // This is a choice, route to choice family
                 {
                     const handler = this.familyHandlers.get('choice');
@@ -701,6 +706,7 @@ export class EffectExecutor {
             // Merged cases from Block 1
             case 'discard_hand_draw':
             case 'shuffle_into_deck':
+            case 'shuffle_self_into_deck':
             case 'discard_hand':
             case 'play_from_inkwell':
             case 'shuffle_from_discard':
@@ -709,6 +715,8 @@ export class EffectExecutor {
             case 'move_to_top_or_bottom':
             case 'headless_horseman_combo':
 
+            case 'look_and_move_to_top_or_bottom':
+                console.log('[DEBUG-EXECUTOR] Route look_and_move_to_top_or_bottom');
             case 'look_and_move':
             case 'look_at_top_and_choose_placement':
             // case 'return_from_discard': // Now routed to zone family
@@ -1031,6 +1039,7 @@ export class EffectExecutor {
             source: {
                 card: context.card,
                 abilityName: context.abilityName,
+                abilityText: context.abilityText,
                 player: context.player
             },
             timestamp: Date.now()
@@ -1098,25 +1107,55 @@ export class EffectExecutor {
 
         // 2. Prompt Construction
         // Use provided prompt, or ability text, or generic fallback to avoid "undefined"
+        // 2. Prompt Construction
+        // Use provided prompt, or ability text, or generic fallback to avoid "undefined"
         let displayPrompt = promptMessage;
+
+
 
         if (!displayPrompt) {
             // If no specific prompt provided, try to construct one from ability text
+            const rawText = effect?.rawText;
+            // Use ability text or name if available
             if (context.abilityText) {
+                // If we have full text, that's the best context
                 displayPrompt = context.abilityText;
+            } else if (context.abilityName) {
+                // If we have just the name, use it
+                displayPrompt = context.abilityName;
+            } else if (rawText) {
+                displayPrompt = rawText;
             } else {
                 displayPrompt = "Do you want to use this ability?";
             }
-        } else if (context.abilityText) {
-            // If both provided, combine them (legacy behavior, but cleaner)
-            displayPrompt = `${displayPrompt}\n\n${context.abilityText}`;
+        } else {
+            // If specific prompt provided, prepend context if available
+            let contextStr = '';
+            if (context.abilityName) contextStr += context.abilityName;
+
+            if (context.abilityText) {
+                if (contextStr) contextStr += ': ';
+                contextStr += context.abilityText.replace(/\n/g, ' '); // Normalize newlines
+            }
+
+            if (contextStr) {
+                // If we have text (very long), use double newline. If just name (short), use colon style?
+                // Standard: "Name: Text\n\nPrompt" OR "Name: Prompt" (if no text) OR "Text\n\nPrompt" (if no name)
+
+                if (context.abilityText) {
+                    displayPrompt = `${contextStr}\n\n${displayPrompt}`;
+                } else {
+                    // Just Name
+                    displayPrompt = `${contextStr}: ${displayPrompt}`;
+                }
+            }
         }
 
         const request: import('../models').ChoiceRequest = {
             id: `optional-${Date.now()}`,
             type: 'yes_no' as any,
             playerId: context.player.id,
-            prompt: displayPrompt,
+            prompt: displayPrompt || "Do you want to use this ability?",
             options: [
                 { id: 'yes', display: 'Yes', valid: true },
                 { id: 'no', display: 'No', valid: true }
@@ -1124,6 +1163,7 @@ export class EffectExecutor {
             source: {
                 card: context.card,
                 abilityName: context.abilityName,
+                abilityText: context.abilityText,
                 player: context.player
             },
             timestamp: Date.now()
@@ -1156,7 +1196,7 @@ export class EffectExecutor {
                 const amount = threshold - currentHand;
 
                 // Use standard drawCards helper
-                const drawn = this.drawCards(player, amount);
+                const drawn = await this.drawCards(player, amount);
 
                 // Use standard logger action for UI visibility
                 this.turnManager?.logger.action(
@@ -1201,10 +1241,16 @@ export class EffectExecutor {
 
                 if (!isBot && this.turnManager) {
                     // Prompt this player
+                    const promptText = context.abilityText
+                        ? `${context.abilityText}\n\nDo you want to draw ${amount} card(s)?`
+                        : (context.abilityName
+                            ? `${context.abilityName}: Do you want to draw ${amount} card(s)?`
+                            : `Do you want to draw ${amount} card(s)?`);
+
                     const choice = await this.turnManager.requestChoice({
                         type: 'confirm',
                         playerId: (player as any).id,
-                        prompt: `Do you want to draw ${amount} card(s)?`,
+                        prompt: promptText,
                         options: [
                             { id: 'yes', display: 'Yes', valid: true },
                             { id: 'no', display: 'No', valid: true }
@@ -1229,7 +1275,7 @@ export class EffectExecutor {
 
             if (shouldDraw) {
                 // Draw for this player
-                const drawn = this.drawCards(player as any, amount);
+                const drawn = await this.drawCards(player as any, amount);
 
                 this.turnManager.logger.effect(
                     (player as any).name,
@@ -1768,13 +1814,32 @@ export class EffectExecutor {
                         label: c.name,
                         valid: true
                     })),
-                    prompt: chooser === 'opponent'
-                        ? `Choose a card to discard from your hand`
-                        : `Choose a card from ${targetPlayer.name}'s hand to discard`,
+                    prompt: (() => {
+                        let base = chooser === 'opponent'
+                            ? `Choose a card to discard from your hand`
+                            : `Choose a card from ${targetPlayer.name}'s hand to discard`;
+
+                        let contextStr = '';
+                        if (context.abilityName) contextStr += context.abilityName;
+                        if (context.abilityText) {
+                            if (contextStr) contextStr += ': ';
+                            contextStr += context.abilityText.replace(/\n/g, ' ');
+                        }
+
+                        if (contextStr) {
+                            if (context.abilityText) {
+                                return `${contextStr}\n\n${base}`;
+                            } else {
+                                return `${contextStr}: ${base}`;
+                            }
+                        }
+                        return base;
+                    })(),
                     source: {
                         card: context.card,
                         player: context.player,
-                        abilityName: context.abilityName
+                        abilityName: context.abilityName,
+                        abilityText: context.abilityText
                     },
                     timestamp: Date.now()
                 };
@@ -1839,6 +1904,18 @@ export class EffectExecutor {
             return filter.filters.some((f: any) => this.checkFilter(card, f, context));
         }
 
+        if (filter.type === 'or' && filter.filters && Array.isArray(filter.filters)) {
+            return filter.filters.some((f: any) => this.checkFilter(card, f, context));
+        }
+
+        // Check name (Lorcana rule: 'named X' matches 'X' or 'X - Subtitle')
+        if (filter.name) {
+            const requiredName = filter.name;
+            if (card.name !== requiredName && !card.name.startsWith(requiredName + ' -')) {
+                return false;
+            }
+        }
+
         // Check cardType (from EffectAST)
         if (filter.cardType) {
             const lowerType = filter.cardType.toLowerCase();
@@ -1861,6 +1938,7 @@ export class EffectExecutor {
                 }
             } else if ((card.type || '').toLowerCase() !== filter.type.toLowerCase()) {
                 if (this.turnManager) this.turnManager.logger.debug(`[DEBUG] checkFilter failed: singular type check. Expected: ${filter.type.toLowerCase()}, Got: ${card.type}`);
+                console.log(`[Executor] checkFilter failed: type mismatch ${card.type} != ${filter.type}`);
                 return false;
             }
         }
@@ -1868,6 +1946,7 @@ export class EffectExecutor {
         // Check owner (opposing/mine/owner property)
         if (filter.opposing || filter.owner === 'opponent' || filter.opponent) {
             if (card.ownerId === context.player.id) {
+                console.log(`[Executor] checkFilter failed: opposing check. cardOwner=${card.ownerId} player=${context.player.id}`);
                 return false;
             }
         }
@@ -1880,6 +1959,7 @@ export class EffectExecutor {
         // Check other (exclude self)
         if (filter.other || filter.excludeSelf) {
             if (context.card && card.instanceId === context.card.instanceId) {
+                console.log(`[Executor] checkFilter failed: excludeSelf`);
                 return false;
             }
         }
@@ -2549,17 +2629,28 @@ export class EffectExecutor {
     /**
      * Draw cards from deck to hand
      */
-    private drawCards(player: any, amount: number): number {
-        let drawn = 0;
-        for (let i = 0; i < amount && player.deck.length > 0; i++) {
-            const card = player.deck.pop();
-            if (card) {
-                card.zone = 'hand';
-                player.hand.push(card);
-                drawn++;
+    private async drawCards(player: any, amount: number): Promise<number> {
+        const initialDeckSize = player.deck.length;
+        const toDraw = Math.min(amount, initialDeckSize);
+
+        if (this.turnManager) {
+            await this.turnManager.drawCards(player.id, amount);
+        } else {
+            // Fallback for tests without turnManager? (Should likely shouldn't happen)
+            // Copy old logic if needed, but turnManager is usually present
+            let drawn = 0;
+            for (let i = 0; i < amount && player.deck.length > 0; i++) {
+                const card = player.deck.pop();
+                if (card) {
+                    card.zone = 'hand';
+                    player.hand.push(card);
+                    drawn++;
+                }
             }
+            return drawn;
         }
-        return drawn;
+
+        return toDraw;
     }
 
     /**
@@ -2704,6 +2795,37 @@ export class EffectExecutor {
      */
     private getValidTargets(targetType: string, filter: any, context: GameContext): any[] {
         if (!this.turnManager) return [];
+
+        // Handle Discard Targeting
+        if (targetType === 'chosen_card_in_discard') {
+            const options: any[] = [];
+            const allPlayers = Object.values(this.turnManager.game.state.players) as any[];
+
+            allPlayers.forEach((player: any) => {
+                // If filter specifies mine/opponent, respect it
+                if (filter?.mine && player.id !== context.player.id) return;
+                if (filter?.opponent && player.id === context.player.id) return;
+
+                // If implied "your discard" (default for most effects unless specified)
+                // We'll assume strict ownership if not specified, but usually static parser extracts checking
+                // If parser didn't add mine: true, we check context?
+                // For now, iterate all unless filtered.
+
+                if (player.discard) {
+                    player.discard.forEach((card: any) => {
+                        if (this.checkFilter(card, filter, context)) {
+                            options.push({
+                                id: card.instanceId,
+                                display: `${card.name} (Discard)`,
+                                card: card,
+                                valid: true
+                            });
+                        }
+                    });
+                }
+            });
+            return options;
+        }
 
         const options: any[] = [];
         const allPlayers = Object.values(this.turnManager.game.state.players) as any[];
@@ -2853,7 +2975,7 @@ export class EffectExecutor {
                 resolvedTargets = [context.card];
                 break;
             case 'card_in_discard':
-            case 'chosen_card_in_discard':
+                // case 'chosen_card_in_discard': // Moved to interactive targeting list below
                 // ... existing logic needs to assign to resolvedTargets instead of return
                 // This requires refactoring the whole switch or wrapping it.
                 // Wrapping seems safer.
@@ -2893,6 +3015,7 @@ export class EffectExecutor {
                 return [];
 
             case 'chosen_character':
+            case 'chosen_card_in_discard': // Added to interactive list
             case 'chosen_opposing_character':
             case 'chosen_item':
             case 'chosen_opposing_item':
@@ -2908,18 +3031,28 @@ export class EffectExecutor {
                     return (context as any).payload.targets;
                 }
 
+                // Check context.targets (set by previous choice effects)
+                if ((context as any).targets && (context as any).targets.length > 0) {
+                    return (context as any).targets;
+                }
+
                 // ===== INTERACTIVE TARGETING (SYNCHRONOUS) =====
                 // First check if target already provided (from event or test mock)
                 // IMPORTANT: Only use pre-set targetCard if it's NOT the source card itself.
-                // For abilities like "When you play this character, chosen character gets +1 strength",
-                // the eventContext.targetCard may be the played card itself, but the chosen target
-                // should be selected by the player, not auto-resolved.
                 const presetTarget = context.eventContext.targetCard;
                 const isPresetTargetTheSourceCard = presetTarget && context.card &&
                     presetTarget.instanceId === context.card.instanceId;
 
                 if (presetTarget && !isPresetTargetTheSourceCard) {
                     const targetCard = presetTarget;
+
+                    // Check Ward: Opponents cannot choose a character with Ward
+                    if (targetCard.keywords && targetCard.keywords.includes('Ward')) {
+                        if (context.player.id !== targetCard.ownerId) {
+                            if (this.turnManager) this.turnManager.logger.warn(`[EffectExecutor] Ward prevents choosing ${targetCard.name}`);
+                            return [];
+                        }
+                    }
 
                     // Apply implied filters based on target type
                     let effectiveFilter = target.filter || {};
@@ -2948,6 +3081,13 @@ export class EffectExecutor {
                         Object.values(this.turnManager.game.state.players).forEach((p: any) => {
                             const card = p.play.find((c: any) => c.instanceId === id);
                             if (card) {
+                                // Check Ward
+                                if (card.keywords && card.keywords.includes('Ward')) {
+                                    if (context.player.id !== card.ownerId) {
+                                        if (this.turnManager) this.turnManager.logger.warn(`[EffectExecutor] Ward prevents choosing ${card.name} (Mock)`);
+                                        return; // Skip this card
+                                    }
+                                }
                                 let effectiveFilter = target.filter || {};
                                 if (target.type === 'chosen_opposing_character') {
                                     effectiveFilter = { ...effectiveFilter, opposing: true };
@@ -2994,8 +3134,16 @@ export class EffectExecutor {
                 if (context.abilityName) prompt += ` (${context.abilityName})`;
 
                 // Request choice SYNCHRONOUSLY -> NOW ASYNC
+                let choiceType: any = target.type;
+                // Map AST types to ChoiceType enum
+                if (target.type === 'chosen_card_in_discard') choiceType = 'target_card_in_discard';
+                if (target.type === 'chosen_character') choiceType = 'target_character';
+                if (target.type === 'chosen_opposing_character') choiceType = 'target_opposing_character';
+                if (target.type === 'chosen_item') choiceType = 'target_item';
+                if (target.type === 'chosen_location') choiceType = 'target_location';
+
                 const chosenOptions = await this.requestTargetChoice({
-                    type: target.type,
+                    type: choiceType as any,
                     prompt,
                     options: validOptions,
                     filter: target.filter,
@@ -3265,27 +3413,54 @@ export class EffectExecutor {
             return;
         }
 
-        // Bot Logic: Choose lowest cost card to ink
-        // Heuristic: Ink least valuable card
-        let cardToInk = player.hand[0];
-        let minCost = player.hand[0].cost || 0;
+        let cardToInk: any;
 
-        player.hand.forEach((c: any) => {
-            const cost = c.cost || 0;
-            if (cost < minCost) {
-                minCost = cost;
-                cardToInk = c;
+        // Use requestChoice to allow player selection (and Bot controller support)
+        const options = player.hand.map((c: any) => ({
+            id: c.instanceId,
+            display: c.name,
+            card: c
+        }));
+
+        // Request choice using TARGET_CARD_IN_HAND (ui maps this to hand selection usually)
+        // or fall back to modal list
+        const response = await this.turnManager.requestChoice({
+            id: `ink_${Date.now()}`,
+            type: 'target_card_in_hand', // Enum ChoiceType.TARGET_CARD_IN_HAND
+            playerId: player.id,
+            prompt: "Choose a card to put into your inkwell",
+            options: options,
+            min: 1,
+            max: 1,
+            source: {
+                card: cardToInk,
+                player: player,
+                abilityName: "Ink Card"
             }
         });
+
+        if (response && response.selectedIds && response.selectedIds.length > 0) {
+            const selectedId = response.selectedIds[0];
+            cardToInk = player.hand.find((c: any) => c.instanceId === selectedId);
+        }
+
+        if (!cardToInk) {
+            this.turnManager.logger.debug(`[EffectExecutor] No card selected for ink.`);
+            return;
+        }
 
         // Remove from hand
         const originalZone = cardToInk.zone || 'hand';
         player.hand = player.hand.filter((c: any) => c.instanceId !== cardToInk.instanceId);
 
-        // Add to inkwell via TurnManager
-        this.turnManager.game.addCardToZone(player, cardToInk, 'inkwell');
+        // Add to inkwell
+        cardToInk.zone = 'inkwell';
+        player.inkwell.push(cardToInk);
+
         this.turnManager.logger.info(`🖌️ ${player.name} put ${cardToInk.name} into their inkwell`);
-        this.turnManager.trackZoneChange(cardToInk, originalZone, 'inkwell');
+        if (this.turnManager.trackZoneChange) {
+            this.turnManager.trackZoneChange(cardToInk, originalZone, 'inkwell');
+        }
     }
 
     /**
@@ -3407,7 +3582,21 @@ export class EffectExecutor {
         if (filter.maxCost !== undefined) {
             costDesc = ` with cost ${filter.maxCost} or less`;
         }
-        const prompt = `Choose a ${cardTypeDesc}${costDesc} to play for free`;
+        let contextStr = '';
+        if (context.abilityName) contextStr += context.abilityName;
+        if (context.abilityText) {
+            if (contextStr) contextStr += ': ';
+            contextStr += context.abilityText.replace(/\n/g, ' ');
+        }
+
+        let prompt = `Choose a ${cardTypeDesc}${costDesc} to play for free`;
+        if (contextStr) {
+            if (context.abilityText) {
+                prompt = `${contextStr}\n\n${prompt}`;
+            } else {
+                prompt = `${contextStr}: ${prompt}`;
+            }
+        }
 
         // Request choice from player
         const selectedCards = await this.requestTargetChoice({

@@ -63,6 +63,9 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
             case 'opponent_reveal_and_discard':
                 await this.executeOpponentRevealAndDiscard(effect, context);
                 break;
+            case 'choose_one':
+                await this.executeChooseOne(effect, context);
+                break;
         }
     }
 
@@ -105,7 +108,8 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 source: {
                     card: context.card,
                     player: context.player,
-                    abilityName: context.abilityName
+                    abilityName: context.abilityName,
+                    abilityText: context.abilityText
                 }
             });
 
@@ -122,11 +126,14 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                     this.turnManager.logger.effect(player.name, 'discarded', cardToDiscard.name, {
                         ability: context.abilityName
                     });
-                    this.turnManager.eventBus.emit(GameEvent.CARD_DISCARDED, {
-                        card: cardToDiscard,
-                        player: player,
-                        source: context.card
-                    });
+
+                    if (this.turnManager.abilitySystem) {
+                        await this.turnManager.abilitySystem.emitEvent(GameEvent.CARD_DISCARDED, {
+                            card: cardToDiscard,
+                            player: player,
+                            source: context.card
+                        });
+                    }
                 }
             }
         }
@@ -161,7 +168,7 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 options: options,
                 min: 1,
                 max: 1,
-                source: { card: context.card, player: context.player }
+                source: { card: context.card, abilityName: context.abilityName, abilityText: context.abilityText, player: context.player }
             });
 
             const selectedId = choice.selectedIds[0];
@@ -207,7 +214,7 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 options: options,
                 min: 1,
                 max: 1, // Or 0 if optional? Usually mandatory if "Choose a card..."
-                source: { card: context.card, player: context.player }
+                source: { card: context.card, abilityName: context.abilityName, abilityText: context.abilityText, player: context.player }
             });
 
             const selectedId = choice.selectedIds[0];
@@ -353,6 +360,7 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
             source: {
                 card: context.card,
                 abilityName: context.abilityName || 'Distribute Damage',
+                abilityText: context.abilityText,
                 player: context.player
             },
             timestamp: Date.now(),
@@ -484,7 +492,8 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                         source: {
                             card: context.card,
                             player: context.player,
-                            abilityName: context.abilityName || 'Opponent Discard'
+                            abilityName: context.abilityName || 'Opponent Discard',
+                            abilityText: context.abilityText
                         },
                         timestamp: Date.now()
                     };
@@ -614,6 +623,7 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                     source: {
                         card: context.card,
                         abilityName: context.abilityName || 'Reveal and Discard',
+                        abilityText: context.abilityText,
                         player: context.player
                     },
                     context: {
@@ -668,6 +678,59 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
         } else {
             if (this.turnManager) {
                 this.turnManager.logger.info(`${opponent.name} has no matching cards to discard, but hand is revealed`);
+            }
+        }
+    }
+    private async executeChooseOne(effect: { type: 'choose_one', options: { label?: string, text?: string, effects: any[] }[] }, context: GameContext): Promise<void> {
+        if (!effect.options || effect.options.length === 0) return;
+
+        const player = context.player;
+
+        // Construct options for UI
+        const options = effect.options.map((opt: any, index: number) => ({
+            id: `option_${index}`,
+            display: opt.label || opt.text,
+            label: opt.label || opt.text,
+            valid: true,
+            optionIndex: index
+        }));
+
+        // Request Choice
+        const choice = await this.turnManager.requestChoice({
+            id: `choose_one_${Date.now()}`,
+            type: 'modal_choice' as any, // ChoiceType.MODAL_CHOICE
+            playerId: player.id,
+            prompt: 'Choose one:',
+            options: options,
+            min: 1,
+            max: 1,
+            optional: false,
+            source: {
+                card: context.card,
+                abilityName: context.abilityName,
+                abilityText: context.abilityText,
+                player: context.player
+            },
+            timestamp: Date.now()
+        });
+
+        // Execute selected option
+        const selectedId = choice.selectedIds[0];
+        const selectedOptionIndex = options.find((o: any) => o.id === selectedId)?.optionIndex;
+
+        if (selectedOptionIndex !== undefined) {
+            const selectedEffects = effect.options[selectedOptionIndex].effects;
+            if (selectedEffects) {
+                if (this.turnManager) {
+                    const opt = effect.options[selectedOptionIndex];
+                    this.turnManager.logger.info(`${player.name} chose: ${opt.label || opt.text}`);
+                }
+
+                // Execute effects
+                for (const eff of selectedEffects) {
+                    // Pass choice context?
+                    await this.executor.execute(eff, context);
+                }
             }
         }
     }

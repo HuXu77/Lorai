@@ -85,21 +85,22 @@ export default function CardSelectionChoice({ choice, onResponse }: CardSelectio
                         const selectionIndex = selectedIds.indexOf(option.id) + 1;
 
                         return (
-                            <div
+                            <button
                                 key={option.id}
                                 data-testid="choice-option"
+                                type="button"
+                                onClick={() => handleCardClick(option.id, option.valid)}
+                                disabled={!option.valid}
                                 className={`
-                                    relative transition-all duration-200 cursor-pointer w-fit
+                                    relative transition-all duration-200 cursor-pointer w-fit p-0 bg-transparent border-0
                                     ${isSelected ? 'transform scale-105 z-10' : 'z-0 hover:scale-102'}
                                     ${!option.valid ? 'cursor-not-allowed' : ''}
                                 `}
-                                onClick={() => handleCardClick(option.id, option.valid)}
                                 aria-label={option.card!.fullName || option.card!.name}
-                                role="button"
                             >
                                 <span className="sr-only">{option.card!.fullName || option.card!.name}</span>
                                 <div className={`
-                                    rounded-lg overflow-hidden
+                                    rounded-lg overflow-hidden pointer-events-none
                                     ${isSelected ? 'ring-4 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)]' : ''}
                                     ${option.valid && !isSelected ? 'ring-2 ring-white/20 hover:ring-white/40' : ''}
                                     ${!option.valid ? 'opacity-40 grayscale' : ''}
@@ -136,7 +137,7 @@ export default function CardSelectionChoice({ choice, onResponse }: CardSelectio
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                            </button>
                         );
                     })}
                 </div>

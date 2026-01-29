@@ -55,7 +55,10 @@ describe('Executor: Quest, Draw, & Lore Mechanics', () => {
         turnManager.logger = {
             info: vi.fn(),
             warn: vi.fn(),
-            error: vi.fn()
+            error: vi.fn(),
+            debug: vi.fn(),
+            action: vi.fn(),
+            effect: vi.fn()
         };
 
         // Mock getPlayer

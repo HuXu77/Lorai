@@ -51,17 +51,28 @@ test.describe('POC: Develop Your Brain Interactions', () => {
         await gamePage.clickAction('Play Card');
 
         // 3. Handle Interactions: Expect Choice Modal
-        console.log('Waiting for choice modal (optional)...');
-        try {
-            const modal = await gamePage.expectModal();
-            expect(modal).toBeVisible();
-            console.log('Modal visible.');
-        } catch (e) {
-            console.warn('Modal not detected within timeout, checking log...');
-        }
+        // 3. Handle Interactions: Expect Choice Modal
+        console.log('Waiting for choice modal...');
+        const modal = gamePage.page.locator('[data-testid="choice-modal"]');
+        await expect(modal).toBeVisible();
+        console.log('Modal visible, selecting card...');
+
+        // Select the first card option
+        const firstOption = gamePage.page.locator('[data-testid="choice-option"]').first();
+        await expect(firstOption).toBeVisible();
+        await firstOption.click();
+
+        // Confirm choice
+        const confirmBtn = gamePage.page.locator('button', { hasText: 'Confirm' });
+        await expect(confirmBtn).toBeVisible();
+        await confirmBtn.click();
+
+        // Wait for modal to close
+        await expect(modal).not.toBeVisible();
 
         // 4. Verify Outcome (Log is the source of truth for action execution)
-        await gamePage.expectLogMessage(/played Develop Your Brain/i);
+        // Log message is "You Played Action Develop Your Brain"
+        await gamePage.expectLogMessage(/played.*Develop Your Brain/i);
         console.log('Log message verified.');
     });
 

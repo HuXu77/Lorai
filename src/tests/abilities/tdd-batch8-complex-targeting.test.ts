@@ -71,7 +71,9 @@ describe('TDD Batch 8: Complex Targeting & Edge Cases', () => {
                 info: console.log,
                 debug: console.log,
                 warn: console.warn,
-                error: console.error
+                error: console.error,
+                action: vi.fn(),
+                effect: vi.fn()
             },
             trackZoneChange: vi.fn(),
             // Mock choices for 'chosen' targets

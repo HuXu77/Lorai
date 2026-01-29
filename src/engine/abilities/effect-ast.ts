@@ -136,6 +136,7 @@ export type EffectAST =
     | { type: 'discard', amount: number, optional?: boolean, target?: TargetAST }
     | { type: 'put_from_discard', filter?: { cardType?: string }, destination: string, optional?: boolean }
     | { type: 'shuffle_into_deck', target: TargetAST }
+    | { type: 'shuffle_self_into_deck' }
 
     // Stat modification
     | { type: 'modify_stats', target?: TargetAST, stat?: string, amount?: number, modifiers?: { [key: string]: number }, duration?: string, condition?: any, scaling?: any }
@@ -246,6 +247,7 @@ export type EffectAST =
     | { type: 'ward', target: TargetAST, amount?: number }
 
     // Choice-Based Effects (using choice system)
+    | { type: 'choose_one', options: { label: string, effects: EffectAST[] }[] }
     | { type: 'choose_card_from_discard', filter?: any }
     | { type: 'choose_to_play_for_free', filter?: any }
     | { type: 'opponent_choose_and_discard', amount: number }

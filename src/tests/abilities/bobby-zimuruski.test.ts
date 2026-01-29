@@ -72,7 +72,8 @@ describe('Bobby Zimuruski Execution', () => {
         const context = {
             player: p1,
             card: card,
-            gameState: game
+            gameState: game,
+            abilityName: 'SO CHEESY'
         };
 
         // Parsed ability structure for Bobby
@@ -101,11 +102,67 @@ describe('Bobby Zimuruski Execution', () => {
         // If the implementation is missing, this expectation might fail or key properties will be missing.
         console.log('Call 1 Type:', call1.type);
         console.log('Call 1 Prompt:', call1.prompt);
+        expect(call1.prompt).toContain('SO CHEESY');
 
         if (call1.type === 'yes_no') {
             console.log('Confirmed: Prompted for optional.');
         } else {
             console.log('Confirmed: DID NOT prompt for optional.');
         }
+    });
+
+    it('should NOT discard if user declines to draw', async () => {
+        const p1 = game.getPlayer(p1Id);
+        p1.deck = [{ instanceId: 'd1', name: 'Card 1' }] as any;
+        p1.hand = [{ instanceId: 'h1', name: 'Hand Card 1' }] as any;
+
+        const context = {
+            player: p1,
+            card: { instanceId: 'bobby', name: 'Bobby Zimuruski', ownerId: p1Id },
+            gameState: game,
+            abilityName: 'SO CHEESY',
+            abilityText: 'When you play this character, you may draw a card, then choose and discard a card.'
+        };
+
+        const ability = {
+            type: 'triggered',
+            effects: [
+                { type: 'draw', amount: 1, optional: true },
+                { type: 'discard', amount: 1 }
+            ]
+        };
+
+        // Mock requestChoice with YES_NO prompt handling
+        turnManager.requestChoice = vi.fn().mockImplementation(async (req) => {
+            if (req.type === 'confirm') return { selectedIds: ['no'] };
+            return { selectedIds: ['h1'] };
+        });
+
+        // Spy on logic
+        // We can't easily spy on executor methods directly unless we re-assign them or use spyOn on the prototype/instance
+        // But we can check if requestChoice was called a second time (for discard)
+
+        await executor.execute(ability, context);
+
+        expect(turnManager.requestChoice).toHaveBeenCalled();
+        const call1 = (turnManager.requestChoice as vi.Mock).mock.calls[0][0];
+
+        console.log('Prompt:', call1.prompt);
+        // Expect prompt to contain the text now (once fixed)
+        // expect(call1.prompt).toContain('choose and discard'); 
+
+        // CRITICAL CHECK: Did it ask to discard?
+        // If we said NO to draw, and it still asks to discard, that's a bug.
+        // Discard usually asks for a choice of card.
+        const calls = (turnManager.requestChoice as vi.Mock).mock.calls;
+        if (calls.length > 1) {
+            console.log('BUG CONFIRMED: Discard triggered even after No');
+        } else {
+            console.log('Confirmed: Discard skipped.');
+        }
+
+        // Assert dependent on desired behavior.
+        // If "May draw... then discard" implies the whole sequence is optional, calls.length should be 1.
+        expect(calls.length).toBe(1);
     });
 });

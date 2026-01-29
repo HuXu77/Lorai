@@ -61,7 +61,7 @@ describe('Batch 38: While Count & Return', () => {
             expect((abilities[0] as any).costs[0].type).toBe('exert');
             expect((abilities[0] as any).costs[1].amount).toBe(3);
             expect((abilities[0] as any).effects[0].type).toBe('return_from_discard');
-            expect((abilities[0] as any).effects[0].target.type).toBe('card_in_discard');
+            expect((abilities[0] as any).effects[0].target.type).toBe('chosen_card_in_discard');
             expect((abilities[0] as any).effects[0].target.filter.cardType).toBe('character');
             expect((abilities[0] as any).effects[0].target.filter.subtype).toBe('pirate');
         });

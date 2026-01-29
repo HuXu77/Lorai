@@ -2,6 +2,72 @@ import { TriggerPattern } from '../types';
 import { generateAbilityId, GameEvent } from '../../parser-utils';
 
 export const CONTROL_PATTERNS: TriggerPattern[] = [
+    // Pay to Return Opposing with Stats (Finnick - Tiny Terror)
+    {
+        pattern: /^when you play this character, you may pay (\d+) (?:⬡|ink) to return chosen opposing character with (\d+) (strength|willpower|lore|¤|🛡️|⛉|◊|⬡) or less to their player's hand/i,
+        handler: (match, card, text) => {
+            const cost = parseInt(match[1]);
+            const statValue = parseInt(match[2]);
+
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                cost: { ink: cost },
+                optional: true, // "You may pay..." implies top-level optionality
+                effects: [{
+                    type: 'return_to_hand',
+                    target: {
+                        type: 'chosen_character',
+                        filter: {
+                            opponent: true,
+                            maxStrength: statValue // Assuming '¤' maps to Strength usually, or handle mapping if strict
+                        }
+                    },
+                    optional: true // "You may pay... to return" implies the whole sequence is optional.
+                }],
+                rawText: text
+            } as any;
+        }
+    },
+    // Banish Chosen Opposing with Stat Condition
+    {
+        pattern: /when you play this character, banish chosen opposing character with (\d+) ([^\s]+) or (more|less)/i,
+        handler: (match, card, text) => {
+            const threshold = parseInt(match[1]);
+            const statType = match[2].toLowerCase();
+            const direction = match[3].toLowerCase(); // "more" or "less"
+
+            let filterProp = '';
+            if (statType === 'cost' || statType === '⬡') filterProp = 'Cost';
+            else if (statType === 'strength' || statType === '¤') filterProp = 'Strength';
+            else if (statType === 'willpower' || statType === '🛡️') filterProp = 'Willpower';
+            else if (statType === 'lore' || statType === '◊') filterProp = 'Lore';
+
+            const minProp = `min${filterProp}`;
+            const maxProp = `max${filterProp}`;
+
+            const filter: any = { opponent: true };
+            if (direction === 'more') filter[minProp] = threshold;
+            else filter[maxProp] = threshold;
+
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects: [{
+                    type: 'banish',
+                    target: {
+                        type: 'chosen_character',
+                        filter
+                    }
+                }],
+                rawText: text
+            } as any;
+        }
+    },
     // Hades - Looking for a Deal (Draw unless opponent puts on bottom)
     {
         pattern: /^when you play this character, you may choose an opposing character\. if you do, draw 2 cards unless that character's player puts that card on the bottom of their deck/i,
@@ -21,7 +87,7 @@ export const CONTROL_PATTERNS: TriggerPattern[] = [
                         optional: true
                     },
                     {
-                        type: 'conditional_action',
+                        type: 'conditional',
                         condition: { type: 'has_target' },
                         effect: {
                             type: 'opponent_choice',
@@ -266,7 +332,37 @@ export const CONTROL_PATTERNS: TriggerPattern[] = [
             } as any;
         }
     },
-    // BATCH 48: Location-based character restriction (Elsa's Ice Palace)
+    // Exert up to X chosen characters & Freeze (Elsa - Spirit of Winter)
+    {
+        pattern: /^when you play this character, exert up to (\d+) chosen characters\. they (?:cannot|can't) ready at the start of their next turn/i,
+        handler: (match, card, text) => {
+            const count = parseInt(match[1]);
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects: [
+                    {
+                        type: 'exert',
+                        target: {
+                            type: 'chosen_character',
+                            count: count,
+                            upTo: true
+                        }
+                    },
+                    {
+                        type: 'restriction',
+                        restriction: 'cant_ready',
+                        target: { type: 'same_target' }, // Relies on context persistence
+                        duration: 'next_turn'
+                    }
+                ],
+                rawText: text
+            } as any;
+        }
+    },
+    // Chosen Opposing & Freeze
     {
         pattern: /when you play this location, choose an exerted character\. while this location is in play, that character can't ready at the start of their turn/i,
         handler: (match, card, text) => {
@@ -281,6 +377,38 @@ export const CONTROL_PATTERNS: TriggerPattern[] = [
                     restriction: 'cant_ready',
                     duration: 'while_in_play',
                     timing: 'start_of_turn'
+                }],
+                rawText: text
+            } as any;
+        }
+    },
+    // Conditional Banish (Pete - Steamboat Rival)
+    {
+        pattern: /^when you play this character, if you have (?:another )?character named (.+?) in play, (you may banish chosen opposing character)/i,
+        handler: (match, card, text) => {
+            const requiredName = match[1];
+
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects: [{
+                    type: 'conditional',
+                    condition: {
+                        type: 'presence',
+                        filter: {
+                            name: requiredName,
+                            other: text.includes('another')
+                        }
+                    },
+                    effect: {
+                        type: 'banish',
+                        target: {
+                            type: 'chosen_opposing_character'
+                        },
+                        optional: text.includes('you may')
+                    }
                 }],
                 rawText: text
             } as any;
@@ -471,6 +599,28 @@ export const CONTROL_PATTERNS: TriggerPattern[] = [
                         filter: { subtype }
                     },
                     optional: text.includes('you may')
+                }],
+                rawText: text
+            } as any;
+        }
+    },
+    // Banish Chosen Item (Benja)
+    {
+        pattern: /^when you play this character, (you may )?banish chosen (opposing )?item/i,
+        handler: (match, card, text) => {
+            const optional = !!match[1];
+            const isOpposing = !!match[2];
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects: [{
+                    type: 'banish',
+                    target: {
+                        type: isOpposing ? 'chosen_opposing_item' : 'chosen_item'
+                    },
+                    optional
                 }],
                 rawText: text
             } as any;

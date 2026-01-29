@@ -11,7 +11,7 @@ interface PlayerHandProps {
     /** Function to check if a card can be played */
     canPlayCard?: (card: CardInstance) => { canPlay: boolean; reason?: string }
     /** Callback when play button is clicked */
-    onPlayCard?: (card: CardInstance) => void
+    onPlayCard?: (card: CardInstance) => void | Promise<void>
     /** Ref for animation targeting */
     handRef?: React.RefObject<HTMLDivElement>
 }
@@ -20,7 +20,8 @@ interface PlayerHandProps {
  * PlayerHand - Displays player or opponent hand
  * Memoized to prevent unnecessary re-renders when parent state changes
  */
-const PlayerHand = React.memo(function PlayerHand({
+// Removed React.memo to ensure UI updates are always reflected immediately
+function PlayerHand({
     cards,
     onCardClick,
     isOpponent = false,
@@ -29,14 +30,27 @@ const PlayerHand = React.memo(function PlayerHand({
     onPlayCard,
     handRef
 }: PlayerHandProps) {
+    const [processingId, setProcessingId] = React.useState<string | null>(null);
+    const processingRef = React.useRef<boolean>(false);
+
     const handleCardClick = useCallback((card: CardInstance) => {
         onCardClick?.(card);
     }, [onCardClick]);
 
-    const handlePlayCard = useCallback((card: CardInstance, e: React.MouseEvent) => {
+    const handlePlayCard = useCallback(async (card: CardInstance, e: React.MouseEvent) => {
         e.stopPropagation();
-        onPlayCard?.(card);
-    }, [onPlayCard]);
+        if (processingRef.current) return; // Prevent double submission immediately
+
+        processingRef.current = true;
+        setProcessingId(card.instanceId); // Still use state for UI updates
+
+        try {
+            await onPlayCard?.(card);
+        } finally {
+            processingRef.current = false;
+            setProcessingId(null);
+        }
+    }, [onPlayCard]); // Removed processingId dependency as we use ref
 
     if (isOpponent) {
         // Opponent hand - compact by default, expands when revealed
@@ -122,6 +136,7 @@ const PlayerHand = React.memo(function PlayerHand({
                     const playability = canPlayCard?.(card);
                     const canPlay = playability?.canPlay ?? false;
                     const reason = playability?.reason;
+                    const isProcessing = processingId === card.instanceId;
 
                     return (
                         <div
@@ -141,10 +156,11 @@ const PlayerHand = React.memo(function PlayerHand({
                             {/* Playability Overlay */}
                             {canPlayCard && (
                                 <>
-                                    {canPlay && onPlayCard && (
+                                    {canPlay && onPlayCard && !isProcessing && (
                                         <div className="absolute inset-0 border-2 border-green-400 border-opacity-40 rounded-lg pointer-events-none transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] z-10">
                                             <button
                                                 onClick={(e) => handlePlayCard(card, e)}
+                                                disabled={isProcessing}
                                                 className="absolute bottom-1 left-1/2 transform -translate-x-1/2 bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-xs font-bold pointer-events-auto shadow-lg transition-all"
                                             >
                                                 ▶ PLAY ({card.cost}◆)
@@ -152,7 +168,13 @@ const PlayerHand = React.memo(function PlayerHand({
                                         </div>
                                     )}
 
-                                    {!canPlay && reason && (
+                                    {isProcessing && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg flex items-center justify-center z-20 pointer-events-none">
+                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                        </div>
+                                    )}
+
+                                    {!canPlay && reason && !isProcessing && (
                                         <div className="absolute inset-0 bg-black bg-opacity-60 rounded-lg pointer-events-none z-10" />
                                     )}
                                 </>
@@ -162,8 +184,8 @@ const PlayerHand = React.memo(function PlayerHand({
                 })
             )}
         </div>
-    )
-});
+    );
+}
 
 export default PlayerHand;
 

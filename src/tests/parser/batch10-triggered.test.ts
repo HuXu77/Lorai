@@ -86,7 +86,7 @@ describe('Batch 10: Triggered Abilities', () => {
             expect(abilities.length).toBe(1);
             expect(abilities[0].type).toBe('triggered');
             expect((abilities[0] as any).event).toBe('card_quested');
-            expect((abilities[0] as any).effects[0].type).toBe('look_at_top_deck');
+            expect((abilities[0] as any).effects[0].type).toBe('look_and_move_to_top_or_bottom');
             expect((abilities[0] as any).effects[0].amount).toBe(1);
         });
     });

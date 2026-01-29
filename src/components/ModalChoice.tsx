@@ -90,6 +90,7 @@ export default function ModalChoice({ choice, onResponse }: ModalChoiceProps) {
 
     return (
         <ChoiceContainer
+            data-testid="choice-modal"
             prompt={choice.prompt}
             sourceCard={choice.source?.card}
             sourceAbilityName={choice.source?.abilityName}

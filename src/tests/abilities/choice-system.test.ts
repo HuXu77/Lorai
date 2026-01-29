@@ -158,7 +158,7 @@ describe('Callback Choice System', () => {
 
         expect(request.id).toBeDefined();
         expect(request.playerId).toBe(p1.id);
-        expect(request.prompt).toBe('Test prompt message');
+        expect(request.prompt).toBe('Test Ability: Test prompt message');
         expect(request.source).toBeDefined();
         expect(request.source.card).toBeDefined();
         expect(request.source.abilityName).toBe('Test Ability');

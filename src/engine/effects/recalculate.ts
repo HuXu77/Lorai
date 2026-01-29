@@ -48,6 +48,7 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
             if (card.meta) {
                 delete card.meta.resist;
             }
+            card.challenger = 0; // Reset challenger to 0 (will be recalculated from keywords)
         });
     });
 
@@ -57,6 +58,9 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
             // Apply active effect modifications (e.g., Granted Keywords, Stat Buffs)
             turnManager.game.state.activeEffects.forEach(effect => {
                 const effectAny = effect as any;
+                if (effect.type === 'modification') {
+                    // 
+                }
                 // console.log(`[Recalc] Checking effect ${effect.id} (${effect.type}) against ${card.name}`);
 
                 // Apply stat modifications (NEW: from executor's executeModifyStats)
@@ -84,9 +88,7 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
                 }
             });
 
-            // NEW: Calculate Resist from keywords (e.g. "Resist +2" granted by effect)
-            // This handles cases where 'grant_keyword' adds "Resist +2" to keywords array,
-            // but does not explicitly set meta.resist.
+            // NEW: Calculate Resist and Challenger from keywords
 
             // FIRST: Restore permanent Resist from static keyword abilities (e.g., Troubadour)
             if (card.parsedEffects) {
@@ -98,17 +100,24 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
                 });
             }
 
-            // THEN: Add Resist from keywords array (granted by effects like "I'm Still Here")
+            // THEN: Add Resist and Challenger from keywords array
             if (card.keywords) {
                 let resistFromKeywords = 0;
+                let challengerFromKeywords = 0;
+
                 card.keywords.forEach(kw => {
                     if (kw.startsWith('Resist')) {
                         // Parse value "Resist +2" or "Resist 1"
                         const match = kw.match(/Resist\s*\+?(\d+)/);
                         if (match) {
                             const val = parseInt(match[1]);
-                            // console.log(`[DEBUG] Found Resist keyword: ${kw}, value: ${val} on ${card.name}`);
                             resistFromKeywords += val;
+                        }
+                    } else if (kw.startsWith('Challenger')) {
+                        const match = kw.match(/Challenger\s*\+?(\d+)/);
+                        if (match) {
+                            const val = parseInt(match[1]);
+                            challengerFromKeywords += val;
                         }
                     }
                 });
@@ -118,6 +127,10 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
                     // Add to existing resist (from static abilities)
                     const oldResist = card.meta.resist || 0;
                     card.meta.resist = oldResist + resistFromKeywords;
+                }
+
+                if (challengerFromKeywords > 0) {
+                    card.challenger = (card.challenger || 0) + challengerFromKeywords;
                 }
             }
 

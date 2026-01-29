@@ -85,7 +85,7 @@ describe('Batch 2 Reproduction Tests', () => {
             expect(abilities.length).toBe(1);
             expect((abilities[0] as any).type).toBe('activated');
             expect((abilities[0] as any).effects[0].type).toBe('return_from_discard');
-            expect((abilities[0] as any).effects[0].target.type).toBe('card_in_discard');
+            expect((abilities[0] as any).effects[0].target.type).toBe('chosen_card_in_discard');
             expect((abilities[0] as any).effects[0].target.filter.cardType).toBe('character');
             expect((abilities[0] as any).effects[0].target.filter.subtype).toBe('pirate');
         });

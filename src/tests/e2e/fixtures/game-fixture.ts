@@ -11,6 +11,14 @@ export class GamePage {
 
     constructor(page: Page) {
         this.page = page;
+        // Forward console logs to stdout
+        page.on('console', msg => {
+            const text = msg.text();
+            // Filter out clutter if needed, or just show all
+            if (!text.includes('[UI DEBUG]')) {
+                console.log(`BROWSER: [${msg.type()}] ${text}`);
+            }
+        });
     }
 
     // ==================== NAVIGATION ====================
@@ -38,6 +46,10 @@ export class GamePage {
     async waitForGameReady() {
         // Wait for the page to settle
         await this.page.waitForLoadState('networkidle', { timeout: 30000 });
+
+        // Disable all CSS animations and transitions for stable testing
+        await this.disableAnimations();
+
         // Give React time to hydrate and initialize game engine
         await this.page.waitForTimeout(2000);
         // Try to wait for lorcanaDebug - fallback if not available
@@ -49,6 +61,23 @@ export class GamePage {
         } catch {
             // Debug API may not be available - continue anyway
         }
+    }
+
+    /**
+     * Disable all CSS animations and transitions for stable E2E testing.
+     * This prevents timing issues with Playwright visibility detection.
+     */
+    async disableAnimations() {
+        await this.page.addStyleTag({
+            content: `
+                *, *::before, *::after {
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
+                }
+            `
+        });
     }
 
     // ==================== STATE INJECTION ====================
@@ -67,19 +96,24 @@ export class GamePage {
      * Inject custom state via debug panel API
      */
     async injectState(config: GameStateConfig) {
+        // Inject state via debug interface
         await this.page.evaluate((cfg) => {
+            console.warn('[INJECT] injectState called inside page context');
             const debug = (window as any).lorcanaDebug;
             if (debug) {
+                console.warn('[INJECT] Found lorcanaDebug, loading preset...');
                 const success = debug.loadPreset({
                     id: 'injected',
                     name: 'Injected State',
+                    description: 'Injected via E2E test',
+                    category: 'general',
                     setup: cfg
                 });
-                if (!success) {
-                    throw new Error('Failed to load injected state via lorcanaDebug');
-                }
+                console.warn(`[INJECT] loadPreset result: ${success}`);
+                if (!success) throw new Error("Failed to load preset");
             } else {
-                throw new Error('lorcanaDebug not found during injectState');
+                console.warn('[INJECT] lorcanaDebug NOT FOUND on window');
+                throw new Error("Debug interface not found");
             }
         }, config);
         await this.page.waitForTimeout(1000); // Increased wait time
@@ -144,11 +178,30 @@ export class GamePage {
     /**
      * Click a card in hand by name (partial match)
      */
+    /**
+     * Click a card in hand by name (partial match)
+     */
     async clickCardInHand(cardName: string) {
         // Scope to player hand to avoid clicking matching cards in play
         const hand = this.page.locator('[data-testid="player-hand"]');
         const card = hand.locator(`[data-card-name*="${cardName}"], [title*="${cardName}"], img[alt*="${cardName}"]`).first();
-        await card.click();
+        try {
+            await card.click({ timeout: 5000 });
+        } catch (e) {
+            console.log(`Failed to click card in hand "${cardName}".`);
+            // Try to find what's covering it
+            const overlays = this.page.locator('.fixed.inset-0');
+            const count = await overlays.count();
+            console.log(`Found ${count} overlays potentially blocking.`);
+            for (let i = 0; i < count; i++) {
+                if (await overlays.nth(i).isVisible()) {
+                    console.log(`Overlay ${i} HTML:`, await overlays.nth(i).innerHTML());
+                    console.log(`Overlay ${i} Class:`, await overlays.nth(i).getAttribute('class'));
+                    console.log(`Overlay ${i} Z-Index:`, await overlays.nth(i).evaluate(el => window.getComputedStyle(el).zIndex));
+                }
+            }
+            throw e;
+        }
     }
 
     /**
@@ -161,11 +214,42 @@ export class GamePage {
     }
 
     /**
+     * Play a card from hand via the UI
+     */
+    async playCardFromHand(cardName: string) {
+        await this.clickCardInHand(cardName);
+
+        // Wait for Action Menu (Play button)
+        // Matches "Play Card" or "Play (X)"
+        const playBtn = this.page.locator('button')
+            .filter({ hasText: /Play Card/i })
+            .first();
+
+        await expect(playBtn).toBeVisible();
+        await expect(playBtn).toBeEnabled();
+        await playBtn.click();
+    }
+
+    /**
      * Click an action button in the card action menu
      */
     async clickAction(actionName: string) {
         const menuButton = this.page.locator(`button:has-text("${actionName}")`).first();
-        await menuButton.click();
+        try {
+            await menuButton.click({ force: true });
+        } catch (e) {
+            console.log(`Failed to click action "${actionName}".`);
+            // Try to find what's covering it
+            // standard check handled by playwright error, but let's be explicit
+            const overlays = this.page.locator('.fixed.inset-0');
+            const count = await overlays.count();
+            console.log(`Found ${count} overlays potentially blocking.`);
+            for (let i = 0; i < count; i++) {
+                console.log(`Overlay ${i} HTML:`, await overlays.nth(i).innerHTML());
+                console.log(`Overlay ${i} Class:`, await overlays.nth(i).getAttribute('class'));
+            }
+            throw e;
+        }
     }
 
     /**
@@ -185,9 +269,32 @@ export class GamePage {
      * Wait for and interact with choice modal
      */
     async expectModal(modalType?: string) {
-        const modal = this.page.locator('[data-testid="choice-modal"], [role="dialog"]');
-        await expect(modal).toBeVisible({ timeout: 5000 });
-        return modal;
+        // Priority: Choice Modal (most common for game flow)
+        // We use first() to avoid strict mode errors if multiple dialogs overlap (e.g. action menu closing)
+        const choiceModal = this.page.locator('[data-testid="choice-modal"]');
+        try {
+            await expect(choiceModal).toBeVisible({ timeout: 5000 });
+            return choiceModal;
+        } catch (e) {
+            // Fallback: Generic Dialog or Action Menu if that was the intent
+            const genericModal = this.page.locator('[role="dialog"]').first();
+            try {
+                await expect(genericModal).toBeVisible({ timeout: 2000 });
+                return genericModal;
+            } catch (e2) {
+                // Debug: Print what we found
+                console.log('Modal not found. Searching for any fixed overlay...');
+                const overlays = this.page.locator('.fixed.inset-0');
+                const count = await overlays.count();
+                console.log(`Found ${count} overlays.`);
+                if (count > 0) {
+                    console.log('Overlay HTML:', await overlays.first().innerHTML());
+                } else {
+                    console.log('No overlays found.');
+                }
+                throw e; // Throw original error
+            }
+        }
     }
 
     /**

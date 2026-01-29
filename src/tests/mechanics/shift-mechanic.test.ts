@@ -48,7 +48,7 @@ describe('Shift Mechanic Reproduction', () => {
 
         player = gameState.players['p1'];
         // Mock logger with debug and action
-        turnManager.logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), action: vi.fn() } as any;
+        turnManager.logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), action: vi.fn(), effect: vi.fn() } as any;
         executor = new EffectExecutor(turnManager);
         (turnManager as any).abilitySystem = {
             executor: executor,

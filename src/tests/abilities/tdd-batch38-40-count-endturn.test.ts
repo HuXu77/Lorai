@@ -47,7 +47,10 @@ describe('TDD Batches 38-40: Count, EndTurn, Global', () => {
             logger: {
                 info: vi.fn(),
                 debug: vi.fn(),
-                warn: vi.fn()
+                warn: vi.fn(),
+                error: vi.fn(),
+                action: vi.fn(),
+                effect: vi.fn()
             }
         };
 

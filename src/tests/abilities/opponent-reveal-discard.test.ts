@@ -76,7 +76,10 @@ describe('Opponent Reveal and Discard Family', () => {
             logger: {
                 info: vi.fn(),
                 debug: vi.fn(),
-                warn: vi.fn()
+                warn: vi.fn(),
+                error: vi.fn(),
+                action: vi.fn(),
+                effect: vi.fn()
             },
             trackZoneChange: vi.fn(),
             requestChoice: vi.fn().mockImplementation(async (request) => {

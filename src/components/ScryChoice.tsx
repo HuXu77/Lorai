@@ -74,8 +74,8 @@ export default function ScryChoice({ choice, onResponse }: ScryChoiceProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 rounded-xl shadow-2xl max-w-5xl w-full border border-purple-500/50 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
+            <div data-testid="choice-modal" className="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 rounded-xl shadow-2xl max-w-5xl w-full border border-purple-500/50 flex flex-col max-h-[90vh]">
 
                 {/* Header */}
                 <div className="p-6 border-b border-purple-500/30 flex justify-between items-center bg-purple-900/20">

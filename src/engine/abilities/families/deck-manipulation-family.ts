@@ -63,6 +63,32 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
                 });
                 break;
 
+            case 'shuffle_self_into_deck':
+                // Shuffle the source card into the deck
+                if (context.card) {
+                    const card = context.card;
+                    const originalZone = card.zone;
+
+                    // Remove from current zone
+                    if (originalZone === ZoneType.Play) {
+                        player.play = player.play.filter((c: any) => c.instanceId !== card.instanceId);
+                    } else if (originalZone === ZoneType.Hand) {
+                        player.hand = player.hand.filter((c: any) => c.instanceId !== card.instanceId);
+                    } else if (originalZone === ZoneType.Discard) {
+                        player.discard = player.discard.filter((c: any) => c.instanceId !== card.instanceId);
+                    }
+
+                    // Add to deck
+                    card.zone = ZoneType.Deck;
+                    player.deck.push(card);
+
+                    // Shuffle
+                    this.shuffleArray(player.deck);
+
+                    this.turnManager.logger.info(`[DeckManipulation] 🔀 Shuffled ${card.name} (from ${originalZone}) into deck`);
+                }
+                break;
+
             case 'put_from_discard_to_top':
                 // Put specific card from discard to top of deck
                 if (player.discard.length > 0) {
@@ -190,7 +216,7 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
 
                 if (currentHandSize < targetAmount) {
                     const drawAmount = targetAmount - currentHandSize;
-                    await this.drawCards(player, drawAmount);
+                    this.turnManager.drawCards(player.id, drawAmount);
                     this.turnManager.logger.info(`[DeckManipulation] ⚖️ Balanced hand: Drew ${drawAmount} cards`, {
                         effectType: 'balance_hand',
                         action: 'draw',
@@ -263,17 +289,16 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
                 break;
 
             case 'rearrange_top_cards':
-            case 'look_and_move_to_top_or_bottom':
-                // Rearrange/move top cards (passive ability for UI)
+                // Rearrange/move top cards (passive)
                 this.registerPassiveEffect({
                     type: effect.type,
                     amount: effect.amount,
                     sourceCardId: context.card?.instanceId
                 }, context);
+                break;
 
-                this.turnManager.logger.info(`[DeckManipulation] 🔄 Rearrange ability registered`, {
-                    effectType: effect.type
-                });
+            case 'look_and_move_to_top_or_bottom':
+                await this.executeRevealAndMoveToTopOrBottom(effect, context);
                 break;
 
             case 'discard_hand_draw':
@@ -304,7 +329,7 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
                     if (this.turnManager && this.turnManager.drawCards) {
                         // We can't easily use turnManager.drawCards for opponent if it assumes context.
                         // But BaseFamilyHandler.drawCards uses turnManager.drawCards(player, amount).
-                        await this.drawCards(targetPlayer, drawAmount);
+                        await this.turnManager.drawCards(targetPlayer.id, drawAmount);
                     } else {
                         // Fallback manual draw
                         for (let i = 0; i < drawAmount && targetPlayer.deck.length > 0; i++) {
@@ -354,6 +379,10 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
                 });
                 break;
 
+            case 'scry':
+                await this.executeScry(effect, context);
+                break;
+
             case 'headless_horseman_combo':
                 // Shuffle hand into deck
                 const handCards = [...player.hand];
@@ -365,7 +394,7 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
                 this.shuffleArray(player.deck);
 
                 // Draw 3 cards
-                await this.drawCards(player, 3);
+                this.turnManager.drawCards(player.id, 3);
 
                 this.turnManager.logger.info(`[DeckManipulation] 🎃 Headless Horseman Combo: Shuffled hand, drew 3`, {
                     effectType: 'headless_horseman_combo',
@@ -585,6 +614,77 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
                     }
                 }
                 break;
+
+            case 'put_from_hand_to_deck': {
+                // Put X cards from hand to top/bottom of deck
+                const amount = effect.amount || 1;
+                const destination = effect.destination || 'top';
+
+                // Request choice from hand
+                if (this.turnManager && this.turnManager.requestChoice) {
+                    const options = player.hand.map((c: any) => ({
+                        id: c.instanceId,
+                        display: c.name,
+                        card: c,
+                        valid: true
+                    }));
+
+                    // If not enough cards, just use what we have (or should it be conditioned?)
+                    // Generally actions do as much as possible.
+                    const maxChoice = Math.min(amount, player.hand.length);
+                    if (maxChoice === 0) return;
+
+                    const response = await this.turnManager.requestChoice({
+                        id: `put-hand-deck-${Date.now()}`,
+                        type: 'choose_card_from_zone' as any, // Usually maps to Hand selection
+                        playerId: player.id,
+                        prompt: `Choose ${maxChoice} card(s) to put on ${destination} of your deck.`,
+                        options: options,
+                        min: maxChoice,
+                        max: maxChoice,
+                        source: {
+                            card: context.card,
+                            abilityName: context.abilityName || 'Effect',
+                            abilityText: context.abilityText,
+                            player: player
+                        },
+                        timestamp: Date.now()
+                    });
+
+                    const selectedIds = response.selectedIds || [];
+
+                    // Process selected cards
+                    selectedIds.forEach((id: string) => {
+                        const cardIndex = player.hand.findIndex((c: any) => c.instanceId === id);
+                        if (cardIndex !== -1) {
+                            const [card] = player.hand.splice(cardIndex, 1);
+                            card.zone = ZoneType.Deck;
+
+                            if (destination === 'top') {
+                                player.deck.push(card);
+                            } else {
+                                player.deck.unshift(card);
+                            }
+
+                            this.turnManager.logger.info(`[DeckManipulation] Moved ${card.name} from hand to ${destination} of deck`);
+                        }
+                    });
+                } else {
+                    // Fallback for tests without interaction: Move valid number from end of hand array
+                    const count = Math.min(amount, player.hand.length);
+                    const cards = player.hand.splice(player.hand.length - count, count);
+
+                    cards.forEach((card: any) => {
+                        card.zone = ZoneType.Deck;
+                        if (destination === 'top') {
+                            player.deck.push(card);
+                        } else {
+                            player.deck.unshift(card);
+                        }
+                    });
+                }
+                break;
+            }
 
             // === BATCH 13: Inkwell & Naming Mechanics ===
             case 'all_inkwell':
@@ -1283,4 +1383,123 @@ export class DeckManipulationFamilyHandler extends BaseFamilyHandler {
         }
     }
 
+    async executeRevealAndMoveToTopOrBottom(effect: any, context: GameContext): Promise<void> {
+        console.log('[DEBUG-HANDLER] executeRevealAndMoveToTopOrBottom called');
+        const player = context.player;
+        if (!player || player.deck.length === 0) return;
+
+        // Reveal top card (not fully public, but "Look at")
+        const card = player.deck[player.deck.length - 1]; // Peek top
+
+        if (this.turnManager && this.turnManager.requestChoice) {
+            const options = [
+                { id: 'top', display: 'Top of Deck', valid: true },
+                { id: 'bottom', display: 'Bottom of Deck', valid: true }
+            ];
+
+            const response = await this.turnManager.requestChoice({
+                id: `reveal-decide-${Date.now()}`,
+                type: ChoiceType.REVEAL_AND_DECIDE,
+                playerId: player.id,
+                prompt: `Look at top card: ${card.name}. Put it on top or bottom?`,
+                options: options,
+                source: {
+                    card: context.card,
+                    abilityName: context.abilityName || 'Reveal & Decide',
+                    player: player
+                },
+                context: {
+                    revealedCard: card
+                }
+            });
+
+            const decision = response.selectedIds[0];
+
+            // Remove from deck (it's currently at end)
+            player.deck.pop();
+
+            if (decision === 'top') {
+                player.deck.push(card);
+                this.turnManager.logger.info(`[DeckManipulation] Put ${card.name} on TOP of deck`);
+            } else {
+                // Bottom is index 0
+                player.deck.unshift(card);
+                this.turnManager.logger.info(`[DeckManipulation] Put ${card.name} on BOTTOM of deck`);
+            }
+        } else {
+            // Bot/Fallback: Put on bottom (cycle strategy)
+            const popped = player.deck.pop();
+            if (popped) {
+                player.deck.unshift(popped);
+                this.turnManager.logger.info(`[DeckManipulation] Bot put ${popped.name} on BOTTOM of deck`);
+            }
+        }
+    }
+
+    /**
+     * Execute Scry (Look at top X, put Y on bottom/top)
+     * For Ursula's Cauldron: Look at 2, put 1 on top, 1 on bottom.
+     */
+    private async executeScry(effect: any, context: GameContext): Promise<void> {
+        const player = context.player;
+        if (!player || player.deck.length === 0) return;
+
+        const amount = effect.amount || 2;
+        const available = Math.min(amount, player.deck.length);
+
+        // Take cards from top of deck (end of array)
+        // We REMOVE them to handle placement
+        const topCards = player.deck.splice(-available).reverse(); // top is first in array for UI
+        // deck: [A, B, C]. splice(-2) -> [B, C]. We want to show B and C.
+        // Actually, usually index 0 is bottom, last index is top.
+        // splice(-2) returns [B, C]. C is top.
+        // If we want UI to show top-first, we reverse?
+        // Let's keep them as [Top, SecondFromTop].
+
+        // C is top. B is next.
+        // splice gives [B, C].
+        // reverse -> [C, B].
+
+        // Prompt user
+        const response = await this.turnManager.requestChoice({
+            id: `scry-${Date.now()}`,
+            type: 'scry', // mapped to ModalType_Scry in UI
+            playerId: player.id,
+            prompt: 'Look at the top cards. Choose one to put on TOP of your deck. The other will be put on the BOTTOM.',
+            options: topCards.map((c: any) => ({
+                id: c.instanceId,
+                card: c,
+                label: c.name
+            })),
+            min: 1,
+            max: 1 // Choose 1 to put on top (implies others go to bottom? or specific mode?)
+        });
+
+        if (response && response.selectedIds && response.selectedIds.length > 0) {
+            const selectedId = response.selectedIds[0];
+            const topCard = topCards.find((c: any) => c.instanceId === selectedId);
+            const bottomCard = topCards.find((c: any) => c.instanceId !== selectedId);
+
+            if (topCard) {
+                // Put on top (push to end of deck)
+                topCard.zone = ZoneType.Deck;
+                player.deck.push(topCard);
+            }
+            if (bottomCard) {
+                // Put on bottom (unshift to start of deck)
+                bottomCard.zone = ZoneType.Deck;
+                player.deck.unshift(bottomCard);
+            }
+
+            this.turnManager.logger.info(`[DeckManipulation] 🔮 Scry: ${topCard?.name} on Top, ${bottomCard?.name} on Bottom`);
+        } else {
+            // Cancelled or no choice? Put back in original order?
+            // "Look" implies you saw them. If cancelled, maybe just put back?
+            // Usually Scry requires a choice if mandated.
+            // If optional, and cancelled?
+            // Ideally we force choice.
+            // If failed, put back.
+            topCards.reverse().forEach((c: any) => player.deck.push(c));
+        }
+    }
 }

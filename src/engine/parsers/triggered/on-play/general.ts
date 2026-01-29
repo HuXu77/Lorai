@@ -5,6 +5,38 @@ import { parseConditionalEffect } from '../../triggered-helpers';
 import { parseCompoundEffect } from '../../parse-utils';
 
 export const GENERAL_PATTERNS: TriggerPattern[] = [
+    // Dual Trigger: "When you play this character and when he leaves play, [Effect]" (Merlin - Squirrel)
+    {
+        pattern: /^when you play this character and when (?:he|she|they|it) leaves play, (.+)/i,
+        handler: (match, card, text) => {
+            console.log(`[DEBUG-PARSER] MERLIN HANDLER HIT! Text: "${text.substring(0, 30)}..."`);
+            const effectText = match[1];
+            const effects = parseStaticEffects(effectText);
+
+            if (effects.length > 0) {
+                const ability1 = {
+                    id: generateAbilityId(),
+                    cardId: card.id.toString(),
+                    type: 'triggered',
+                    event: GameEvent.CARD_PLAYED,
+                    effects: effects, // Shared effects reference
+                    rawText: text
+                };
+
+                const ability2 = {
+                    id: generateAbilityId(),
+                    cardId: card.id.toString(),
+                    type: 'triggered',
+                    event: GameEvent.CARD_LEAVES_PLAY,
+                    effects: effects, // Shared effects reference
+                    rawText: text
+                };
+
+                return [ability1, ability2] as any;
+            }
+            return null;
+        }
+    },
     // Conditionals: "When you play this character, if X, Y"
     {
         pattern: /when you play this character, (if .+)/i,
@@ -159,12 +191,34 @@ export const GENERAL_PATTERNS: TriggerPattern[] = [
             } as any;
         }
     },
+    // Choose one (Modal) Trigger
+    {
+        pattern: /^when you play this (?:character|item|action),?\s+(choose one[\s:].+)/i,
+        handler: (match, card, text) => {
+            const effectText = match[1];
+            const effects = parseStaticEffects(effectText);
+
+            if (effects.length > 0) {
+                return {
+                    id: generateAbilityId(),
+                    cardId: card.id.toString(),
+                    type: 'triggered',
+                    event: GameEvent.CARD_PLAYED,
+                    effects,
+                    rawText: text
+                } as any;
+            }
+            return null;
+        }
+    },
     // Generic Fallback with Compound Effect Support
     {
-        pattern: /^when you play this (?:character|item), (.+)/i,
+        pattern: /^when you play this (?:character|item|action), (.+)/i,
         handler: (match, card, text) => {
             const effectText = match[1];
             if (effectText.match(/whenever/i)) return null;
+
+
 
             // Try compound effect parser first
             const compoundEffects = parseCompoundEffect(effectText);

@@ -29,11 +29,23 @@ describe('Ability System Manager', () => {
                 debug: vi.fn(),
                 info: vi.fn(),
                 warn: vi.fn(),
-                error: vi.fn()
+                error: vi.fn(),
+                action: vi.fn(),
+                effect: vi.fn()
             },
             requestChoice: vi.fn().mockReturnValue({
                 selectedIds: ['yes'],
                 declined: false
+            }),
+            drawCards: vi.fn((playerId, amount) => {
+                const player = mockPlayer; // Simplified since we hardcode getPlayer return
+                for (let i = 0; i < amount; i++) {
+                    if (player.deck.length > 0) {
+                        const card = player.deck.pop();
+                        player.hand.push(card);
+                        card.zone = 'hand';
+                    }
+                }
             })
         };
 

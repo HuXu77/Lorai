@@ -164,7 +164,7 @@ describe('TDD Batch 10: Combat & Play Free', () => {
     describe('Challenger Keyword (Documentation)', () => {
         // Challenger bonus is applied in TurnManager.challenge method
         // This is validated via code inspection:
-        // - Lines 1063-1082 in actions.ts apply challenger bonuses
+        // - The 'challenge' method in actions.ts applies challenger bonuses
         // - Both parsedEffects (keyword_challenger) and active effects are checked
         it('should document that challenger logic exists in TurnManager', () => {
             // This test serves as documentation that Batch 10 includes

@@ -69,7 +69,7 @@ export default function PlayAreaActionMenu({
 
     if (showMoveSelection) {
         return (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 backdrop-blur-sm"
                 onClick={() => setShowMoveSelection(false)}
             >
                 <div
@@ -127,7 +127,7 @@ export default function PlayAreaActionMenu({
     // Challenge Target Selection Modal
     if (showTargetSelection) {
         return (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 backdrop-blur-sm"
                 onClick={() => setShowTargetSelection(false)}
             >
                 <div
@@ -176,10 +176,12 @@ export default function PlayAreaActionMenu({
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={onCancel}
         >
             <div
+                role="dialog"
+                aria-modal="true"
                 className="bg-slate-900 border border-slate-600 rounded-xl p-6 shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-150"
                 onClick={(e) => e.stopPropagation()}
             >

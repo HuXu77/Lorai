@@ -110,11 +110,15 @@ export class HumanController implements PlayerController {
      * Called by UI when user makes a choice
      */
     submitChoice(response: ChoiceResponse) {
+        console.log('[HumanController] submitChoice called', response);
         this.pendingChoiceRequest = null;
 
         // Clear UI via callback
         if (this.choiceCallback) {
+            console.log('[HumanController] Calling choiceCallback(null)');
             this.choiceCallback(null);
+        } else {
+            console.warn('[HumanController] No choiceCallback set!');
         }
 
         // Resolve promise if async

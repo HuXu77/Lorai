@@ -102,7 +102,7 @@ export default function CardActionMenu({
         };
 
         return (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            <div className="fixed inset-0 z-[40] flex items-center justify-center bg-black/60"
                 onClick={() => setShowShiftTargets(false)}
             >
                 {/* Use the shared CardSelectionChoice component */}
@@ -153,7 +153,7 @@ export default function CardActionMenu({
         };
 
         return (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60"
                 onClick={() => setShowSingerSelection(false)}
             >
                 {/* Use the shared CardSelectionChoice component */}
@@ -177,10 +177,13 @@ export default function CardActionMenu({
 
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={onCancel}
         >
             <div
+                role="dialog"
+                aria-modal="true"
+                data-testid="card-action-menu"
                 className="bg-slate-900 border border-slate-600 rounded-xl p-6 shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-150"
                 onClick={(e) => e.stopPropagation()}
             >

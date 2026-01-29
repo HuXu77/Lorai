@@ -54,7 +54,9 @@ describe('TDD Batches 20-22: Static Complex & Conditional', () => {
                 info: vi.fn(),
                 debug: vi.fn(),
                 warn: vi.fn(),
-                action: vi.fn()
+                action: vi.fn(),
+                effect: vi.fn(),
+                error: vi.fn()
             },
             trackZoneChange: vi.fn(),
             applyDamage: vi.fn((player, target, amount) => {

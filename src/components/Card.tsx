@@ -27,7 +27,7 @@ interface CardProps {
     cost?: number;
 }
 
-export default function Card({
+function Card({
     card,
     onClick,
     isExerted = false,
@@ -49,19 +49,23 @@ export default function Card({
     const [imageError, setImageError] = useState(false);
     const imagePath = getCardImagePath(card, 'full'); // Assuming 'full' as default since variant prop is removed
 
-    // Calculate stat modifications
-    // Fix: Clamp strength to 0 for display and modification calculation
-    // This prevents negative strength from appearing in UI or badges (rules say min 0)
-    const displayStrength = card.strength !== undefined ? Math.max(0, card.strength) : undefined;
+    // Use props if provided, otherwise fallback to card object
+    const currentDamage = damage ?? card.damage;
+    const currentStrength = strength ?? card.strength;
+    const currentWillpower = willpower ?? card.willpower;
+    const currentLore = lore ?? card.lore;
+    const currentCost = cost ?? card.cost;
+
+    const displayStrength = currentStrength !== undefined ? Math.max(0, currentStrength) : undefined;
 
     const strengthMod = displayStrength !== undefined && card.baseStrength !== undefined
         ? displayStrength - card.baseStrength
         : 0;
-    const willpowerMod = card.willpower !== undefined && card.baseWillpower !== undefined
-        ? card.willpower - card.baseWillpower
+    const willpowerMod = currentWillpower !== undefined && card.baseWillpower !== undefined
+        ? currentWillpower - card.baseWillpower
         : 0;
-    const loreMod = card.lore !== undefined && card.baseLore !== undefined
-        ? card.lore - card.baseLore
+    const loreMod = currentLore !== undefined && card.baseLore !== undefined
+        ? currentLore - card.baseLore
         : 0;
 
     // Helper to get stat color class
@@ -88,9 +92,9 @@ export default function Card({
                     />
 
                     {/* Damage Counter */}
-                    {card.damage > 0 && (
+                    {currentDamage > 0 && (
                         <div className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg border-2 border-white z-10">
-                            {card.damage}
+                            {currentDamage}
                         </div>
                     )}
 
@@ -159,7 +163,7 @@ export default function Card({
                                 {card.fullName || card.name}
                             </h3>
                             <span className="text-yellow-300 text-sm font-bold ml-1">
-                                {card.cost}
+                                {currentCost}
                             </span>
                         </div>
                     </div>
@@ -195,19 +199,19 @@ export default function Card({
                                                 <StatModificationBadge modification={strengthMod} stat="strength" size="sm" />
                                             </span>
                                         )}
-                                        {card.willpower !== undefined && (
+                                        {currentWillpower !== undefined && (
                                             <span className="flex items-center gap-0.5">
                                                 <span className={`font-bold ${getStatColor(willpowerMod, 'text-blue-400')}`}>
-                                                    🛡️ {card.willpower}
+                                                    🛡️ {currentWillpower}
                                                 </span>
                                                 <StatModificationBadge modification={willpowerMod} stat="willpower" size="sm" />
                                             </span>
                                         )}
                                     </div>
-                                    {card.lore !== undefined && (
+                                    {currentLore !== undefined && (
                                         <span className="flex items-center gap-0.5">
                                             <span className={`font-bold ${getStatColor(loreMod, 'text-yellow-300')}`}>
-                                                ◆ {card.lore}
+                                                ◆ {currentLore}
                                             </span>
                                             <StatModificationBadge modification={loreMod} stat="lore" size="sm" />
                                         </span>
@@ -217,9 +221,9 @@ export default function Card({
                         </div>
 
                         {/* Damage Counter */}
-                        {card.damage > 0 && (
+                        {currentDamage > 0 && (
                             <div className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                                {card.damage}
+                                {currentDamage}
                             </div>
                         )}
 
@@ -301,3 +305,48 @@ export default function Card({
         </div>
     );
 }
+
+// Custom comparison for React.memo
+function arePropsEqual(prev: CardProps, next: CardProps) {
+    // 1. Check simple scalar props
+    if (prev.isExerted !== next.isExerted) return false;
+    if (prev.size !== next.size) return false;
+    if (prev.isOverlay !== next.isOverlay) return false;
+    if (prev.disabled !== next.disabled) return false;
+    if (prev.showDetails !== next.showDetails) return false;
+    if (prev.variant !== next.variant) return false;
+    if (prev.selected !== next.selected) return false;
+    if (prev.isWarded !== next.isWarded) return false;
+    if (prev.isDrying !== next.isDrying) return false;
+    if (prev.damage !== next.damage) return false;
+    if (prev.willpower !== next.willpower) return false;
+    if (prev.strength !== next.strength) return false;
+    if (prev.lore !== next.lore) return false;
+    if (prev.cost !== next.cost) return false;
+    if (prev.onClick !== next.onClick) return false; // Function ref check
+
+    // 2. Check deeply nested card properties that affect visuals
+    const pCard = prev.card;
+    const nCard = next.card;
+
+    if (pCard.instanceId !== nCard.instanceId) return false;
+    if (pCard.name !== nCard.name) return false; // Transformations?
+    if (pCard.ready !== nCard.ready) return false;
+    if (pCard.damage !== nCard.damage) return false;
+    if (pCard.zone !== nCard.zone) return false;
+
+    // Check stats on card object if not overridden by props
+    if (prev.strength === undefined && pCard.strength !== nCard.strength) return false;
+    if (prev.willpower === undefined && pCard.willpower !== nCard.willpower) return false;
+    if (prev.lore === undefined && pCard.lore !== nCard.lore) return false;
+    if (prev.cost === undefined && pCard.cost !== nCard.cost) return false;
+
+    // Check meta (keywords, cards under)
+    // Deep comparison of meta or just existence?
+    // JSON stringify is fast enough for small meta objects
+    if (JSON.stringify(pCard.meta) !== JSON.stringify(nCard.meta)) return false;
+
+    return true;
+}
+
+export default React.memo(Card, arePropsEqual);

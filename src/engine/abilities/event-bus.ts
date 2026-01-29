@@ -213,6 +213,7 @@ export class EventBus {
      */
     emit(event: GameEvent, context: Partial<EventContext>): AbilityListener[] {
         const listeners = this.listeners.get(event) || new Set();
+        console.error(`[DEBUG-EVENTBUS] emit(${event}): ${listeners.size} listeners for this event`);
 
         const fullContext: EventContext = {
             event,
@@ -224,10 +225,12 @@ export class EventBus {
 
         for (const listener of listeners) {
             const should = listener.shouldTrigger(fullContext);
+            console.error(`[DEBUG-EVENTBUS] Listener card=${listener.card?.name}, ability=${listener.ability?.rawText?.substring(0, 30)}..., shouldTrigger=${should}`);
             if (should) {
                 triggered.push(listener);
             }
         }
+        console.error(`[DEBUG-EVENTBUS] Returning ${triggered.length} triggered abilities`);
         return triggered;
     }
 

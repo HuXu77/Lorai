@@ -70,15 +70,15 @@ export async function executeQuest(
     // Exert
     card.ready = false;
 
-    // Emit CARD_EXERTED event (fire-and-forget)
-    abilitySystem.emitEvent(GameEvent.CARD_EXERTED, {
+    // Emit CARD_EXERTED event (await to ensure triggers process)
+    await abilitySystem.emitEvent(GameEvent.CARD_EXERTED, {
         event: GameEvent.CARD_EXERTED,
         card: card,
         sourceCard: card,
         player: player,
         reason: 'quest',
         timestamp: Date.now()
-    }).catch(e => logger.error('Error emitting CARD_EXERTED', e));
+    });
 
     // CRITICAL: Emit quest event for "whenever this character quests" abilities
     await abilitySystem.emitEvent(GameEvent.CARD_QUESTED, {

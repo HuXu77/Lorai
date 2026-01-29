@@ -178,15 +178,15 @@ export async function executeChallenge(
     if (!hasAlert) {
         attacker.ready = false;
 
-        // Emit CARD_EXERTED event (fire-and-forget)
-        abilitySystem.emitEvent(GameEvent.CARD_EXERTED, {
+        // Emit CARD_EXERTED event (await to ensure triggers process)
+        await abilitySystem.emitEvent(GameEvent.CARD_EXERTED, {
             event: GameEvent.CARD_EXERTED,
             card: attacker,
             sourceCard: attacker,
             player: player,
             reason: 'challenge',
             timestamp: Date.now()
-        }).catch(e => logger.error('Error emitting CARD_EXERTED', e));
+        });
     } else {
         logger.effect(attacker.name, `Alert: Stays ready after challenging`);
     }

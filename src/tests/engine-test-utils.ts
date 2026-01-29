@@ -322,7 +322,7 @@ export class TestHarness {
         // Handle legacy API: playCard(playerId: string, cardName: string)
         if (typeof playerOrId === 'string' && typeof cardOrName === 'string') {
             player = this.game.getPlayer(playerOrId);
-            const cardInHand = player.hand.find((c: CardInstance) => c.name === cardOrName || c.instanceId === cardOrName);
+            const cardInHand = player.hand.find((c: CardInstance) => c.name === cardOrName || c.fullName === cardOrName || c.instanceId === cardOrName);
             if (!cardInHand) {
                 throw new Error(`Card "${cardOrName}" not found in ${playerOrId}'s hand. Hand contains: ${player.hand.map((c: any) => c.name).join(', ')}`);
             }

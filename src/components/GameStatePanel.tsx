@@ -1,4 +1,7 @@
 import React, { useRef } from 'react';
+import InkPile from './InkPile';
+import DiscardPile from './DiscardPile';
+import { CardInstance } from '../engine/models';
 
 interface GameStatePanelProps {
     playerName: string;
@@ -9,6 +12,12 @@ interface GameStatePanelProps {
     isActive: boolean;
     hasPriority: boolean;
     testId?: string;
+    // Optional props for Opponent View (passed from game page for opponent panel)
+    inkwellCards?: CardInstance[];
+    inkLabel?: string;
+    discardCards?: CardInstance[];
+    discardLabel?: string;
+    onDiscardClick?: () => void;
 }
 
 export const GameStatePanel: React.FC<GameStatePanelProps> = ({
@@ -19,7 +28,12 @@ export const GameStatePanel: React.FC<GameStatePanelProps> = ({
     handSize,
     isActive,
     hasPriority,
-    testId
+    testId,
+    inkwellCards,
+    inkLabel,
+    discardCards,
+    discardLabel,
+    onDiscardClick
 }) => {
     const deckRef = useRef<HTMLDivElement>(null);
 
@@ -53,8 +67,15 @@ export const GameStatePanel: React.FC<GameStatePanelProps> = ({
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="flex justify-end">
+            {/* Stats Row (Deck & Hand) */}
+            <div className="flex justify-end gap-4 mb-2">
+                {/* Hand Size */}
+                <div className="flex items-center gap-2 text-gray-300 opacity-80 hover:opacity-100 transition-opacity">
+                    <div className="text-xs uppercase tracking-wide">Hand</div>
+                    <div className="font-mono font-bold text-sm">{handSize}</div>
+                </div>
+
+                {/* Deck Size */}
                 <div
                     ref={deckRef}
                     className="flex items-center gap-2 text-gray-300 opacity-80 hover:opacity-100 transition-opacity"
@@ -63,6 +84,27 @@ export const GameStatePanel: React.FC<GameStatePanelProps> = ({
                     <div className="font-mono font-bold text-sm">{deckSize}</div>
                 </div>
             </div>
+
+            {/* Optional: Inkwell & Discard (For Opponent View) */}
+            {(inkwellCards || discardCards) && (
+                <div className="mt-4 pt-4 border-t border-white/10 flex gap-4">
+                    {inkwellCards && (
+                        <div className="flex-1">
+                            <InkPile cards={inkwellCards} label={inkLabel || "Ink"} />
+                        </div>
+                    )}
+                    {discardCards && (
+                        <div className="flex-1">
+                            <DiscardPile
+                                cards={discardCards}
+                                label={discardLabel || "Discard"}
+                                onClick={onDiscardClick}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
+

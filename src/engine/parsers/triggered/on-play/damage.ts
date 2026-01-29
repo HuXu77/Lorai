@@ -119,56 +119,7 @@ export const DAMAGE_PATTERNS: TriggerPattern[] = [
             } as any;
         }
     },
-    // Banish Chosen
-    {
-        pattern: /(?:when you play this character, )?(you may )?banish chosen (damaged )?(?:(dragon) )?(opposing )?(villain|hero|character|item)(?: with cost (\d+) or less)?/i,
-        handler: (match, card, text) => {
-            // Avoid conflict with "banish all"
-            if (text.match(/^banish all/i)) return null;
 
-            const isOptional = !!match[1];
-            const isDamaged = !!match[2];
-            const specificType = match[3];
-            const isOpposing = !!match[4];
-            const rawTargetType = match[5].toLowerCase();
-            const costLimit = match[6] ? parseInt(match[6]) : undefined;
-
-            const filter: any = {};
-
-            if (isDamaged) filter.damaged = true;
-            if (specificType) filter.subtype = specificType.toLowerCase();
-            if (isOpposing) filter.opposing = true;
-            if (costLimit !== undefined) filter.costLimit = costLimit;
-
-            // Determine actual target type and implicit filters
-            let effectTargetType = 'character';
-            if (rawTargetType === 'item') {
-                effectTargetType = 'item';
-            } else if (rawTargetType === 'location') {
-                effectTargetType = 'location';
-            } else if (['villain', 'hero'].includes(rawTargetType)) {
-                filter.subtype = rawTargetType;
-            }
-
-            const targetType = isOpposing ? `chosen_opposing_${effectTargetType}` : `chosen_${effectTargetType}`;
-
-            return {
-                id: generateAbilityId(),
-                cardId: card.id.toString(),
-                type: 'triggered',
-                event: GameEvent.CARD_PLAYED,
-                effects: [{
-                    type: 'banish',
-                    target: {
-                        type: targetType,
-                        filter
-                    },
-                    optional: isOptional
-                }],
-                rawText: text
-            } as any;
-        }
-    },
     // Banish All Opposing (Tsunami)
     {
         pattern: /^(?:when you play this character, )?banish all opposing characters/i,

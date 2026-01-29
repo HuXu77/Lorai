@@ -71,8 +71,8 @@ export default function DistributeDamageChoice({ choice, onResponse }: Distribut
     const isValid = totalAssigned === totalDamageToDistribute;
 
     return (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-xl shadow-2xl max-w-4xl w-full border border-red-500/50 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
+            <div data-testid="choice-modal" className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-xl shadow-2xl max-w-4xl w-full border border-red-500/50 overflow-hidden flex flex-col max-h-[90vh]">
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-red-900/40 to-slate-900/80 p-6 border-b border-red-500/30 flex-shrink-0">

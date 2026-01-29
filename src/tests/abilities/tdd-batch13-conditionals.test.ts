@@ -24,13 +24,7 @@ describe('TDD Batch 13: Conditional Effects & Special Triggers', () => {
                 activeEffects: [],
                 turnCount: 1
             },
-            getPlayer: (id: string) => player,
-            addCardToZone: vi.fn((player, card, zone) => {
-                if (zone === 'inkwell') {
-                    player.inkwell.push(card);
-                    card.zone = 'inkwell';
-                }
-            })
+            getPlayer: (id: string) => player
         };
 
         turnManager = {
@@ -84,7 +78,7 @@ describe('TDD Batch 13: Conditional Effects & Special Triggers', () => {
             expect(player.hand.length).toBe(0);
             expect(player.inkwell.length).toBe(1);
             expect(player.inkwell[0].instanceId).toBe('c1');
-            expect(game.addCardToZone).toHaveBeenCalledWith(player, cardToInk, 'inkwell');
+            expect(turnManager.trackZoneChange).toHaveBeenCalledWith(cardToInk, 'hand', 'inkwell');
         });
 
         it('should handle empty hand gracefully', async () => {
@@ -104,7 +98,7 @@ describe('TDD Batch 13: Conditional Effects & Special Triggers', () => {
             await executor.execute(effect as any, context);
 
             // Should not crash and not call addCardToZone
-            expect(game.addCardToZone).not.toHaveBeenCalled();
+            expect(turnManager.trackZoneChange).not.toHaveBeenCalled();
         });
     });
 

@@ -29,7 +29,7 @@ describe('Batch 12: Time/State-based Effects', () => {
         expect(effects[0].type).toBe('modify_stats');
         expect(effects[0].stat).toBe('strength');
         expect(effects[0].amount).toBe(1);
-        expect(effects[0].target.type).toBe('other_characters');
+        expect(effects[0].target.type).toBe('all_characters');
     });
 
     // Belle - Strange but Special

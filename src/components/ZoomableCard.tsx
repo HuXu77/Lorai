@@ -46,7 +46,7 @@ export interface ZoomableCardProps {
     className?: string;
 }
 
-export default function ZoomableCard({
+function ZoomableCard({
     card,
     size = 'md',
     zoomTrigger = 'hover',
@@ -291,3 +291,6 @@ export default function ZoomableCard({
         </>
     );
 }
+
+// Export directly without memo to handle deep state mutations
+export default ZoomableCard;

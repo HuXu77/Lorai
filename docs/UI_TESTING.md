@@ -35,6 +35,24 @@ await gamePage.selectModalOption('Mickey Mouse');
 await gamePage.confirmModal();
 ```
 
+### Test State Injection
+Use `injectState` to set up complex board states instantly, bypassing manual setup steps. This is preferred for testing specific mechanics.
+
+```typescript
+await gamePage.injectState({
+    player1: {
+        hand: ['Stitch - Rock Star'], // Cards in hand
+        inkwell: ['Minnie Mouse - Always Classy'], // Cards in inkwell (ready)
+        play: [{ name: 'Stitch - New Dog', ready: true }], // Cards in play
+        deck: ['Mickey Mouse - Detective'] // Required to prevent deck-out!
+    },
+    player2: {
+        deck: ['Mickey Mouse - Detective'] // Always specify a deck for opponent too
+    }
+});
+```
+**Note:** Always provide a `deck` list to prevent immediate game loss due to drawing from an empty deck.
+
 ### Async & Animations
 - Playwright auto-waits for actionability (visible, stable, enabled) on `click()`.
 - Use `await expect(locator).toBeVisible()` for assertions.

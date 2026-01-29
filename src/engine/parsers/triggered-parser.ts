@@ -2,6 +2,7 @@ import { AbilityDefinition, Card } from './parser-utils';
 import { getTriggerPatterns } from './triggered/index';
 
 export function parseTriggered(text: string, card: Card, abilities: AbilityDefinition[]): boolean {
+    console.error(`[DEBUG-PARSER] Entering parseTriggered: "${text.substring(0, 30)}..."`);
     // Normalize text to handle newlines
     let cleanText = text.replace(/\\n/g, ' ').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -19,6 +20,7 @@ export function parseTriggered(text: string, card: Card, abilities: AbilityDefin
 
     // 0. Check Pattern Table (Refactoring Phase 4)
     const patterns = getTriggerPatterns();
+    console.log(`[DEBUG-PARSER] Processing Text: "${cleanText.substring(0, 50)}..."`);
 
     for (let i = 0; i < patterns.length; i++) {
         const { pattern, handler } = patterns[i];
@@ -28,6 +30,7 @@ export function parseTriggered(text: string, card: Card, abilities: AbilityDefin
             try {
                 const result = handler(match, card, text); // Pass original text for rawText
                 if (result) {
+                    console.log(`[DEBUG-PARSER] Match Pattern ${i}: `, Array.isArray(result) ? result.length : 1, 'abilities');
                     if (turnCondition) {
                         // Apply turn condition to result(s)
                         const conditionObj = { type: turnCondition };

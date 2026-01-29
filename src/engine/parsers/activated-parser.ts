@@ -1,6 +1,6 @@
 import { AbilityDefinition, generateAbilityId } from './parser-utils';
 import { parseStaticEffects } from './static-effect-parser';
-import { parseSimpleBanishAction, parseSimpleHealAction, parseReadyAllAction, parseCantReadyAction, parseMassBanishAction, parseOpponentChoiceAction, parseHighestCostDamageAction, parseConditionalDrawAction, parseMoveDamageAction, parsePutIntoInkwellAction, parseRevealTopCardAction, parsePlayFromDiscardAction, parseOpponentDiscardAction, parseRevealAndPutIntoHandAction, parseConditionalInkAction, parseMoveCharactersAction, parsePutDamageCounterAction, parsePutUnderItemAction, parsePlayFromUnderItemAction, parseMassInkwellAction } from './action-card-helpers';
+import { parseSimpleBanishAction, parseSimpleHealAction, parseReadyAllAction, parseCantReadyAction, parseMassBanishAction, parseOpponentChoiceAction, parseHighestCostDamageAction, parseConditionalDrawAction, parseMoveDamageAction, parsePutIntoInkwellAction, parseRevealTopCardAction, parsePlayFromDiscardAction, parseOpponentDiscardAction, parseRevealAndPutIntoHandAction, parseConditionalInkAction, parseMoveCharactersAction, parsePutDamageCounterAction, parsePutUnderItemAction, parsePlayFromUnderItemAction, parseMassInkwellAction, parseDrawThenPutOnDeckAction } from './action-card-helpers';
 import { parseStat, parseStatModification, PATTERNS } from './pattern-matchers';
 import { Card } from '../models';
 import { ActivatedAbility } from '../abilities/types';
@@ -28,9 +28,20 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
 
     log(`      [ACTIVATED] Checking: "${normalizedText.substring(0, 70)}..."`);
 
+    if (normalizedText.toLowerCase().includes('hypnotic') || normalizedText.toLowerCase().includes('draw 3 cards')) {
+        console.log(`[DEBUG-HYPNOTIC-TEXT] Normalized Text: "${normalizedText}"`);
+    }
+
     // Use normalizedText for all pattern matching below
     text = normalizedText;
 
+    // PRIORITY: Hypnotic Deduction (Draw then put on deck)
+    // Needs to be checked before partial matches
+    if (text.match(/draw \d+ cards?.*put \d+ cards?/i)) {
+        if (parseDrawThenPutOnDeckAction(text, card, abilities)) {
+            return true;
+        }
+    }
 
     // A Whole New World: "Each player discards their hand and draws 7 cards."
     const wholeNewWorldMatch = text.match(/^each player discards their hand and draws (\d+) cards/i);
@@ -101,6 +112,7 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
         return true;
     }
 
+    // Generic "Ready chosen character..."
     // Fa Zhou: "Ready chosen character named Mulan. She can't quest for the rest of this turn."
     const readyNamedMatch = text.match(/^ready chosen character named (.+)\. (?:she|he|they) can't quest for the rest of this turn/i);
     if (readyNamedMatch) {
@@ -120,6 +132,27 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
                     duration: 'rest_of_turn'
                 }
             ],
+            rawText: text
+        } as any);
+        return true;
+    }
+
+    // Ursula's Cauldron / Peer Into The Depths
+    // "Peer Into The Depths — ⟳ Look at the top 2 cards of your deck. Put one on the top of your deck and the other on the bottom."
+    if (text.match(/peer into the depths.*[—\-–].*[⟳\u27f3].*look at the top 2 cards of your deck.*put one on the top.*and the other on the bottom/i) ||
+        text.match(/[—\-–].*[⟳\u27f3].*look at the top 2 cards of your deck/i)) {
+
+        abilities.push({
+            id: generateAbilityId(),
+            cardId: card.id.toString(),
+            type: 'activated',
+            cost: { exert: true },
+            effects: [{
+                type: 'scry',
+                amount: 2,
+                mode: 'one_top_one_bottom',
+                target: { type: 'self_deck_top' }
+            }],
             rawText: text
         } as any);
         return true;
@@ -409,6 +442,11 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
     // BATCH 44: Simple action cards without cost separator
     // These are "play card → effect" patterns (no exert/ink cost)
 
+    // NEW GAP: Draw then put on deck (Hypnotic Deduction)
+    if (text.match(/^draw \d+ cards?\. then, put \d+ cards?/i)) {
+        return parseDrawThenPutOnDeckAction(text, card, abilities);
+    }
+
     // "Mass Inkwell" patterns (Spooky Sight)
     if (text.match(/^put all characters .*into their players'? inkwells/i)) {
         return parseMassInkwellAction(text, card, abilities);
@@ -656,7 +694,8 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
 
     // 1. Parse Costs
     // Look for "Cost: Effect" structure
-    const costMatch = text.match(/^([^:]+): (.+)/);
+    // EXCEPTION: "Choose one: ..." is NOT a cost/effect pair, it's a modal choice handled by static/triggered parsers
+    const costMatch = text.match(/^((?!Choose one)[^:]+): (.+)/i);
     let costText = '';
     let effectText = text;
 
@@ -1401,6 +1440,33 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
         // We need to find the ability we are building.
         // Wait, 'effects' is an array we are building.
         // We can add a special property to the effect or handle it at the end.
+    }
+
+    // Pongo - Old Rascal: Conditional Damage Replacement
+    // "deal 2 damage to chosen character. If you have a character named Perdita in play, you may deal 4 damage instead."
+    const pongoMatch = effectText.match(/^deal (\d+) damage to chosen (?:opposing )?character\. if you have a character named (.+) in play, (?:you may )?deal (\d+) damage instead/i);
+    if (pongoMatch) {
+        const baseDamage = parseInt(pongoMatch[1]);
+        const requiredName = pongoMatch[2];
+        const replacementDamage = parseInt(pongoMatch[3]);
+
+        effects.push({
+            type: 'conditional_action',
+            base_action: {
+                type: 'damage',
+                amount: baseDamage,
+                target: { type: 'chosen_character' }
+            },
+            condition: {
+                type: 'presence',
+                filter: { name: requiredName }
+            },
+            replacement_action: {
+                type: 'damage',
+                amount: replacementDamage,
+                target: { type: 'chosen_character' } // Re-targets same chosen
+            }
+        });
     }
 
     // 21. Conditional Replacement (Poisoned Apple)

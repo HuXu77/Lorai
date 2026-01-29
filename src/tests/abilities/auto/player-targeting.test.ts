@@ -81,6 +81,19 @@ class MockTurnManager {
     trackZoneChange = vi.fn();
     checkWinCondition = vi.fn();
     addActiveEffect = vi.fn();
+
+    drawCards = vi.fn((playerId: string, amount: number) => {
+        const player = this.game.getPlayer(playerId);
+        if (!player) return;
+
+        for (let i = 0; i < amount; i++) {
+            if (player.deck.length > 0) {
+                const card = player.deck.pop();
+                player.hand.push(card);
+                card.zone = 'hand';
+            }
+        }
+    });
 }
 
 class MockGame {

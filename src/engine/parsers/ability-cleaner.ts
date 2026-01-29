@@ -124,6 +124,7 @@ export function stripAbilityName(text: string): string {
         /each opposing player/i, // BATCH 35: Entangling Magic
         /shift \d+/i, // BATCH 49: Shift keyword
         /boost \d+/i, // BATCH 49: Boost keyword
+        /choose one/i, // Modal choice start
     ];
 
     const genericNamePatterns = [
@@ -147,7 +148,7 @@ export function stripAbilityName(text: string): string {
     // IMPORTANT: Don't strip ability text that starts with action keywords  
     // Action cards often start with "Banish chosen...", "Exert chosen...", "Chosen opponent...", etc and this is the actual effect
     // These are direct effects, not ability names to be stripped
-    if (text.match(/^(banish|exert|ready|deal|draw|look|reveal|return|put|remove|gain|chosen|move|prevent|skip|each|your|sing|during|if)/i)) {
+    if (text.match(/^(banish|exert|ready|deal|draw|look|reveal|return|put|remove|gain|chosen|choose|move|prevent|skip|each|your|sing|during|if)/i)) {
         log(`  [STRIP] Skipping strip - text starts with action keyword`);
         return text; // Don't strip - this is likely an action card effect
     }

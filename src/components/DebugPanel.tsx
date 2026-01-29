@@ -33,6 +33,8 @@ declare global {
             // Player IDs for test access
             player1Id: string;
             player2Id: string;
+            engine: any;
+            state: any;
         };
     }
 }
@@ -66,8 +68,8 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
     const [combatAttackerId, setCombatAttackerId] = useState<string>('');
     const [combatDefenderId, setCombatDefenderId] = useState<string>('');
 
-    // Create manipulator instance
-    const manipulator = new StateManipulator(gameEngine);
+    // Create manipulator instance - Memoized to prevent effect re-runs
+    const manipulator = React.useMemo(() => new StateManipulator(gameEngine), [gameEngine]);
 
     // Refresh UI state
     const refreshState = useCallback(() => {
@@ -136,15 +138,17 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
 
                 // Player IDs for E2E tests
                 player1Id: 'player1',
-                player2Id: 'player2'
+                player2Id: 'player2',
+
+                // Expose Engine directly
+                engine: gameEngine,
+                state: engineState
             };
         }
         return () => {
-            if (typeof window !== 'undefined') {
-                delete window.lorcanaDebug;
-            }
+            // Only delete if we are unmounting or truly changing engines
         };
-    }, [manipulator, refreshState]);
+    }, [manipulator, refreshState, gameEngine, engineState]);
 
     // Handle card selection from picker
     const handleSelectCard = useCallback((card: any) => {

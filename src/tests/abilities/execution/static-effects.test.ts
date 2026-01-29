@@ -53,7 +53,10 @@ describe('Executor: Static Abilities & Conditional Buffs', () => {
         turnManager.logger = {
             info: vi.fn(),
             warn: vi.fn(),
-            error: vi.fn()
+            error: vi.fn(),
+            debug: vi.fn(),
+            action: vi.fn(),
+            effect: vi.fn()
         };
         turnManager.addActiveEffect.mockImplementation((effect: any) => {
             game.state.activeEffects.push(effect);

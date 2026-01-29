@@ -83,6 +83,10 @@ export class AbilitySystemManager {
                     if (!card.meta) card.meta = {};
                     card.meta.resist = staticAbility.value;
                     this.turnManager.logger.debug(`[AbilitySystem] Applied Resist ${staticAbility.value} to ${card.name} (static)`);
+                } else if (staticAbility.keyword === 'singer' && staticAbility.value) {
+                    if (!card.meta) card.meta = {};
+                    card.meta.singer = staticAbility.value;
+                    this.turnManager.logger.debug(`[AbilitySystem] Applied Singer ${staticAbility.value} to ${card.name} (static)`);
                 }
 
                 // Check for nested effects (e.g. grant_keyword in static ability)
@@ -260,6 +264,8 @@ export class AbilitySystemManager {
         const effects = this.convertToEffectAST(triggeredAbility.effects || []);
 
         // Build game context
+
+
         const gameContext: GameContext = {
             player: cardOwner || eventContext.player,  // Use card owner, fallback to event player
             card: card,
@@ -491,6 +497,9 @@ export class AbilitySystemManager {
 
 
         // Check all static abilities for cost reduction effects
+        if (card.name.includes('Tramp')) {
+            this.turnManager.logger.debug(`[AbilitySystem] Checking cost for Tramp. ParsedEffects: ${card.parsedEffects?.length}`);
+        }
         for (const [sourceCard, abilities] of this.staticAbilities.entries()) {
             // Only apply abilities from cards the player controls
             if (sourceCard.ownerId !== player.id) continue;
@@ -1215,6 +1224,20 @@ export class AbilitySystemManager {
             return false;
         }
 
+        // Check Strength (using base stats for now, ideally should use effective stats)
+        if (filter.minStrength !== undefined) {
+            if ((card.strength || 0) < filter.minStrength) return false;
+        }
+        if (filter.maxStrength !== undefined && (card.strength || 0) > filter.maxStrength) return false;
+
+        // Check Willpower
+        if (filter.maxWillpower !== undefined && (card.willpower || 0) > filter.maxWillpower) return false;
+        if (filter.minWillpower !== undefined && (card.willpower || 0) < filter.minWillpower) return false;
+
+        // Check Lore
+        if (filter.maxLore !== undefined && (card.lore || 0) > filter.maxLore) return false;
+        if (filter.minLore !== undefined && (card.lore || 0) < filter.minLore) return false;
+
         // Check subtypes/classifications
         if (filter.subtype) {
             let targetSubtype = filter.subtype;
@@ -1518,6 +1541,7 @@ export class AbilitySystemManager {
      * Execute abilities for an Action card immediately
      */
     async executeActionCard(card: any, player: any, targetCard?: any, payload?: any): Promise<void> {
+        this.turnManager.logger.debug(`[AbilitySystem] executeActionCard called for ${card.name} target=${targetCard?.name}`);
         // Parse abilities (use cached if available)
         const abilities = (card.parsedEffects && card.parsedEffects.length > 0)
             ? card.parsedEffects
@@ -1553,6 +1577,7 @@ export class AbilitySystemManager {
                 for (const effect of effects) {
                     try {
                         this.turnManager.logger.debug(`[AbilitySystem] Executing action effect: ${effect.type}`);
+                        console.log('[AbilitySystem] Executing action effect:', JSON.stringify(effect));
                         // Propagate duration from ability to effect if not present
                         const effectWithDuration = {
                             ...effect,

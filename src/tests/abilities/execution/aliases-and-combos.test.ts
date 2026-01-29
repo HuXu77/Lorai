@@ -52,7 +52,10 @@ describe('Executor: Aliases and Combos', () => {
         turnManager.logger = {
             info: vi.fn(),
             warn: vi.fn(),
-            error: vi.fn()
+            error: vi.fn(),
+            debug: vi.fn(),
+            action: vi.fn(),
+            effect: vi.fn()
         };
         turnManager.drawCards = vi.fn((playerOrId, amt) => {
             // Handler passes player.id, not player object

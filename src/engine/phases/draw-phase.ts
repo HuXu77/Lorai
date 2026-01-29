@@ -7,6 +7,7 @@
  * - Handles deck-out loss condition
  */
 
+import { executeRecalculateEffects } from '../effects';
 import { PlayerState } from '../state';
 import { ZoneType } from '../models';
 import { GameEvent } from '../abilities/events';
@@ -62,7 +63,7 @@ export function executeDrawPhase(turnManager: TurnManager, player: PlayerState):
  * @param playerId - ID of the player drawing cards
  * @param amount - Number of cards to draw
  */
-export function drawCards(turnManager: TurnManager, playerId: string, amount: number): void {
+export async function drawCards(turnManager: TurnManager, playerId: string, amount: number): Promise<void> {
     const game = turnManager.game;
     const logger = turnManager.logger;
     const player = game.getPlayer(playerId);
@@ -76,22 +77,26 @@ export function drawCards(turnManager: TurnManager, playerId: string, amount: nu
                 player.hand.push(card);
                 drawn++;
 
-                // Emit CARD_DRAWN event (fire-and-forget)
-                turnManager.abilitySystem.emitEvent(GameEvent.CARD_DRAWN, {
+                // Emit CARD_DRAWN event (await to ensure triggers process before returning)
+                await turnManager.abilitySystem.emitEvent(GameEvent.CARD_DRAWN, {
                     event: GameEvent.CARD_DRAWN,
                     card: card,
                     sourceCard: card,
                     player: player,
                     timestamp: Date.now()
-                }).catch(e => logger.error('Error emitting CARD_DRAWN', e));
+                });
             }
         }
     }
 
     if (drawn > 0) {
         logger.action(player.name, `Drew ${drawn} card(s) (Effect)`);
+
+        // Recalculate effects (e.g. Royal Guard trigger "When you draw a card")
+        // Trigger was emitted inside loop, which adds active effects.
+        // We must recalculate to apply them (e.g. update Challenger stat).
+        executeRecalculateEffects(turnManager);
     } else {
         logger.info(`[${player.name}] Could not draw cards (Deck empty)`);
     }
 }
-

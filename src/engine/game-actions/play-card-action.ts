@@ -45,12 +45,14 @@ export async function executePlayCard(
 
     // Validate Phase
     if (game.state.phase !== Phase.Main) {
+        console.error(`[DEBUG-ENGINE] Phase mismatch: ${game.state.phase}`);
         logger.debug(`Cards can only be played during Main Phase. Current: ${game.state.phase}`);
         return false;
     }
 
     const cardIndex = player.hand.findIndex(c => c.instanceId === cardId);
     if (cardIndex === -1) {
+        console.error(`[DEBUG-ENGINE] Card ${cardId} not found in hand.`);
         return false;
     }
     const card = player.hand[cardIndex];
@@ -276,8 +278,20 @@ async function handleSing(
         s.ready = false;
     });
 
-    // Move card
-    player.hand.splice(cardIndex, 1);
+    // Move card from hand
+    const initialHandSize = player.hand.length;
+    console.error(`[PlayCard-Sing-DEBUG] Removing ${card.instanceId} from hand. Size before: ${initialHandSize}. IDs: ${player.hand.map(c => c.instanceId).join(',')}`);
+
+    const newHand = player.hand.filter(c => c.instanceId !== card.instanceId);
+
+    if (newHand.length === initialHandSize) {
+        console.error(`[PlayCard-Sing-DEBUG] CRITICAL: Card ${card.instanceId} NOT found in hand.`);
+    } else {
+        player.hand = newHand;
+        console.error(`[PlayCard-Sing-DEBUG] Removed ${card.instanceId}. New size: ${player.hand.length}`);
+    }
+    // card.zone = ZoneType.Discard; // Already set by filter? No, needed for logic? 
+    // Wait, original code set zone to Discard.
     card.zone = ZoneType.Discard;
     player.discard.push(card);
 
@@ -381,7 +395,20 @@ async function handleNormalPlay(
 
 
     // Move card from hand
-    player.hand.splice(cardIndex, 1);
+    // Recalculate index to ensure valid removal
+    const initialHandSize = player.hand.length;
+    console.error(`[PlayCard-DEBUG] Removing ${card.instanceId} from hand. Size before: ${initialHandSize}. IDs: ${player.hand.map(c => c.instanceId).join(',')}`);
+
+    // Use filter to remove, which handles index shifts and potential duplicates safely
+    // Also assigns a new array reference which can help with some state observation systems
+    const newHand = player.hand.filter(c => c.instanceId !== card.instanceId);
+
+    if (newHand.length === initialHandSize) {
+        console.error(`[PlayCard-DEBUG] CRITICAL: Card ${card.instanceId} (${card.name}) NOT found in hand during removal! IDs: ${player.hand.map(c => c.instanceId).join(',')}`);
+    } else {
+        player.hand = newHand;
+        console.error(`[PlayCard-DEBUG] Removed ${card.instanceId}. New size: ${player.hand.length}`);
+    }
 
     // Resolve target
     const targetCard = await resolveTarget(turnManager, targetId);
@@ -469,7 +496,7 @@ async function handlePermanentCard(
     // Check for Bodyguard - "may enter play exerted"
     const hasBodyguard = card.parsedEffects?.some((e: any) =>
         e.action === 'keyword_bodyguard' ||
-        e.keyword === 'bodyguard' ||
+        (e.keyword && e.keyword.toLowerCase() === 'bodyguard') ||
         (e.type === 'static' && e.effects?.some((ef: any) => ef.type === 'bodyguard'))
     );
 

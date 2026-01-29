@@ -16,6 +16,7 @@ export default function RevealModal({ choice, onResponse }: RevealModalProps) {
 
     const revealedCard = choice.context.revealedCard;
     const canPutInHand = choice.options.some(opt => opt.id === 'hand' && opt.valid);
+    const canPutOnTop = choice.options.some(opt => opt.id === 'top' && opt.valid);
     const isAcknowledgement = choice.options.some(opt => opt.id === 'acknowledge');
 
     const handleConfirm = (optionId: string) => {
@@ -98,6 +99,22 @@ export default function RevealModal({ choice, onResponse }: RevealModalProps) {
                 {/* Decision Options (Hide if acknowledgement) */}
                 {!isAcknowledgement && (
                     <>
+                        {/* Option: Put on Top */}
+                        {canPutOnTop && (
+                            <button
+                                onClick={() => handleConfirm('top')}
+                                className="
+                                    relative overflow-hidden group w-full sm:w-auto px-8 py-4 rounded-xl font-black text-lg
+                                    bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400
+                                    text-white transform hover:-translate-y-1 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)]
+                                "
+                            >
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                    <span>⬆️ Top of Deck</span>
+                                </span>
+                            </button>
+                        )}
+
                         {/* Option: Put in Hand (Primary) */}
                         {canPutInHand && (
                             <button
@@ -121,7 +138,7 @@ export default function RevealModal({ choice, onResponse }: RevealModalProps) {
                                 w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg
                                 border-2 transition-all transform hover:-translate-y-1
                                 flex items-center justify-center gap-2
-                                ${!canPutInHand
+                                ${!canPutInHand && !canPutOnTop
                                     ? 'bg-blue-600/20 border-blue-500/50 hover:bg-blue-600/40 text-blue-100 shadow-[0_0_20px_rgba(59,130,246,0.3)]'
                                     : 'bg-slate-800/50 border-slate-600/50 hover:bg-slate-700/50 text-gray-300'
                                 }
@@ -138,6 +155,6 @@ export default function RevealModal({ choice, onResponse }: RevealModalProps) {
                 Revealed by <span className="text-gray-400 font-semibold">{choice.source.card?.fullName || 'ability'}</span> ability.
             </div>
 
-        </div>
+        </div >
     );
 }

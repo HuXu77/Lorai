@@ -57,6 +57,7 @@ export default function OrderCardsChoice({ choice, onResponse }: OrderCardsChoic
 
     return (
         <ChoiceContainer
+            data-testid="choice-modal"
             title="Card Ordering"
             prompt={choice.prompt || "Order Cards"}
             sourceCard={choice.source?.card}

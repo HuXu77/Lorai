@@ -4,6 +4,58 @@ import { StaticAbility } from './parser-utils';
 export function parseStaticEffects(text: string): any[] {
     const effects: any[] = [];
 
+    // Choose one modal (moved to top to avoid sentence splitting)
+    // "choose one: • Each player draws a card. • Each player chooses and discards a card."
+    const chooseOneMatch = text.match(/^choose one:\s*•\s*(.+?)\.\s*•\s*(.+)/i);
+    // OR Semicolon style (Desperate Plan): "Choose one: Effect A; or Effect B."
+    const chooseOneSemiMatch = text.match(/^choose one:\s*(.+?);\s*or\s*(.+)/i);
+
+    if (chooseOneMatch || chooseOneSemiMatch) {
+        const match = chooseOneMatch || chooseOneSemiMatch!;
+        const option1 = match[1];
+        const option2 = match[2];
+
+        effects.push({
+            type: 'choose_one',
+            options: [
+                { text: option1.trim(), effects: parseStaticEffects(option1) },
+                { text: option2.trim(), effects: parseStaticEffects(option2) }
+            ]
+        });
+        return effects;
+    }
+
+    // Generic "If X, Y instead" Replacement Effect (Pongo - Old Rascal)
+    // "deal 2 damage to chosen character. If you have a character named Perdita in play, you may deal 4 damage instead."
+    const replacementMatch = text.match(/^(.+?)\. If (.+?), (?:you may )?(.+) instead\.?$/i);
+    if (replacementMatch) {
+        const baseText = replacementMatch[1];
+        const conditionText = replacementMatch[2];
+        const replacementText = replacementMatch[3];
+
+        const baseEffects = parseStaticEffects(baseText);
+        const replacementEffects = parseStaticEffects(replacementText);
+
+        if (baseEffects.length > 0 && replacementEffects.length > 0) {
+            // Parse condition
+            let condition: any = null;
+            if (conditionText.match(/you have a character named (.+) in play/i)) {
+                const name = conditionText.match(/you have a character named (.+) in play/i)![1];
+                condition = { type: 'presence', filter: { name } };
+            }
+            // Add other condition parsers as needed (e.g. "you have 4 or more characters")
+
+            if (condition) {
+                return [{
+                    type: 'conditional_action',
+                    base_action: baseEffects[0],
+                    condition,
+                    replacement_action: replacementEffects[0]
+                }];
+            }
+        }
+    }
+
     // Lilo - Causing an Uproar: "During your turn, if you've played 3 or more actions this turn, you may play this character for free."
     const playFreeActionCountMatch = text.match(/^during your turn, if you've played (\d+) or more actions this turn, you may play this character for free/i);
     if (playFreeActionCountMatch) {
@@ -179,6 +231,23 @@ export function parseStaticEffects(text: string): any[] {
             filter: { classification },
             location: 'discard',
             appliesTo: 'self'
+        });
+        return effects;
+    }
+
+    // "Your other characters get +1 ◊ this turn." (Lucky - The 15th Puppy)
+    const yourOtherCharactersBuffMatch = text.match(/^your other characters get ([+\-]\d+) ([¤◊⛉])(?: this turn)?/i);
+    if (yourOtherCharactersBuffMatch) {
+        const amount = parseInt(yourOtherCharactersBuffMatch[1]);
+        const statSymbol = yourOtherCharactersBuffMatch[2];
+        const stat = statSymbol === '¤' ? 'strength' : statSymbol === '◊' ? 'lore' : 'willpower';
+
+        effects.push({
+            type: 'modify_stats',
+            stat,
+            amount,
+            target: { type: 'all_characters', filter: { mine: true, other: true } },
+            duration: text.match(/this turn/i) ? 'this_turn' : undefined
         });
         return effects;
     }
@@ -475,6 +544,16 @@ export function parseStaticEffects(text: string): any[] {
         });
         return effects;
     }
+
+    // Merlin - Squirrel: "Look at the top card of your deck. Put it on either the top or the bottom."
+    if (text.match(/^look at the top card of your deck\. Put it on either the top or the bottom/i)) {
+        effects.push({
+            type: 'look_and_move_to_top_or_bottom',
+            amount: 1,
+            source: 'deck'
+        });
+        return effects;
+    }
     // During Your Turn (Global Condition)
     // "During your turn, this character gets +2 strength."
     // "During your turn, this character has Evasive."
@@ -587,6 +666,18 @@ export function parseStaticEffects(text: string): any[] {
         return effects;
     }
 
+    // "This character gains Challenger +1 this turn."
+    const gainsKeywordValueMatch = text.match(/^(?:this character|it|he|she|they) gains (.+?) ([+-]?\d+)(?: this turn)?\.?$/i);
+    if (gainsKeywordValueMatch) {
+        return [{
+            type: 'grant_keyword',
+            keyword: gainsKeywordValueMatch[1].trim(),
+            amount: parseInt(gainsKeywordValueMatch[2]),
+            target: { type: 'self' },
+            duration: text.match(/this turn/i) ? 'this_turn' : undefined
+        }];
+    }
+
     // Pronoun gets (triggered context) - "it gets +2 strength this turn"
     // Must come before the "while" conditional pattern
     const pronounGetsMatch = text.match(/^(?:it|he|she|they) gets? ([+-])(\d+) (strength|willpower|lore|¤|※|🛡️|⛉|⛨|◊|⬡)(?: this turn)?\.?$/i);
@@ -606,6 +697,7 @@ export function parseStaticEffects(text: string): any[] {
         });
         return effects;
     }
+
 
     // Choose and discard
     // "While this character is damaged, it gets +2 strength"
@@ -2287,6 +2379,42 @@ export function parseStaticEffects(text: string): any[] {
         return effects;
     }
 
+    // AOE Damage (Tug-of-War, Tinker Bell - Giant Fairy)
+    // "Deal 1 damage to each opposing character."
+    // "Deal 1 damage to each opposing character without Evasive."
+    const damageEachMatch = text.match(/(?:you may )?deal (\d+) damage to (?:each|all) (opposing )?character(?:s)?( with .+| without .+)?/i);
+    if (damageEachMatch) {
+        const amount = parseInt(damageEachMatch[1]);
+        const isOpposing = !!damageEachMatch[2];
+        const conditionText = damageEachMatch[3]; // " without Evasive"
+
+        let targetType = 'all_characters';
+        if (isOpposing) targetType = 'all_opposing_characters';
+
+        const filter: any = {};
+
+        if (conditionText) {
+            const lowerCond = conditionText.trim().toLowerCase();
+            if (lowerCond.includes('without evasive')) {
+                filter.excludeKeyword = 'Evasive';
+            } else if (lowerCond.includes('with evasive')) {
+                filter.keyword = 'Evasive';
+            }
+            // Add other conditions as needed
+        }
+
+        effects.push({
+            type: 'damage',
+            amount,
+            target: {
+                type: targetType,
+                filter: Object.keys(filter).length > 0 ? filter : undefined
+            },
+            optional: text.match(/you may/i) ? true : false
+        });
+        return effects;
+    }
+
     // Action Card: Deal Damage
     // "Deal 2 damage to chosen character."
     // "Deal 3 damage to chosen opposing character."
@@ -2461,15 +2589,29 @@ export function parseStaticEffects(text: string): any[] {
         return effects;
     }
 
-    // This character gains Resist +X (Noi, etc.)
-    // "this character gains Resist +1"
-    const resistGrantMatch = text.match(/this character gains resist \+(\d+)/i);
-    if (resistGrantMatch) {
-        const resistValue = parseInt(resistGrantMatch[1]);
+    // Generic Keyword Grant "this character gains [Keyword] [+X] [this turn]"
+    // Captures: "Resist +1", "Challenger +3", "Evasive", "Support"
+    // Regex explanation:
+    // - gains : literal
+    // - ([a-zA-Z]+) : Keyword name (Group 1)
+    // - (?: \+(\d+))? : Optional amount (Group 2)
+    // - (?: this turn)? : Optional duration
+    const genericGainMatch = text.match(/this character gains ([a-zA-Z]+)(?: \+(\d+))?(?: this turn)?/i);
+    if (genericGainMatch) {
+        const keyword = genericGainMatch[1];
+        const amountStr = genericGainMatch[2];
+        const amount = amountStr ? parseInt(amountStr) : undefined;
+        const duration = text.match(/this turn/i) ? 'turn' : undefined;
+
+        // Construct keyword string (e.g. "Challenger +1" or "Evasive")
+        const finalKeyword = amount !== undefined ? `${keyword} +${amount}` : keyword;
+
         effects.push({
             type: 'grant_keyword',
-            keyword: `Resist + ${resistValue} `,
-            target: { type: 'self' }
+            keyword: finalKeyword,
+            amount,
+            target: { type: 'self' },
+            duration
         });
         return effects;
     }
@@ -3570,7 +3712,7 @@ export function parseStaticEffects(text: string): any[] {
         effects.push({
             type: 'return_from_discard',
             target: {
-                type: 'card_in_discard',
+                type: 'chosen_card_in_discard',
                 filter: {
                     cardType,
                     subtype
@@ -4770,26 +4912,7 @@ export function parseStaticEffects(text: string): any[] {
         return effects;
     }
 
-    // Choose one modal (Kuzco - Panicked Llama)
-    // "choose one: • Each player draws a card. • Each player chooses and discards a card."
-    const chooseOneMatch = text.match(/^choose one:\s*•\s*(.+?)\.\s*•\s*(.+)/i);
-    // OR Semicolon style (Desperate Plan): "Choose one: Effect A; or Effect B."
-    const chooseOneSemiMatch = text.match(/^choose one:\s*(.+?);\s*or\s*(.+)/i);
 
-    if (chooseOneMatch || chooseOneSemiMatch) {
-        const match = chooseOneMatch || chooseOneSemiMatch!;
-        const option1 = match[1];
-        const option2 = match[2];
-
-        effects.push({
-            type: 'choose_one',
-            options: [
-                { text: option1.trim(), effects: parseStaticEffects(option1) },
-                { text: option2.trim(), effects: parseStaticEffects(option2) }
-            ]
-        });
-        return effects;
-    }
 
     // Opponent choice return (Daisy Duck)
     // "chosen opponent chooses one of their characters and returns that card to their hand"

@@ -9,29 +9,47 @@ import { test, expect } from '../fixtures/game-fixture';
 
 test.describe('Modal: Target Card in Discard', () => {
 
-    test('should show discard pile cards as options', async ({ gamePage }) => {
+    // GAP: Part of Your World (Return from discard) not triggering modal
+    test('should allow selecting a character from discard to return to hand', async ({ gamePage }) => {
         await gamePage.loadTestGame();
 
-        // Add cards to discard
-        await gamePage.page.evaluate(() => {
-            const debug = (window as any).lorcanaDebug;
-            const state = JSON.parse(debug?.getState() || '{}');
-            const playerId = debug?.player1Id;
-
-            if (state.players?.[playerId]) {
-                state.players[playerId].discard = [
-                    { instanceId: 'discard-1', name: 'Mickey Mouse', fullName: 'Mickey Mouse - Brave Little Tailor', type: 'Character' },
-                    { instanceId: 'discard-2', name: 'Elsa', fullName: 'Elsa - Spirit of Winter', type: 'Character' }
-                ];
-                debug?.importState(JSON.stringify(state));
-            }
+        // Setup:
+        // Hand: Part of Your World (3 cost)
+        // Ink: 3 cards
+        // Discard: Mickey Mouse - Brave Little Tailor
+        await gamePage.injectState({
+            player1: {
+                hand: ['Part of Your World'],
+                inkwell: ['Mickey Mouse - Detective', 'Mickey Mouse - Detective', 'Mickey Mouse - Detective'],
+                discard: ['Mickey Mouse - Brave Little Tailor', 'Elsa - Spirit of Winter'],
+                play: [],
+                deck: []
+            },
+            turnPlayer: 'player1'
         });
 
-        await gamePage.page.waitForTimeout(500);
+        // Play Part of Your World
+        await gamePage.clickCardInHand('Part of Your World');
+        await gamePage.clickAction('Play');
 
-        // Verify discard has cards
-        // The actual ability triggering this modal would need a specific card
-        // This test is more about verifying the modal type works
+        // Expect Modal showing Discard cards
+        const modal = await gamePage.expectModal();
+        await expect(modal).toBeVisible();
+        await expect(modal).toContainText(/Return a character/i);
+
+        // Select Mickey Mouse from the modal
+        const mickeyBtn = gamePage.page.locator('[role="dialog"] button').filter({ hasText: 'Mickey Mouse' });
+        await expect(mickeyBtn).toBeVisible();
+        await mickeyBtn.click();
+
+        // Modal should close
+        await expect(modal).toBeHidden();
+
+        // Verify Mickey is now in hand
+        await expect(gamePage.page.locator('[data-testid="player-hand"]')).toContainText('Mickey Mouse - Brave Little Tailor');
+
+        // Verify Log
+        await gamePage.expectLogMessage(/returned.*Mickey Mouse/i);
     });
 
 });
