@@ -267,7 +267,10 @@ export function getValidActions(manager: TurnManager, playerId: string): GameAct
                     const cost: ActivationCost = effect.cost || {};
 
                     if (cost.exert) {
-                        if (!card.ready || card.turnPlayed === manager.game.state.turnCount) {
+                        // Card must be ready (not exerted) AND dry (not played this turn)
+                        if (!card.ready) {
+                            canPay = false;
+                        } else if (card.turnPlayed === manager.game.state.turnCount) {
                             canPay = false;
                         }
                     }

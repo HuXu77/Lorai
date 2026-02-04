@@ -7,7 +7,8 @@ import { defineConfig, devices } from '@playwright/test';
  * Run with UI:   npx playwright test --ui
  */
 export default defineConfig({
-    testDir: './src/tests/e2e',
+    testDir: './src/tests',
+    testMatch: '**/*.spec.ts',
 
     /* Run tests in files in parallel */
     fullyParallel: true,

@@ -2837,9 +2837,16 @@ export class EffectExecutor {
             if (!isOpposing && targetType.includes('your') && player.id !== context.player.id) return;
 
             player.play.forEach((card: any) => {
+                // Bug Fix: Exclude card if it is leaving play
+                if (context.eventContext &&
+                    context.eventContext.event === GameEvent.CARD_LEAVES_PLAY &&
+                    context.eventContext.card &&
+                    context.eventContext.card.instanceId === card.instanceId) {
+                    return;
+                }
+
                 let validParams = false;
                 const cardType = (card.type || '').toLowerCase();
-                console.log(`[getValidTargets] Checking card ${card.name} (${cardType}) for ${targetType}`);
                 if (targetType.includes('character') && cardType === 'character') validParams = true;
                 if (targetType.includes('item') && cardType === 'item') validParams = true;
                 if (targetType.includes('location') && cardType === 'location') validParams = true;

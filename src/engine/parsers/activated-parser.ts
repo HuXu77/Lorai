@@ -988,7 +988,7 @@ export function parseActivated(text: string, card: Card, abilities: AbilityDefin
     // BATCH 34: Heal Chosen Character (Dinglehopper)
     // "Remove up to X damage from chosen character."
     // Also supports "chosen location" (Wildcat's Wrench)
-    const healChosenMatch = effectText.match(/remove up to (\d+) damage from chosen (character|location)/i);
+    const healChosenMatch = effectText.match(/^remove up to (\d+) damage from chosen (character|location)/i);
     if (healChosenMatch) {
         const targetType = healChosenMatch[2].toLowerCase() === 'location' ? 'chosen_location' : 'chosen_character';
         effects.push({

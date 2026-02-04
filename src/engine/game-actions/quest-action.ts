@@ -188,7 +188,7 @@ async function handleSupport(
                 valid: true,
                 card: t
             })),
-            optional: false,
+            optional: true, // Support is optional ("You may...")
             source: {
                 card: card,
                 abilityName: 'Support',
@@ -199,7 +199,14 @@ async function handleSupport(
 
         try {
             const response = await turnManager.requestChoice(supportRequest);
-            const targetId = response.selectedIds?.[0];
+
+            // Check if user declined (empty selection or 'no' or 'cancel')
+            if (!response.selectedIds || response.selectedIds.length === 0 || response.selectedIds[0] === 'no' || response.selectedIds[0] === 'cancel') {
+                logger.debug(`[Support] Player declined support.`);
+                return; // Declined, do not use fallback
+            }
+
+            const targetId = response.selectedIds[0];
             const target = player.play.find(c => c.instanceId === targetId);
 
             if (target) {
@@ -207,14 +214,20 @@ async function handleSupport(
                 return; // Successfully applied via choice
             }
         } catch (e) {
-            logger.debug(`[Support] Choice request failed, using fallback`);
+            logger.debug(`[Support] Choice request failed or timed out`);
+            // If strictly optional and failed, maybe we shouldn't fallback?
+            // But tests/bots might rely on fallback if they don't implement choice handler.
+            // If exception was "No handler", we fallback.
         }
     }
 
-    // Fallback: Auto-select first target (for bot/tests or when choice fails)
+    // Fallback: Auto-select first target ONLY if not explicitly declined via choice system?
+    // If we are here, either requestChoice didn't exist, or it threw (e.g. no handler).
+    // In these cases (Bot/Test default), we usually auto-apply beneficial effects.
     const target = supportTargets[0];
     applySupport(turnManager, player, card, target);
 }
+
 /**
  * Apply Support effect to a target
  */
@@ -225,14 +238,24 @@ function applySupport(
     target: CardInstance
 ): void {
     const logger = turnManager.logger;
+    const strengthBonus = card.strength || 0;
 
-    target.strength = (target.strength || 0) + (card.strength || 0);
-    // Add temporary effect to revert strength at end of turn
-    if (!target.meta) target.meta = {};
-    if (!target.meta.temporaryStrength) target.meta.temporaryStrength = 0;
-    target.meta.temporaryStrength += (card.strength || 0);
+    // Use the correct effect structure that stat-calculator.ts expects
+    const supportEffect: any = {
+        id: `support_${Date.now()}_${Math.random()}`,
+        type: 'modify_strength',  // stat-calculator checks for this type
+        value: strengthBonus,
+        sourceCardId: card.instanceId,
+        targetCardId: target.instanceId,
+        duration: 'until_end_of_turn',
+        timestamp: Date.now()
+    };
 
-    logger.effect(card.name, `Support: Added ${card.strength} strength to ${target.name}`);
+    // Add to activeEffects and recalculate
+    turnManager.game.state.activeEffects.push(supportEffect);
+    turnManager.recalculateEffects();
+
+    logger.effect(card.name, `Support: Added ${strengthBonus} strength to ${target.name}`);
 
     // Trigger "on_chosen_for_support" effects
     player.play.forEach(c => {

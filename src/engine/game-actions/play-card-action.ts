@@ -265,11 +265,28 @@ async function handleSing(
         singers.push(singer);
     }
 
-    // Use ability system for comprehensive cost calculation
-    const effectiveCost = abilitySystem.getModifiedCost(card, player);
+    // Check for Sing Together keyword
+    const singTogetherEffect = card.parsedEffects?.find((e: any) =>
+        e.action === 'keyword_sing_together' ||
+        e.keyword === 'sing_together' ||
+        (e.type === 'static' && e.keyword === 'sing_together') ||
+        (e.type === 'static' && e.effects?.some((ef: any) => ef.type === 'sing_together'))
+    ) as any;
 
-    if (totalSingValue < effectiveCost) {
-        logger.debug(`Not enough singing value. Need ${effectiveCost}, have ${totalSingValue}`);
+    let requiredValue: number;
+
+    if (singTogetherEffect) {
+        // Sing Together: Use the Sing Together requirement value
+        requiredValue = singTogetherEffect.amount || singTogetherEffect.value || 7;
+        logger.debug(`Sing Together detected. Required combined cost: ${requiredValue}, have: ${totalSingValue}`);
+    } else {
+        // Normal singing: Use the song's effective cost
+        requiredValue = abilitySystem.getModifiedCost(card, player);
+        logger.debug(`Normal singing. Required cost: ${requiredValue}, have: ${totalSingValue}`);
+    }
+
+    if (totalSingValue < requiredValue) {
+        logger.debug(`Not enough singing value. Need ${requiredValue}, have ${totalSingValue}`);
         return false;
     }
 
@@ -491,7 +508,7 @@ async function handlePermanentCard(
     card.zone = ZoneType.Play;
 
     // Check for "enters play exerted" effect
-    const entersExerted = card.parsedEffects?.some(e => e.action === 'enters_play_exerted');
+    const entersExerted = card.parsedEffects?.some(e => e.action === 'enters_play_exerted' || (e as any).type === 'enters_play_exerted');
 
     // Check for Bodyguard - "may enter play exerted"
     const hasBodyguard = card.parsedEffects?.some((e: any) =>

@@ -2,7 +2,6 @@ import { Bot } from './models';
 import { GameState } from '../engine/models';
 import { GameAction } from '../engine/models';
 import { TurnManager, ActionType } from '../engine/actions';
-import { GameStateEvaluator } from './evaluator';
 import { ActionGenerator } from './action-generator';
 import { GameLogger } from '../engine/logger';
 
@@ -11,14 +10,12 @@ export class HeuristicBot implements Bot {
     name: string = 'Heuristic Bot';
     private playerId: string = '';
     private turnManager: TurnManager;
-    private evaluator: GameStateEvaluator;
     private actionGenerator: ActionGenerator;
     private logger?: GameLogger;
 
     constructor(turnManager: TurnManager, logger?: GameLogger) {
         this.turnManager = turnManager;
         this.logger = logger;
-        this.evaluator = new GameStateEvaluator();
         this.actionGenerator = new ActionGenerator(turnManager);
     }
 
@@ -83,6 +80,115 @@ export class HeuristicBot implements Bot {
         // No-op
     }
 
+    /**
+     * Cache modified stats for all cards to avoid redundant calculations
+     * Returns a map of instanceId -> { lore, strength, willpower }
+     */
+    private cacheModifiedStats(gameState: GameState, playerId: string): Map<string, { lore: number; strength: number; willpower: number }> {
+        const cache = new Map();
+        const abilitySystem = this.turnManager.abilitySystem;
+
+        if (!abilitySystem) return cache;
+
+        const player = gameState.players[playerId] as any;
+        const opponentId = Object.keys(gameState.players).find(id => id !== playerId);
+        const opponent = opponentId ? gameState.players[opponentId] : null;
+
+        // Cache player's cards
+        player.play.forEach((card: any) => {
+            cache.set(card.instanceId, {
+                lore: abilitySystem.getModifiedStat(card, 'lore'),
+                strength: abilitySystem.getModifiedStat(card, 'strength'),
+                willpower: abilitySystem.getModifiedStat(card, 'willpower')
+            });
+        });
+
+        // Cache opponent's cards
+        if (opponent) {
+            opponent.play.forEach((card: any) => {
+                cache.set(card.instanceId, {
+                    lore: abilitySystem.getModifiedStat(card, 'lore'),
+                    strength: abilitySystem.getModifiedStat(card, 'strength'),
+                    willpower: abilitySystem.getModifiedStat(card, 'willpower')
+                });
+            });
+        }
+
+        return cache;
+    }
+
+    /**
+     * Evaluate the value of a card for PlayCard decisions
+     * Considers cost, stats, keywords, AND game phase (tempo)
+     */
+    private evaluateCardValue(card: any, player?: any, currentTurn?: number): number {
+        let value = 0;
+
+        // Determine game phase
+        const turn = currentTurn || 1;
+        const availableInk = player?.inkwell?.length || 0;
+        const isEarlyGame = turn <= 4 || availableInk <= 4;
+        const isMidGame = turn > 4 && turn <= 8;
+
+        // Base value from cost - BUT adjusted for game phase
+        const cost = card.cost || 0;
+
+        if (isEarlyGame) {
+            // Early game: Prioritize LOW cost cards for tempo
+            // Curve: 1-2 cost cards are best, 3-4 are okay, 5+ are bad
+            if (cost <= 2) {
+                value += 100; // Excellent early game play
+            } else if (cost <= 4) {
+                value += 60; // Acceptable
+            } else {
+                value += 20; // Too slow, but still developing board
+            }
+        } else if (isMidGame) {
+            // Mid game: Balance between tempo and power
+            if (cost >= 4 && cost <= 6) {
+                value += 80; // Sweet spot
+            } else if (cost <= 3) {
+                value += 50; // Still useful
+            } else {
+                value += 60; // Big bombs
+            }
+        } else {
+            // Late game: High cost = high value
+            value += cost * 15;
+        }
+
+        // Stats (always valuable)
+        value += (card.lore || 0) * 20; // Lore wins games
+        value += (card.strength || 0) * 5;
+        value += (card.willpower || 0) * 5;
+
+        // Keyword bonuses
+        const keywords = card.keywords || [];
+        if (keywords.includes('Evasive')) value += 30; // Hard to remove
+        if (keywords.includes('Rush')) value += 25; // Immediate impact
+        if (keywords.includes('Ward')) value += 20; // Protection
+        if (keywords.includes('Challenger')) value += 15; // Combat advantage
+        if (keywords.includes('Bodyguard')) value += 15; // Defensive value
+        if (keywords.includes('Support')) value += 10;
+        if (keywords.includes('Resist')) value += 10;
+
+        // Check for powerful abilities (simplified heuristic)
+        if (card.parsedEffects && card.parsedEffects.length > 0) {
+            value += card.parsedEffects.length * 10; // More abilities = more value
+        }
+
+        // CRITICAL: Playability bonus
+        // If we can actually play this card NOW, it's worth more
+        if (player && cost <= availableInk) {
+            value += 40; // Immediate impact bonus
+        } else if (player && cost > availableInk + 2) {
+            // Card is too expensive to play soon
+            value -= 30; // Tempo penalty
+        }
+
+        return value;
+    }
+
     async decideAction(gameState: GameState): Promise<GameAction> {
         const validActions = this.actionGenerator.getPossibleActions(gameState, this.playerId);
 
@@ -111,6 +217,9 @@ export class HeuristicBot implements Bot {
             return mainPhaseActions[0];
         }
 
+        // --- PERFORMANCE OPTIMIZATION: Cache all modified stats once ---
+        const statCache = this.cacheModifiedStats(gameState, this.playerId);
+
         // --- LETHAL & THREAT ANALYSIS ---
         const opponentId = Object.keys(gameState.players).find(id => id !== this.playerId);
         const opponent = opponentId ? gameState.players[opponentId] : null;
@@ -120,19 +229,26 @@ export class HeuristicBot implements Bot {
         let myLethal = false;
 
         // Check if I have lethal on board (current lore + ready characters)
+        // Use cached stats for performance
         const myReadyLore = player.play
             .filter((c: any) => c.ready)
-            .reduce((sum: number, c: any) => sum + (abilitySystem ? abilitySystem.getModifiedStat(c, 'lore') : (c.lore || 0)), 0);
+            .reduce((sum: number, c: any) => {
+                const cached = statCache.get(c.instanceId);
+                return sum + (cached ? cached.lore : (c.lore || 0));
+            }, 0);
 
         if (player.lore + myReadyLore >= 20) {
             myLethal = true; // Full Aggro Mode
         }
 
-        // Check opponent threat
+        // Check opponent threat (use cached stats)
         if (opponent) {
             const opponentReadyLore = opponent.play
                 .filter((c: any) => c.ready)
-                .reduce((sum: number, c: any) => sum + (abilitySystem ? abilitySystem.getModifiedStat(c, 'lore') : (c.lore || 0)), 0);
+                .reduce((sum: number, c: any) => {
+                    const cached = statCache.get(c.instanceId);
+                    return sum + (cached ? cached.lore : (c.lore || 0));
+                }, 0);
 
             const opponentTotalThreat = opponent.lore + opponentReadyLore;
 
@@ -155,7 +271,9 @@ export class HeuristicBot implements Bot {
                     score += 100; // Base value
 
                     const questerCard = gameState.players[this.playerId].play.find(c => c.instanceId === action.cardId);
-                    const loreGained = abilitySystem ? abilitySystem.getModifiedStat(questerCard, 'lore') : (questerCard?.lore || 1);
+                    // Use cached stats for performance
+                    const questerStats = action.cardId ? statCache.get(action.cardId) : null;
+                    const loreGained = questerStats ? questerStats.lore : (questerCard?.lore || 1);
 
                     // If this wins the game, infinite value
                     if ((gameState.players[this.playerId].lore + loreGained) >= 20) {
@@ -178,12 +296,16 @@ export class HeuristicBot implements Bot {
                     const defender = opponentId ? gameState.players[opponentId!].play.find(c => c.instanceId === action.targetId) : null;
 
                     if (attacker && defender) {
-                        const attStrength = abilitySystem ? abilitySystem.getModifiedStat(attacker, 'strength') : (attacker.strength || 0);
-                        const attWillpower = abilitySystem ? abilitySystem.getModifiedStat(attacker, 'willpower') : (attacker.willpower || 0);
+                        // Use cached stats for performance
+                        const attStats = action.cardId ? statCache.get(action.cardId) : null;
+                        const defStats = action.targetId ? statCache.get(action.targetId) : null;
 
-                        const defStrength = abilitySystem ? abilitySystem.getModifiedStat(defender, 'strength') : (defender.strength || 0);
-                        const defWillpower = abilitySystem ? abilitySystem.getModifiedStat(defender, 'willpower') : (defender.willpower || 0);
-                        const defLore = abilitySystem ? abilitySystem.getModifiedStat(defender, 'lore') : (defender.lore || 0);
+                        const attStrength = attStats ? attStats.strength : (attacker.strength || 0);
+                        const attWillpower = attStats ? attStats.willpower : (attacker.willpower || 0);
+
+                        const defStrength = defStats ? defStats.strength : (defender.strength || 0);
+                        const defWillpower = defStats ? defStats.willpower : (defender.willpower || 0);
+                        const defLore = defStats ? defStats.lore : (defender.lore || 0);
 
                         const damageToDefender = attStrength;
                         const damageToAttacker = defStrength;
@@ -207,7 +329,8 @@ export class HeuristicBot implements Bot {
                             // Value Trading: Did we trade up?
                             // Trading weak unit for strong unit
                             if (attackerDies) {
-                                if (defLore > (attacker.lore || 0)) score += 60; // Traded for better lore
+                                const attLore = attStats ? attStats.lore : (attacker.lore || 0);
+                                if (defLore > attLore) score += 60; // Traded for better lore
                                 if ((defender.cost || 0) > (attacker.cost || 0)) score += 40; // Traded for better cost
                             } else {
                                 // FREE KILL
@@ -224,8 +347,21 @@ export class HeuristicBot implements Bot {
                     break;
 
                 case ActionType.PlayCard:
-                    score += 20; // Developing board is good
-                    // In emergency, prioritize Rush/Evasive/Bodyguard? (Future improvement)
+                    // Use card value assessment with tempo awareness
+                    const cardToPlay = player.hand.find((c: any) => c.instanceId === action.cardId);
+                    if (cardToPlay) {
+                        score += this.evaluateCardValue(cardToPlay, player, gameState.turnCount);
+
+                        // In emergency, prioritize defensive keywords
+                        if (defensiveEmergency) {
+                            const keywords = cardToPlay.keywords || [];
+                            if (keywords.includes('Bodyguard')) score += 100;
+                            if (keywords.includes('Rush')) score += 80; // Can challenge immediately
+                            if (keywords.includes('Challenger')) score += 60;
+                        }
+                    } else {
+                        score += 20; // Fallback
+                    }
                     break;
 
                 case ActionType.UseAbility:

@@ -141,6 +141,32 @@ export const GENERAL_PATTERNS: TriggerPattern[] = [
             return null;
         }
     },
+    // Whenever you play a character with [Keyword] (e.g., Bodyguard)
+    {
+        pattern: /^whenever you play a character with (.+?), (.+)/i,
+        handler: (match, card, text) => {
+            const keyword = match[1];
+            const effectText = match[2];
+            const effects = parseStaticEffects(effectText);
+
+            if (effects.length > 0) {
+                return {
+                    id: generateAbilityId(),
+                    cardId: card.id.toString(),
+                    type: 'triggered',
+                    event: GameEvent.CARD_PLAYED,
+                    triggerFilter: {
+                        type: 'character',
+                        keyword: keyword,
+                        mine: true
+                    },
+                    effects,
+                    rawText: text
+                } as any;
+            }
+            return null;
+        }
+    },
     // Generic Name Trigger "Whenever you play a character named X"
     {
         pattern: /^whenever you play a character named (.+?), (.+)/i,

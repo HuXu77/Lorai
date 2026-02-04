@@ -89,6 +89,27 @@ export class EventBus {
                         if (card.type.toLowerCase() !== filter.type.toLowerCase()) return false;
                     }
 
+                    // Check for keyword (e.g., "with Bodyguard")
+                    if (filter.keyword) {
+                        const card = context.card;
+                        if (!card) return false;
+
+                        // Check keywords/abilities
+                        const hasKeyword = card.abilities?.some((a: any) =>
+                            (a.type === 'keyword' || a.keyword) &&
+                            (a.keyword || a.name || '').toLowerCase() === filter.keyword.toLowerCase()
+                        );
+
+                        // Also check simple string array of keywords if available
+                        const simpleKeywords = (card as any).keywords || [];
+                        const hasSimpleKeyword = simpleKeywords.some((k: string) => k.toLowerCase() === filter.keyword.toLowerCase());
+
+                        if (!hasKeyword && !hasSimpleKeyword) return false;
+
+                        // Bodyguard is sometimes a keyword ability, sometimes just a keyword string
+                        // For parsed cards, it should be in abilities.
+                    }
+
                     // ===== NEW: Check target owner (e.g., "whenever one of your characters is banished") =====
                     if (filter.targetOwner) {
                         // For card events (played, banished), context.card IS the target

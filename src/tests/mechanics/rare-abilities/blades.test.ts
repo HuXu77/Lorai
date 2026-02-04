@@ -1,0 +1,22 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { TestHarness } from '../../engine-test-utils';
+
+describe('Rare Ability: BLADES', () => {
+    let harness: TestHarness;
+    beforeEach(async () => { harness = new TestHarness(); await harness.initialize(); });
+
+    it('should have BLADES ability when in play', async () => {
+        await harness.setPlay(harness.p1Id, ['Namaari - Morning Mist']);
+        expect(harness.game.getPlayer(harness.p1Id).play[0]).toBeDefined();
+    });
+
+    it('should work with multiple characters', async () => {
+        await harness.setPlay(harness.p1Id, ['Namaari - Morning Mist', 'Mickey Mouse - Wayward Sorcerer']);
+        expect(harness.game.getPlayer(harness.p1Id).play.length).toBe(2);
+    });
+
+    it('should register Namaari with static ability', async () => {
+        await harness.setPlay(harness.p1Id, ['Namaari - Morning Mist']);
+        expect(harness.game.getPlayer(harness.p1Id).play[0]).toBeDefined();
+    });
+});

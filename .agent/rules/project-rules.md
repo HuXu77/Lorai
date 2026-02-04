@@ -57,6 +57,18 @@ Verify card exists: `grep '"fullName":.*CardName' allCards.json`
 3. **Modal not found** - Use `getByRole` not scoped locators
 4. **Parser returns null** - Check parser ordering in `src/engine/parsers/`
 
+## Prompt Standardization
+Triggered/Optional abilities must use the following prompt format:
+
+`[Ability Name]: [Ability Text]`
+
+Example:
+> **SO CHEESY**: When you play this character, you may draw a card, then choose and discard a card.
+> 
+> Do you want to draw 1 card(s)?
+
+This ensures users always have context for the decision they are making.
+
 ## Before Pushing
 
 ```bash

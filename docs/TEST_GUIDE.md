@@ -206,7 +206,44 @@ npm test -- choice-system.test.ts
 
 ---
 
-### 2. **Parser Tests**
+---
+
+### 2. **Ability-Centric Mechanic Tests** ⭐ PREFERRED STRATEGY
+**Location**: `src/tests/mechanics/[mechanic-name]/`
+
+This is the **standard for testing complex game mechanics** (e.g., Singer, Bodyguard, Shift). It groups both engine logic and UI verification in a single directory.
+
+#### Structure
+A mechanic directory (e.g., `src/tests/mechanics/singer/`) must contain:
+1.  **Engine Test** (`singer.test.ts`): Uses `TestHarness` to verify rules, math, and state triggers.
+2.  **UI/E2E Test** (`singer.spec.ts`): Uses Playwright (`GamePage`) to verify user interactions, modals, and visual feedback.
+
+#### 1. Engine Test (`.test.ts`)
+**Runner**: Vitest
+**Focus**: Logic, Math, State Transitions
+```typescript
+it('Singer 5 can sing cost 5 song', async () => {
+    harness.setPlay(harness.p1Id, ['Ariel - Spectacular Singer']); // Singer 5
+    harness.setHand(harness.p1Id, ['A Whole New World']); // Cost 5 Song
+    // ... execute sing action ...
+    expect(song.zone).toBe('discard'); // Verified logic
+});
+```
+
+#### 2. UI Test (`.spec.ts`)
+**Runner**: Playwright
+**Focus**: Modals, Buttons, Logs, User Flow
+```typescript
+test('Singer UI prompt', async ({ gamePage }) => {
+    await gamePage.injectState({ ... });
+    await gamePage.clickCardInPlay('Ariel');
+    await expect(gamePage.page.getByText('Sing song?')).toBeVisible(); // Verified UI
+});
+```
+
+---
+
+### 3. **Parser Tests**
 **Location**: `src/tests/parser/`
 
 Tests that card ability text is correctly parsed into executable AST.

@@ -130,35 +130,34 @@ describe('Quest Effect Execution', () => {
             const mickey = p1.play[1]; // Target
 
             // MOCK: Ensure Merlin has Support effect for testing execution logic (independent of parser)
+            // Set Merlin's strength explicitly (Merlin - Self-Appointed Mentor has 4 strength)
+            merlin.strength = 4;
             merlin.parsedEffects = [
                 {
                     action: 'keyword_support',
-                    strength: merlin.strength || 4
+                    strength: merlin.strength
                 } as any
             ];
 
-            const initialStrength = mickey.strength || 0;
+            const initialStrength = mickey.strength || 5; // Mickey Mouse - Brave Little Tailor has 5 strength
+            mickey.strength = initialStrength; // Ensure it's set
             merlin.ready = true; // Ensure ready to quest
 
             // Register choice for Support (target Mickey) (Note: quest() currently auto-selects, but we mock strictly)
             harness.turnManager.registerChoiceHandler(harness.p1Id, (request: any) => {
-                if (request.type === 'select_target') {
+                if (request.type === 'target_character' || request.type === 'select_target') {
                     return { selectedIds: [mickey.instanceId] };
                 }
                 return { selectedIds: [] };
             });
 
             // Quest with Merlin
-            await harness.turnManager.resolveAction({
-                type: 'Quest',
-                playerId: harness.p1Id,
-                cardId: merlin.instanceId
-            });
+            await harness.turnManager.quest(p1, merlin.instanceId);
 
             // Verify Support triggered: Mickey gets +strength equal to Merlin's strength
-            // Merlin strength is 4? Need to check stats.
-            // If Support works, strength should increase.
+            // Mickey base strength is 5, Merlin adds 4, total should be 9
             expect(mickey.strength).toBeGreaterThan(initialStrength);
+            expect(mickey.strength).toBe(9); // 5 (Mickey base) + 4 (Merlin Support)
         });
 
         it('should prevent questing when restricted', async () => {

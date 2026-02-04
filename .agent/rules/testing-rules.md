@@ -8,7 +8,15 @@
 | Parser patterns | `src/tests/parser/` | `batch-N-*.test.ts` |
 | E2E modals | `src/tests/e2e/modals/` | `modal-type.spec.ts` |
 | E2E features | `src/tests/e2e/` | `feature.spec.ts` |
-| Mechanics | `src/tests/mechanics/` | `mechanic.test.ts` |
+| Mechanics | `src/tests/mechanics/[mechanic-name]/` | `mechanic.test.ts` AND `mechanic.spec.ts` |
+
+## Mechanics Testing Strategy (Preferred)
+For any new mechanic (e.g., Singer, Bodyguard, Shift), you **MUST** create a dedicated directory in `src/tests/mechanics/`.
+This directory must contain TWO test files:
+1.  **Engine Test**: `[mechanic].test.ts` (Vitest) - Verifies the rules/math/state.
+2.  **UI Test**: `[mechanic].spec.ts` (Playwright) - Verifies the user interaction/modals.
+
+**Do NOT** split these into separate `abilities/` and `e2e/` folders. Keep them together.
 
 ## Unit Test Structure
 

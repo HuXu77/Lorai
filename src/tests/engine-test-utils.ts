@@ -139,7 +139,17 @@ export class TestHarness {
                 baseCard = this.getCard(cardData);
                 if (!baseCard) throw new Error(`Card not found: ${cardData}`);
             } else {
-                baseCard = cardData;
+                if (cardData.name) {
+                    const lookup = this.getCard(cardData.name);
+                    if (lookup) {
+                        baseCard = { ...lookup, ...cardData };
+                    } else {
+                        baseCard = cardData;
+                    }
+                } else {
+                    baseCard = cardData;
+                }
+
                 if (!baseCard.name) throw new Error(`Card object must have a 'name' property: ${JSON.stringify(cardData)}`);
                 if (!baseCard.type) throw new Error(`Card object must have a 'type' property: ${JSON.stringify(cardData)}`);
             }
@@ -227,7 +237,17 @@ export class TestHarness {
                 baseCard = this.getCard(cardData);
                 if (!baseCard) throw new Error(`Card not found: ${cardData}`);
             } else {
-                baseCard = cardData;
+                if (cardData.name) {
+                    const lookup = this.getCard(cardData.name);
+                    if (lookup) {
+                        baseCard = { ...lookup, ...cardData };
+                    } else {
+                        baseCard = cardData;
+                    }
+                } else {
+                    baseCard = cardData;
+                }
+
                 if (!baseCard.name) throw new Error(`Card object must have a 'name' property`);
                 if (!baseCard.type) throw new Error(`Card object must have a 'type' property`);
             }

@@ -2,6 +2,50 @@ import { TriggerPattern } from '../types';
 import { generateAbilityId, GameEvent } from '../../parser-utils';
 
 export const DAMAGE_PATTERNS: TriggerPattern[] = [
+    // Julieta Madrigal - Heal and Buff
+    {
+        pattern: /When you play this character, (?:you may )?remove up to (\d+) damage from chosen character and (?:they )?gain (.+?)(?: until (.+))?\.?$/i,
+        handler: (match, card, text) => {
+            const healAmount = parseInt(match[1]);
+            const buffText = match[2]; // "Resist +1"
+
+            const effects: any[] = [];
+
+            // 1. Heal effect
+            effects.push({
+                type: 'heal',
+                amount: healAmount,
+                target: { type: 'chosen_character' }
+            });
+
+            // 2. Buff effect
+            let keyword = buffText;
+            let amount = 1;
+            const resMatch = buffText.match(/Resist \+(\d+)/i);
+            if (resMatch) {
+                keyword = 'Resist';
+                amount = parseInt(resMatch[1]);
+            }
+
+            effects.push({
+                type: 'grant_keyword',
+                keyword,
+                amount,
+                target: { type: 'same_target' },
+                // Duration handled by ability level or default
+            });
+
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects,
+                optional: true,
+                rawText: text
+            } as any;
+        }
+    },
     // Generic Damage
     {
         pattern: /^when you play this (?:character|item|action), deal (\d+) damage to chosen character/i,
