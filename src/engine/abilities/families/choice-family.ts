@@ -577,16 +577,16 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
         if (this.turnManager) {
             const cardNames = opponent.hand.map((c: any) => c.name).join(', ');
             this.turnManager.logger.info(`${opponent.name} reveals hand: ${cardNames}`);
+            // Send reveal event to the player who played the card
+            this.turnManager.eventBus?.emit(GameEvent.HAND_REVEALED, {
+                player: context.player, // The one seeing the hand
+                revealedPlayer: opponent, // The one whose hand is revealed
+                hand: opponent.hand
+            });
         }
 
         const eligibleCards = opponent.hand.filter((card: any) => matchesCardFilter(card, effect.filter));
         // Note: original had custom filter logic for excludeCardType, which matchesCardFilter might not cover yet.
-        // But for now use matchesCardFilter. If filter logic is complex, we might need to enhance matchesCardFilter.
-        // Original logic checked excludeCardType.
-        // matchesCardFilter only checks cardType and subtype.
-        // We should ENHANCE matchesCardFilter in filters.ts if needed, or do extra check here.
-        // For simplicity, implementing exclude check here or filtering matchesCardFilter results?
-        // Original logic: "if (effect.filter.excludeCardType)..."
 
         let finalEligible = eligibleCards;
         if (effect.filter && effect.filter.excludeCardType) {
@@ -595,12 +595,9 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
         }
 
         if (finalEligible.length > 0) {
-            const discardOptions = finalEligible.map((card: any) => ({
-                id: card.instanceId,
-                display: `${card.fullName || card.name} (${card.type}, Cost ${card.cost || 0})`,
-                card: card,
-                valid: true
-            }));
+            // Check if there is only 1 valid option? 
+            // The card says "discards a non-character card of their choice". 
+            // If only 1 valid card, usually it's forced? But let's stick to choice if possible.
 
             if (this.turnManager.requestChoice) {
                 // Map ALL cards to options, but mark non-matching ones as invalid
@@ -609,25 +606,25 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                     display: card.name, // Client should show full card details
                     card: card, // Pass full card object for rendering
                     valid: finalEligible.some((c: any) => c.instanceId === card.instanceId),
-                    // Pass extra data so UI knows why it's invalid if needed, or just relying on valid flag
-                    // We can also pass 'card' object in a real implementation if the UI supports it, 
-                    // but for now we rely on the ID matching the card availability in the UI's view of the hand.
                 }));
+
+                const chooserId = effect.filter?.chooser === 'opponent' || (effect as any).chooser === 'opponent' ? opponent.id : context.player.id;
+                const isSelf = chooserId === opponent.id;
 
                 const choiceRequest: ChoiceRequest = {
                     id: `choice_discard_${Date.now()}`,
                     type: ChoiceType.TARGET_CARD_IN_HAND,
-                    playerId: context.player.id, // The player ("you") chooses
-                    prompt: `Choose a card from ${opponent.name}'s hand to discard`,
-                    options: options, // Show all cards
+                    playerId: chooserId,
+                    prompt: isSelf ? `Choose a card from your hand to discard` : `Choose a card from ${opponent.name}'s hand to discard`,
+                    options: options, // Show all cards (some invalid)
                     source: {
                         card: context.card,
                         abilityName: context.abilityName || 'Reveal and Discard',
                         abilityText: context.abilityText,
-                        player: context.player
+                        player: context.player // The source player
                     },
                     context: {
-                        revealedCards: opponent.hand, // Reveal ALL cards
+                        revealedCards: opponent.hand, // Reveal ALL cards (to whom? The chooser knows their hand)
                         opponentHand: opponent.hand
                     },
                     min: 1,
@@ -639,26 +636,26 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                 if (response.selectedIds && response.selectedIds.length > 0) {
                     const toDiscard = opponent.hand.find((c: any) => c.instanceId === response.selectedIds[0]);
 
-                    // Validate selection again just in case (though UI should prevent it)
+                    // Validate selection again
                     if (toDiscard && finalEligible.some((c: any) => c.instanceId === toDiscard.instanceId)) {
                         opponent.hand = opponent.hand.filter((c: any) => c.instanceId !== toDiscard.instanceId);
                         toDiscard.zone = 'discard';
                         opponent.discard.push(toDiscard);
 
                         if (this.turnManager) {
-                            this.turnManager.logger.effect(context.player.name, 'chose opponent discard', toDiscard.name, {
+                            this.turnManager.logger.effect(context.player.name, 'opponent discarded', toDiscard.name, {
                                 opponent: opponent.name,
                                 ability: context.abilityName
                             });
                             this.turnManager.trackZoneChange(toDiscard, 'hand', 'discard');
-                            this.turnManager.eventBus.emit(GameEvent.CARD_DISCARDED, {
+                            this.turnManager.eventBus?.emit(GameEvent.CARD_DISCARDED, {
                                 card: toDiscard,
                                 player: opponent,
                                 source: context.card
                             });
                         }
                     } else if (toDiscard) {
-                        this.turnManager?.logger.warn(`Player attempted to discard invalid target ${toDiscard.name}`);
+                        this.turnManager?.logger.warn(`Opponent attempted to discard invalid target ${toDiscard.name}`);
                     }
                 }
             } else {
@@ -672,12 +669,18 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
                     if (this.turnManager) {
                         this.turnManager.logger.info(`${opponent.name} discards ${toDiscard.name} (random fallback)`);
                         this.turnManager.trackZoneChange(toDiscard, 'hand', 'discard');
+                        this.turnManager.eventBus?.emit(GameEvent.CARD_DISCARDED, {
+                            card: toDiscard,
+                            player: opponent,
+                            source: context.card
+                        });
                     }
                 }
             }
         } else {
             if (this.turnManager) {
                 this.turnManager.logger.info(`${opponent.name} has no matching cards to discard, but hand is revealed`);
+                // Still reveal hand event? Yes, already emitted above.
             }
         }
     }
