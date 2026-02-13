@@ -3,11 +3,12 @@
 A comprehensive Lorcana TCG game engine with AI opponent and web interface.
 
 ## Features
-- Complete game engine with 3297 passing tests (100% test coverage)
+- Complete game engine with extensive test coverage (>3000 tests)
 - AI bot opponent with heuristic-based decision making
 - Web-based game interface built with Next.js
 - Full card database with 2455+ cards
 - Automated ability parsing and execution
+- CLI for game simulations and debugging
 
 ## Getting Started
 
@@ -23,6 +24,27 @@ npm run dev
 npm test
 ```
 
+### Testing
+
+This project uses **Vitest** for unit/integration testing and **Playwright** for E2E testing.
+
+```bash
+# Run full test suite
+npm test
+
+# Run engine tests (fast)
+npm run test:engine
+
+# Run parser tests
+npm run test:parser
+
+# Run ability executor tests
+npm run test:executor
+
+# Run E2E tests
+npm run test:e2e
+```
+
 ### Deployment
 
 This project is optimized for deployment on **Vercel**:
@@ -34,16 +56,10 @@ This project is optimized for deployment on **Vercel**:
 **Build command**: `npm run next:build`  
 **Output directory**: `.next`
 
-## Testing
-- Total tests: 3297/3297 passing
-- Engine tests: `npm run test:engine`
-- Parser tests: `npm run test:parser`
-- Full suite: `npm test`
-
 ## Tech Stack
 - **Framework**: Next.js 14
 - **Language**: TypeScript
-- **Testing**: Jest
+- **Testing**: Vitest, Playwright
 - **UI**: React + Tailwind CSS
 - **AI**: Custom heuristic bot
 
@@ -51,11 +67,17 @@ This project is optimized for deployment on **Vercel**:
 ```
 src/
 ├── app/           # Next.js app router pages
-├── engine/        # Core game engine
+├── engine/        # Core game engine logic
 ├── ai/            # Bot AI logic
-├── tests/         # Test suite
-└── components/    # React components
+├── components/    # React components
+├── controllers/   # Game controllers
+├── cli/           # CLI tools and scripts
+├── scripts/       # Utility scripts
+├── hooks/         # React hooks
+├── types/         # TypeScript type definitions
+├── utils/         # Helper utilities
+└── tests/         # Test suite (unit, integration, e2e)
 ```
 
 ## Live Demo
-🎮 [Play the game](#) _(Coming soon after deployment)_
+🎮 [Play the game](https://lorai-self.vercel.app/)
