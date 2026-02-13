@@ -130,4 +130,45 @@ describe('Lilo - Escape Artist Bug', () => {
         // 3. Lilo enters EXERTED
         expect(liloInPlay?.ready).toBe(false);
     });
+
+    it('should NOT trigger on OPPONENT\'S turn if Lilo is in DISCARD', async () => {
+        const player1 = harness.game.getPlayer(harness.p1Id);
+
+        // Setup Lilo in DISCARD
+        await harness.setInk(harness.p1Id, 2);
+
+        const lilo = {
+            id: 'lilo-discarded-opp',
+            name: 'Lilo - Escape Artist',
+            type: 'Character',
+            cost: 2,
+            inkwell: true,
+            color: 'Amber',
+            abilities: [
+                { fullText: "At the start of your turn, if this card is in your discard, you may play her and she enters play exerted." }
+            ],
+            instanceId: 'lilo-discarded-opp-instance',
+            ownerId: harness.p1Id,
+            zone: 'Discard',
+            ready: true,
+            damage: 0
+        };
+        player1.discard = [lilo as any];
+
+        // Register card
+        harness.turnManager.abilitySystem.registerCard(lilo as any);
+
+        // Start OPPONENT'S Turn (Player 2)
+        await harness.turnManager.startTurn(harness.p2Id);
+
+        // Wait for async abilities
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Assert NO pending effects/choices for Player 1 (or Player 2)
+        const pendingChoice = (harness.game.state as any).pendingChoice;
+        expect(pendingChoice).toBeUndefined();
+
+        // Check Lilo is still in discard
+        expect(player1.discard.length).toBe(1);
+    });
 });

@@ -264,6 +264,7 @@ export const TURN_BASED_PATTERNS: TriggerPattern[] = [
                     type: 'triggered',
                     event: GameEvent.TURN_START,
                     trigger: { type: 'start_of_turn' },
+                    eventConditions: [{ type: 'during_your_turn' }],
                     effects,
                     zone,
                     rawText: text
