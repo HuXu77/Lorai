@@ -30,7 +30,7 @@ export default function LogEntry({ entry, debugMode = false }: LogEntryProps) {
                             {/* Show ability causality context inline */}
                             {entry.details?.causedBy && (
                                 <span className="text-purple-400 text-xs ml-1">
-                                    (via {entry.details.causedBy.cardName}'s {entry.details.causedBy.abilityName || 'ability'})
+                                    (via {entry.details.causedBy.cardName}&apos;s {entry.details.causedBy.abilityName || 'ability'})
                                 </span>
                             )}
                         </div>

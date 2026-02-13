@@ -84,7 +84,7 @@ export default function ChoiceContainer({
                             {/* Ability Text Quote */}
                             {sourceAbilityText && (
                                 <div className="mt-2 text-sm text-gray-300 bg-slate-900/50 rounded px-3 py-2 border-l-2 border-purple-500 italic max-h-20 overflow-y-auto custom-scrollbar">
-                                    "{sourceAbilityText}"
+                                    &quot;{sourceAbilityText}&quot;
                                 </div>
                             )}
                         </div>

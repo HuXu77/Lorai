@@ -212,7 +212,7 @@ export default function DeckImportModal({ isOpen, onClose, onImport }: DeckImpor
                                     >
                                         <span>💾</span> Save P1 Deck
                                     </button>
-                                    {savedDecks.length > 0 && <span className="text-gray-600">Tip: Check 'Saved Decks' tab to load</span>}
+                                    {savedDecks.length > 0 && <span className="text-gray-600">Tip: Check &apos;Saved Decks&apos; tab to load</span>}
                                 </div>
                             </div>
 
@@ -266,7 +266,7 @@ export default function DeckImportModal({ isOpen, onClose, onImport }: DeckImpor
                             <div className="h-64 flex flex-col items-center justify-center text-gray-500">
                                 <span className="text-4xl mb-2">📭</span>
                                 <p>No saved decks yet.</p>
-                                <p className="text-sm">Import or type a deck in the "Import" tab and click Save.</p>
+                                <p className="text-sm">Import or type a deck in the &quot;Import&quot; tab and click Save.</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

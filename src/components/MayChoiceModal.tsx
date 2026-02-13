@@ -176,7 +176,7 @@ export default function MayChoiceModal({ choice, onResponse }: MayChoiceModalPro
                 {/* Footer hint */}
                 <div className="px-6 pb-4 text-center">
                     <p className="text-xs text-gray-500">
-                        This is an optional "may" ability. You can choose to skip it.
+                        This is an optional &quot;may&quot; ability. You can choose to skip it.
                     </p>
                 </div>
             </div>

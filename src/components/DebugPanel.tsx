@@ -520,7 +520,7 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                                                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                                 }`}
                                         >
-                                            Bot's Turn
+                                            Bot&apos;s Turn
                                         </button>
                                     </div>
                                 </div>

@@ -47,7 +47,7 @@ export default function RevealModal({ choice, onResponse }: RevealModalProps) {
                 </h1>
                 {choice.source.abilityText && (
                     <div className="mt-3 text-gray-400 font-serif italic max-w-lg mx-auto border-t border-white/10 pt-2">
-                        "{choice.source.abilityText}"
+                        &quot;{choice.source.abilityText}&quot;
                     </div>
                 )}
             </div>

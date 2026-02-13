@@ -360,7 +360,7 @@ export default function PlayAreaActionMenu({
                                                     </div>
                                                     {ability.text && (
                                                         <div className="text-xs text-indigo-200 font-normal mt-0.5 opacity-90">
-                                                            "{ability.text}"
+                                                            &quot;{ability.text}&quot;
                                                         </div>
                                                     )}
                                                 </>
