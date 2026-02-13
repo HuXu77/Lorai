@@ -2501,10 +2501,53 @@ export class EffectExecutor {
         // Apply to target
         const targets = await this.resolveTargets(effect.target, context);
 
+        // Create active effects AND directly update card stats for immediate UI display
         targets.forEach((target: any) => {
-            if (target[effect.stat] !== undefined) {
-                target[effect.stat] += totalModifier;
+            if (!this.turnManager?.game?.state?.activeEffects) {
+                if (!this.turnManager?.game?.state) return;
+                this.turnManager.game.state.activeEffects = [];
             }
+
+            let effectType: 'modify_strength' | 'modify_willpower' | 'modify_lore' | 'modify_damage';
+            if (effect.stat === 'strength') {
+                effectType = 'modify_strength';
+                // DIRECTLY update card strength for immediate UI display
+                target.strength = (target.strength || 0) + totalModifier;
+            } else if (effect.stat === 'willpower') {
+                effectType = 'modify_willpower';
+                // DIRECTLY update card willpower
+                target.willpower = (target.willpower || 0) + totalModifier;
+            } else if (effect.stat === 'lore') {
+                effectType = 'modify_lore';
+                // DIRECTLY update card lore
+                target.lore = (target.lore || 0) + totalModifier;
+            } else if (effect.stat === 'damage') {
+                effectType = 'modify_damage';
+                // DIRECTLY update card damage
+                target.damage = (target.damage || 0) + totalModifier;
+            } else {
+                return; // Unknown stat type
+            }
+
+            // Create effect for tracking/cleanup
+            const activeEffect = {
+                id: `effect_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                sourceCardId: context.card?.instanceId || 'unknown',
+                targetCardId: target.instanceId,
+                type: effectType,
+                value: totalModifier,
+                duration: effect.duration || 'until_end_of_turn',
+                timestamp: Date.now()
+            };
+
+            // Only add active effect if the method exists (for test compatibility)
+            if (this.turnManager && typeof this.turnManager.addActiveEffect === 'function') {
+                this.turnManager.addActiveEffect(activeEffect);
+            }
+
+            // Log effect creation
+            const durationStr = effect.duration === 'until_end_of_turn' ? 'this_turn' : effect.duration;
+            console.log(`→ Effect: ${target.name} ${totalModifier > 0 ? '+' : ''}${totalModifier} ${effect.stat} (${durationStr})`);
         });
 
         if (this.turnManager) {

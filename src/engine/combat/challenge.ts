@@ -18,9 +18,18 @@ import { checkBanishment } from './banishment';
  * 
  * @param attacker - The attacking character
  * @param target - The target character
+ * @param abilitySystem - The AbilitySystem instance (for querying modified keywords)
+ * @param attackerPlayer - The player who owns the attacker
+ * @param targetPlayer - The player who owns the target
  * @returns True if challenge is valid
  */
-export function canChallenge(attacker: CardInstance, target: CardInstance): boolean {
+export function canChallenge(
+    attacker: CardInstance,
+    target: CardInstance,
+    abilitySystem?: any,
+    attackerPlayer?: any,
+    targetPlayer?: any
+): boolean {
     // Rule: Attacker must be ready
     if (!attacker.ready) return false;
 
@@ -31,21 +40,34 @@ export function canChallenge(attacker: CardInstance, target: CardInstance): bool
     if (target.ready && !isLocation && !canChallengeReady) return false;
 
     // Rule: Evasive - Only characters with Evasive can challenge Evasive
-    // Rule: Evasive - Only characters with Evasive can challenge Evasive
-    const targetIsEvasive = target.parsedEffects?.some(e =>
-        e.action === 'keyword_evasive' ||
-        (e as any).keyword === 'evasive' ||
-        ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
-    ) || target.keywords?.includes('Evasive');
+    // Use AbilitySystem.getModifiedKeywords() for clean, condition-aware keyword checking
+    if (abilitySystem && targetPlayer) {
+        const targetKeywords = abilitySystem.getModifiedKeywords(target, targetPlayer);
+        const targetIsEvasive = targetKeywords.includes('Evasive');
 
-    if (targetIsEvasive) {
-        const attackerIsEvasive = attacker.parsedEffects?.some(e =>
+        if (targetIsEvasive) {
+            const attackerKeywords = abilitySystem.getModifiedKeywords(attacker, attackerPlayer);
+            const attackerIsEvasive = attackerKeywords.includes('Evasive');
+
+            if (!attackerIsEvasive) return false;
+        }
+    } else {
+        // Fallback: Check parsedEffects and keywords array (for backwards compatibility)
+        const targetIsEvasive = target.parsedEffects?.some(e =>
             e.action === 'keyword_evasive' ||
             (e as any).keyword === 'evasive' ||
             ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
-        ) || attacker.keywords?.includes('Evasive');
+        ) || target.keywords?.includes('Evasive') || target.baseKeywords?.includes('Evasive');
 
-        if (!attackerIsEvasive) return false;
+        if (targetIsEvasive) {
+            const attackerIsEvasive = attacker.parsedEffects?.some(e =>
+                e.action === 'keyword_evasive' ||
+                (e as any).keyword === 'evasive' ||
+                ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
+            ) || attacker.keywords?.includes('Evasive') || attacker.baseKeywords?.includes('Evasive');
+
+            if (!attackerIsEvasive) return false;
+        }
     }
 
     return true;
@@ -110,7 +132,9 @@ export async function executeChallenge(
     }
 
     // Rule: Attacker must be dry (unless Rush)
-    const hasRush = attacker.parsedEffects?.some(e => e.action === 'keyword_rush');
+    // Use getModifiedKeywords for clean, condition-aware keyword checking
+    const attackerKeywords = abilitySystem.getModifiedKeywords(attacker, player);
+    const hasRush = attackerKeywords.includes('Rush');
     if (attacker.turnPlayed === game.state.turnCount && !hasRush) {
         logger.debug(`${attacker.name} is drying and cannot challenge.`);
         return false;
@@ -148,18 +172,13 @@ export async function executeChallenge(
     }
 
     // Rule: Evasive
-    const targetIsEvasive = target.parsedEffects?.some(e =>
-        e.action === 'keyword_evasive' ||
-        (e as any).keyword === 'evasive' ||
-        ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
-    ) || target.keywords?.includes('Evasive');
+    // Use getModifiedKeywords for clean, condition-aware keyword checking
+    const targetKeywords = abilitySystem.getModifiedKeywords(target, opponent);
+    const targetIsEvasive = targetKeywords.includes('Evasive');
 
     if (targetIsEvasive) {
-        const attackerIsEvasive = attacker.parsedEffects?.some(e =>
-            e.action === 'keyword_evasive' ||
-            (e as any).keyword === 'evasive' ||
-            ((e as any).effects && (e as any).effects.some((eff: any) => eff.type === 'evasive'))
-        ) || attacker.keywords?.includes('Evasive');
+        // attackerKeywords already computed above for Rush check
+        const attackerIsEvasive = attackerKeywords.includes('Evasive');
 
         if (!attackerIsEvasive) {
             logger.debug(`[${player.name}] ${target.name} has Evasive and can only be challenged by characters with Evasive.`);

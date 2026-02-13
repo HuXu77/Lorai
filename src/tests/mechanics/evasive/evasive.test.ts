@@ -150,7 +150,7 @@ describe('Mechanic: Evasive', () => {
     });
 
     // TODO: Fix engine to apply "During your turn, gains Evasive" before challenge validation
-    it.skip('should allow character with conditional Evasive to challenge Evasive character during their turn', async () => {
+    it('should allow character with conditional Evasive to challenge Evasive character during their turn', async () => {
         // Setup: P1 has character with "During your turn, gains Evasive" (Grumpy - Skeptical Knight)
         // P2 has Evasive character (exerted)
         await harness.setPlay(harness.p1Id, [
@@ -182,14 +182,14 @@ describe('Mechanic: Evasive', () => {
         // Challenge should succeed because Grumpy gains Evasive during P1's turn
         expect(result).toBe(true);
 
-        // Verify combat occurred (both should take damage or be banished)
+        // Verify combat occurred (both should be banished)
         const updatedP1 = harness.game.getPlayer(harness.p1Id);
         const updatedP2 = harness.game.getPlayer(harness.p2Id);
 
-        // Grumpy (2/4) vs Tinker Bell (2/3): Tinker Bell banished, Grumpy takes 2 damage
-        const survivingGrumpy = updatedP1.play.find(c => c.instanceId === grumpy.instanceId);
-        expect(survivingGrumpy).toBeDefined();
-        expect(survivingGrumpy?.damage).toBe(2);
+        // Grumpy (3 strength, 1 willpower, Resist +2) vs Tinker Bell (3 strength, 3 willpower)
+        // Grumpy deals 3 damage → Tinker Bell banished
+        // Tinker Bell deals 3 damage, reduced by Resist +2 = 1 damage → Grumpy banished (1 willpower)
+        expect(updatedP1.play.length).toBe(0); // Grumpy banished
         expect(updatedP2.play.length).toBe(0); // Tinker Bell banished
     });
 });

@@ -280,7 +280,22 @@ function evaluateCondition(condition: any, context: EventContext, card: any): bo
             return context.card === card;
         case 'in_challenge':
             return context.inChallenge === true;
+        case 'opponent_turn':
+        case 'opponents_turn':
+            // Check if it is the opponent's turn
+            // We need access to GameState to check turnPlayerId
+            // valid context usually has gameState?
+            if (context.gameState) {
+                return context.gameState.state.turnPlayerId !== card.ownerId;
+            }
+            return false;
+        case 'during_your_turn':
+            if (context.gameState) {
+                return context.gameState.state.turnPlayerId === card.ownerId;
+            }
+            return false;
         default:
-            return true;
+            console.error(`[EventBus] Unknown condition type: ${condition.type} ${JSON.stringify(condition)}`);
+            return false; // Fail safe for unknown conditions
     }
 }

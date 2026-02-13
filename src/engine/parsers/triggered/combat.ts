@@ -875,6 +875,10 @@ export function getCombatPatterns(): TriggerPattern[] {
                     type: 'triggered',
                     event: GameEvent.CARD_BANISHED,
                     condition: { type: 'opponent_turn' },
+                    triggerFilter: {
+                        targetOwner: 'self',
+                        type: 'character'
+                    },
                     effects: [{
                         type: 'return_to_hand',
                         target: { type: 'chosen_character' }

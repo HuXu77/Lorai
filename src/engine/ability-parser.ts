@@ -323,9 +323,15 @@ export function parseAbilityStructured(text: string, card: Card, abilities: Abil
     // Phase 1: Check Triggered Abilities (on_play, on_quest, when challenged, etc.)
     // ==========================================================================
 
-    if (parseTriggered(text, card, abilities)) {
-        log(`    ✅ parseTriggered succeeded`);
-        return true;
+    // SPECIAL CASE: "During your turn, this character gains [keyword]" is a STATIC ability with a condition
+    // NOT a triggered ability. Skip parseTriggered and let parseStatic handle it.
+    if (!text.match(/^during your turn, this character gains/i)) {
+        if (parseTriggered(text, card, abilities)) {
+            log(`    ✅ parseTriggered succeeded`);
+            return true;
+        }
+    } else {
+        log(`    ⚠️ Text matches "During your turn, this character gains" - skipping parseTriggered, will try parseStatic`);
     }
 
     // 3. Keywords (often single words or simple phrases)

@@ -1935,8 +1935,10 @@ export const MISC_PATTERNS: TriggerPattern[] = [
         }
     },
     // Philoctetes - No-Nonsense Instructor: "Whenever you play a Hero character, gain 1 lore."
+    // This pattern matches abilities WITH a subtype (e.g., "Hero", "Floodborn", etc.)
+    // Uses negative lookahead to ensure we don't match bare "a character"
     {
-        pattern: /^whenever you play a (.+) character, (.+)/i,
+        pattern: /^whenever you play a (?!character\b)(.+?) character, (.+)/i,
         handler: (match: RegExpMatchArray, card: any, text: string) => {
             const subtype = match[1];
             const effectText = match[2];
@@ -1949,8 +1951,33 @@ export const MISC_PATTERNS: TriggerPattern[] = [
                     event: GameEvent.CARD_PLAYED,
                     triggerFilter: {
                         mine: true,
-                        type: 'Character', // Implicitly character
+                        type: 'Character',
                         subtype: subtype
+                    },
+                    effects,
+                    rawText: text
+                } as any;
+            }
+            return null;
+        }
+    },
+    // Lady - Decisive Dog: "Whenever you play a character, this character gets +1 ¤ this turn."
+    // This pattern matches abilities WITHOUT a subtype (just "a character")
+    {
+        pattern: /^whenever you play a character, (.+)/i,
+        handler: (match: RegExpMatchArray, card: any, text: string) => {
+            const effectText = match[1];
+            const effects = parseStaticEffects(effectText);
+            if (effects.length > 0) {
+                return {
+                    id: generateAbilityId(),
+                    cardId: card.id.toString(),
+                    type: 'triggered',
+                    event: GameEvent.CARD_PLAYED,
+                    triggerFilter: {
+                        mine: true,
+                        type: 'Character'
+                        // No subtype filter - matches any character
                     },
                     effects,
                     rawText: text

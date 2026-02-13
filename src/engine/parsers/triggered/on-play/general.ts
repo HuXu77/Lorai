@@ -109,7 +109,7 @@ export const GENERAL_PATTERNS: TriggerPattern[] = [
                     cardId: card.id.toString(),
                     type: 'triggered',
                     event: GameEvent.CARD_PLAYED,
-                    triggerFilter: { type: triggerType },
+                    triggerFilter: { type: triggerType, mine: true },
                     effects,
                     rawText: text
                 } as any;

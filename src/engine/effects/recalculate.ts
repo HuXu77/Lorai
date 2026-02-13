@@ -164,13 +164,13 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
                         if (effect.effects) {
                             // Check parent condition (Group Condition - e.g. "While X, gets Y and Z")
                             if (effect.condition) {
-                                if (!evaluateCondition(player as any, effect.condition, card)) return;
+                                if (!evaluateCondition(player as any, effect.condition, card, turnManager)) return;
                             }
 
                             effect.effects.forEach((subEffect: any) => {
                                 // Check subEffect's individual condition (e.g. Flynn Rider: "While there's a card under")
                                 if (subEffect.condition) {
-                                    if (!evaluateCondition(player as any, subEffect.condition, card)) return;
+                                    if (!evaluateCondition(player as any, subEffect.condition, card, turnManager)) return;
                                 }
 
                                 if (subEffect.type === 'modify_stats') {
@@ -652,10 +652,15 @@ export function executeRecalculateEffects(turnManager: TurnManager) {
 /**
  * Evaluate a condition against current game state (Group 1: Conditional Static Abilities)
  */
-export function evaluateCondition(player: PlayerState, condition: any, sourceCard?: CardInstance): boolean {
+export function evaluateCondition(player: PlayerState, condition: any, sourceCard?: CardInstance, turnManager?: TurnManager): boolean {
     if (!condition) return false;
 
     switch (condition.type) {
+        case 'during_your_turn':
+            // Check if it's the player's turn
+            if (!turnManager) return false;
+            return turnManager.game.state.turnPlayerId === player.id;
+
         case 'hand_size_greater_than_or_equal':
             return player.hand.length >= condition.threshold;
 

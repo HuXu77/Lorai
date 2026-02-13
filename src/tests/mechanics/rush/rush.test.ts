@@ -12,7 +12,7 @@ describe('Mechanic: Rush', () => {
     // TODO: Engine doesn't currently implement Rush mechanic for challenges
     // Rush should allow characters to challenge the turn they're played
     // This test is skipped until the engine implements Rush
-    it.skip('should allow Rush character to challenge immediately when played', async () => {
+    it('should allow Rush character to challenge immediately when played', async () => {
         // Setup: P2 has exerted character to challenge
         await harness.setPlay(harness.p2Id, [
             { name: 'HeiHei - Boat Snack', ready: false } // 1/2, exerted target

@@ -66,15 +66,17 @@ export const CARD_MANIPULATION_PATTERNS: TriggerPattern[] = [
                 event: GameEvent.CARD_PLAYED,
                 effects: [{
                     type: 'return_from_discard',
-                    amount,
+                    // amount is now part of target count
                     target: {
-                        zone: 'discard',
-                        destination: 'hand',
+                        type: 'chosen_card_in_discard',
+                        count: amount,
+                        upTo: true,
                         filter: {
                             cardType,
                             maxCost
                         }
                     },
+                    destination: 'hand', // Explicit destination
                     optional: true
                 }],
                 rawText: text

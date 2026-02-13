@@ -2617,6 +2617,31 @@ export function parseStaticEffects(text: string): any[] {
     }
 
     // Generic Stat Modification (Strength / Willpower / Lore) with SCALING ("for each ...")
+    // Tramp - Enterprising Dog: "chosen character of yours gets +1 ¤ this turn for each other character you have in play"
+    const scaledByCharactersRegex = /((?:chosen|all|this) (?:opposing )?(?:character|characters?)(?: of yours)?|it) gets? ([+-]\d+) (strength|willpower|lore|¤|🛡️|⛉|◊|⬡)(?: this turn)? for each (?:other )?character(?:s)? you have in play\.?/i;
+    const scaledByCharactersMatch = text.match(scaledByCharactersRegex);
+    if (scaledByCharactersMatch) {
+        const targetStr = scaledByCharactersMatch[1];
+        const amountStr = scaledByCharactersMatch[2];
+        const statStr = parseStat(scaledByCharactersMatch[3]);
+
+        return [{
+            type: 'modify_stats_by_count',
+            stat: statStr,
+            amountMultiplier: parseInt(amountStr),
+            target: parseTarget(targetStr),
+            countTarget: {
+                type: 'all_characters',
+                filter: {
+                    mine: true,
+                    other: text.includes('other') // Exclude the target if "other" is specified
+                }
+            },
+            duration: 'turn'
+        }];
+    }
+
+    // "chosen character gets -1 strength this turn for each item named Microbots you have in play"
     // "chosen character gets -1 strength this turn for each item named Microbots you have in play"
     const scaledStatRegex = /((?:chosen|all|this) (?:opposing )?characters?|it) gets? ([+-]\d+) (strength|willpower|lore|¤|🛡️|⛉|◊|⬡)(?: this turn)? for each item named (.+?) you have in play\.?/i;
     const scaledStatModMatch = text.match(scaledStatRegex);
@@ -5095,7 +5120,7 @@ export function parseStaticEffects(text: string): any[] {
             type: 'grant_keyword',
             keyword: keyword.charAt(0).toUpperCase() + keyword.slice(1).toLowerCase(),
             target: { type: 'self' },
-            condition: { type: 'during_my_turn' }
+            condition: { type: 'during_your_turn' }
         });
         return effects;
     }

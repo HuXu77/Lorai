@@ -1067,6 +1067,29 @@ export class AbilitySystemManager {
                     continue;
                 }
 
+                // BACKWARDS COMPATIBILITY: Handle old test format with action: 'keyword_X'
+                if (ability.action && ability.action.startsWith('keyword_')) {
+                    if (sourceCard.instanceId === card.instanceId) {
+                        const keywordName = ability.action.replace('keyword_', '');
+                        // Capitalize first letter
+                        const capitalizedKeyword = keywordName.charAt(0).toUpperCase() + keywordName.slice(1);
+                        keywords.add(capitalizedKeyword);
+                    }
+                    continue; // Skip to next ability
+                }
+
+                // BACKWARDS COMPATIBILITY: Handle ability-level keyword field
+                if (ability.keyword && ability.type === 'static') {
+                    if (sourceCard.instanceId === card.instanceId) {
+                        // Capitalize first letter
+                        const capitalizedKeyword = ability.keyword.charAt(0).toUpperCase() + ability.keyword.slice(1);
+                        keywords.add(capitalizedKeyword);
+                    }
+                }
+
+                // Skip if no effects array
+                if (!ability.effects || !Array.isArray(ability.effects)) continue;
+
                 for (const effect of ability.effects) {
                     // Check effect-level conditions
                     if ('condition' in effect && effect.condition && !this.evaluateEffectCondition(effect.condition, this.turnManager.game.getPlayer(sourceCard.ownerId), sourceCard)) {
@@ -1103,7 +1126,13 @@ export class AbilitySystemManager {
             }
         };
 
-        // 1. Check global static abilities (registered from other cards)
+
+        // 1. Check the card's own parsedEffects (for test cards and backwards compatibility)
+        if (card.parsedEffects && Array.isArray(card.parsedEffects)) {
+            processEffects(card.parsedEffects, card);
+        }
+
+        // 2. Check global static abilities (registered from other cards)
         for (const [sourceCard, abilities] of this.staticAbilities.entries()) {
             if (sourceCard.zone !== ZoneType.Play && sourceCard.zone !== ZoneType.Inkwell) continue; // Inkwell items might have static abilities? usually just Play
             // Only active cards
@@ -1112,7 +1141,7 @@ export class AbilitySystemManager {
             processEffects(abilities, sourceCard);
         }
 
-        // 2. Check Active Effects
+        // 3. Check Active Effects
         if (this.turnManager.game && this.turnManager.game.state.activeEffects) {
             for (const e of this.turnManager.game.state.activeEffects) {
                 const effect = e as unknown as ActiveEffect;
@@ -1406,6 +1435,16 @@ export class AbilitySystemManager {
 
                     return true;
                 });
+
+            case 'opponent_turn':
+            case 'opponents_turn':
+                // Check if it's NOT the card owner's turn
+                const currentTp = this.turnManager.game.state.turnPlayerId;
+                const ownerId = card.ownerId;
+                return currentTp !== ownerId;
+
+            case 'during_your_turn':
+                return this.turnManager.game.state.turnPlayerId === card.ownerId;
 
             // Add more condition types as needed
             default:

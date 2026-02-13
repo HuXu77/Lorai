@@ -85,14 +85,15 @@ export const STATS_PATTERNS: TriggerPattern[] = [
                 type: 'triggered',
                 event: GameEvent.CARD_PLAYED,
                 cost: { ink: cost },
+                optional: true, // MOVED: Set at ability level so executeAbility's cost check works
                 effects: [{
                     type: 'gain_lore',
                     amount: {
                         type: 'variable',
                         source: 'damage_on_target',
                         target: 'chosen_opposing_character'
-                    },
-                    optional: true
+                    }
+                    // REMOVED: optional flag from effect level
                 }],
                 rawText: text
             } as any;
