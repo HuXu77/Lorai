@@ -88,10 +88,13 @@ export class CardLoader {
      * Ensure a card's abilities are parsed (lazy loading helper)
      */
     private ensureParsed(card: Card): void {
-        if ((!card.parsedEffects || card.parsedEffects.length === 0) && card.abilities && card.abilities.length > 0) {
+        const hasAbilities = card.abilities && card.abilities.length > 0;
+        const hasFullTextSections = card.fullTextSections && card.fullTextSections.length > 0;
+
+        if ((!card.parsedEffects || card.parsedEffects.length === 0) && (hasAbilities || hasFullTextSections)) {
             const abilityDefinitions = parseToAbilityDefinition(card);
             card.parsedEffects = abilityDefinitions as any[];
-            console.log(`[CARD LOAD] ${card.name}: ${card.abilities.length} raw → ${abilityDefinitions.length} parsed`);
+            console.log(`[CARD LOAD] ${card.name}: ${card.abilities?.length || 0} raw abilities / ${card.fullTextSections?.length || 0} text sections → ${abilityDefinitions.length} parsed`);
         }
     }
 

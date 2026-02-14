@@ -264,5 +264,28 @@ export const ACTION_EFFECT_PATTERNS: TriggerPattern[] = [
                 rawText: text
             } as any;
         }
+    },
+
+    // Under The Sea: "Put all opposing characters with 2 ¤ or less on the bottom of their players' decks in any order."
+    {
+        pattern: /^put all opposing characters with (\d+) (?:¤|strength) or less on the bottom of their players[''] decks(?: in any order)?/i,
+        handler: (match, card, text) => {
+            const strengthThreshold = parseInt(match[1]);
+
+            return {
+                id: generateAbilityId(),
+                cardId: card.id.toString(),
+                type: 'triggered',
+                event: GameEvent.CARD_PLAYED,
+                effects: [{
+                    type: 'put_on_bottom',
+                    target: {
+                        type: 'all_opposing_characters',
+                        filter: { maxStrength: strengthThreshold }
+                    }
+                }],
+                rawText: text
+            } as any;
+        }
     }
 ];
