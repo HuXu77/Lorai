@@ -192,6 +192,7 @@ export interface CardInstance extends Card {
     classifications?: string[];  // Card classifications (e.g., ['Hero', 'Villain', 'Ally'])
     damageDealtThisTurn?: number;  // Damage dealt by this card this turn (for tracking effects)
     locationId?: string; // If this is a character, instanceId of location it is at
+    revealed?: boolean; // If true, card is visible to opponents
 }
 
 export interface DamageShield {
@@ -215,6 +216,7 @@ export interface Player {
     costReductions?: CostReduction[]; // Active cost reductions
     restrictions?: ContinuousEffect[]; // Active restrictions (e.g. can't play actions)
     inkedThisTurn: boolean;
+    handRevealed?: boolean; // If true, hand is visible to opponents
 }
 
 

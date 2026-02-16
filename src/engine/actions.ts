@@ -4160,6 +4160,14 @@ export class TurnManager {
         );
         this.recalculateEffects();
 
+        // Reset revealed hands
+        Object.values(this.game.state.players).forEach(p => {
+            p.handRevealed = false;
+            p.hand.forEach(c => {
+                if (c.revealed) c.revealed = false;
+            });
+        });
+
         // Cleanup turn-based abilities (remove temporary ability listeners)
         if (this.abilitySystem) {
             this.abilitySystem.cleanupTurnBasedAbilities();

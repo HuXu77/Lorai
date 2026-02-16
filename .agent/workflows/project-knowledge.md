@@ -2,143 +2,82 @@
 description: Project-specific conventions, patterns, and important knowledge for working on Lorai
 ---
 
-# Lorai Project Knowledge
+# Lorai Agent Onboarding & Project Knowledge
 
-This document captures critical project knowledge, conventions, and patterns.
+This document is the **single source of truth** for agents to navigate the Lorai codebase. Read this first to avoid unnecessary searching.
 
-## Technology Stack
+## 🚀 Quick Path: Where do I go?
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **UI**: React with TailwindCSS
-- **Testing**: Jest (unit), Playwright (E2E)
-- **Key Files**:
-  - `allCards.json` - Card database (6.4MB, 2500+ cards)
-  - `src/engine/actions.ts` - TurnManager (main game logic)
-  - `src/app/game/page.tsx` - Main game UI
+Find your task type below and go directly to the relevant files.
 
-## Directory Structure
+| Task Type | Key Directories / Files | Essential Documentation (Read These!) |
+| :--- | :--- | :--- |
+| **Fixing a Card Bug** | `src/engine/abilities/` (logic)<br>`allCards.json` (data) | `docs/EXECUTOR_ARCHITECTURE.md`<br>`docs/TEST_GUIDE.md` (Section: Ability Testing) |
+| **Adding a New Card** | `allCards.json`<br>`src/engine/parsers/` | `docs/CARD_DATA_FORMAT.md`<br>`docs/PARSER_ORDERING.md` |
+| **UI Changes / Styling** | `src/app/game/` (Game Page)<br>`src/components/` | `docs/UI_ARCHITECTURE.md` |
+| **Bot / AI Logic** | `src/engine/ai/` | `docs/ENGINE_ARCHITECTURE.md` (AI Layer) |
+| **Game Engine Core** | `src/engine/actions.ts` (TurnManager)<br>`src/engine/models.ts` | `docs/ENGINE_ARCHITECTURE.md` |
+| **Writing Tests** | `src/tests/` | `docs/TEST_GUIDE.md` (Critical!) |
 
-```
-src/
-├── app/           # Next.js pages
-├── components/    # React UI components
-├── engine/        # Core game engine (CRITICAL)
-│   ├── actions.ts      # TurnManager - game state mutations
-│   ├── abilities/      # AbilitySystemManager, EffectExecutor
-│   ├── parsers/        # Card text parsing
-│   └── models.ts       # Core types
-├── tests/         # Test suites
-│   ├── abilities/      # 124 files - ability execution
-│   ├── parser/         # 70 files - text parsing
-│   ├── e2e/            # Playwright browser tests
-│   └── engine-test-utils.ts  # TestHarness helper
-└── debug/         # Debug utilities (StateManipulator, presets)
-```
+---
 
-## Testing Commands
+## 🏗️ Architecture at a Glance
 
-```bash
-# Unit tests (Jest)
-npm test                                    # All tests
-npm test -- path/to/test.ts                 # Specific file
-npm test -- --testNamePattern="pattern"     # By name
+The application follows a strict layered architecture. **Do not bypass layers.**
 
-# E2E tests (Playwright)
-npx playwright test                         # All E2E
-npx playwright test src/tests/e2e/modals/   # Specific directory
-npx playwright show-report                  # View HTML report
-```
+1.  **State Layer** (`src/engine/models.ts`):
+    *   Pure data. No logic.
+    *   **Rule**: Never mutate state directly in UI components. Use `TurnManager` actions.
 
-## Key Test Patterns
+2.  **Engine Layer** (`src/engine/`):
+    *   **TurnManager** (`actions.ts`): The "brain". Validates rules and executes moves.
+    *   **AbilitySystem** (`abilities/`):
+        *   **Parser**: Converts text -> JSON AST (`EffectAST`).
+        *   **Executor**: Executes JSON AST -> Game State changes.
+    *   **Rule**: All game logic lives here.
 
-### Unit Test Setup (TestHarness)
-```typescript
-import { TestHarness } from '../engine-test-utils';
+3.  **UI Layer** (`src/app/game/`, `src/components/`):
+    *   **Next.js 14** (App Router).
+    *   **Rule**: UI only *displays* state and *requests* actions via `HumanController`.
 
-const harness = new TestHarness();
-await harness.initialize();
+---
 
-harness.setHand(harness.p1Id, ['Card Name']);
-harness.setInkwell(harness.p1Id, ['Ink Card'], true);
-harness.turnManager.playCard(harness.p1Id, cardId);
-```
+## ⚠️ Critical Agent Rules
 
-### E2E Test Setup (injectState)
-```typescript
-await gamePage.injectState({
-    player1: {
-        hand: ['Card Name'],
-        inkwell: ['Generic Ink', 'Generic Ink'],
-        play: [{ name: 'Character', ready: true, turnPlayed: 0 }],
-        deck: ['Deck Card'],
-        lore: 0
-    },
-    player2: {
-        deck: ['Deck Card'],
-        play: []
-    },
-    turnPlayer: 'player1'
-});
-```
+### 1. Testing is Mandatory
+*   **Never** fix a bug without a reproduction test case.
+*   **Use `TestHarness`**:
+    ```typescript
+    import { TestHarness } from '../engine-test-utils';
+    const harness = new TestHarness();
+    await harness.initialize();
+    harness.setHand(harness.p1Id, ['Card Name']); // Setup state
+    ```
+*   **Run Tests**:
+    *   `npm test` (All tests - slow)
+    *   `npm test -- path/to/file` (Fast - use this!)
 
-### E2E Modal Interaction (Reliable Pattern)
-```typescript
-// Use getByRole for reliable button detection
-const button = gamePage.page.getByRole('button', { name: /Button Text/i });
-await expect(button).toBeVisible({ timeout: 10000 });
-await button.click();
+### 2. Card Naming
+*   Always use the **exact full name** from `allCards.json` (e.g., `"Mickey Mouse - Brave Little Tailor"`, not just `"Mickey"`).
+*   Typos in card names will cause tests to fail silently or throw "Card not found" errors.
 
-// Wait for confirm and click
-const confirmBtn = gamePage.page.getByRole('button', { name: /Confirm/i });
-await expect(confirmBtn).toBeEnabled({ timeout: 5000 });
-await confirmBtn.click();
-```
+### 3. Coding Standards
+*   **Immutability**: Prefer creating new objects over mutating state where possible, though the engine uses mutable state for performance.
+*   **No `any`**: TypeScript types are strict. Use `GameState`, `PlayerState`, `CardInstance`.
+*   **No `console.log` in production**: Use the `GameLog` system for player-facing messages.
 
-## Card Name Resolution
+### 4. Common Pitfalls
+*   **Infinite Loops**: When writing `while` loops in the engine, always add a safety break (e.g., `let checks = 0; if (checks++ > 100) break;`).
+*   **Async/Await**: The engine is largely synchronous, but some UI interactions (choices) are async. Be careful when mixing the two.
 
-- Use **exact full names** from `allCards.json` (e.g., `"Mickey Mouse - Brave Little Tailor"`)
-- Card lookup during `injectState` uses fuzzy matching but exact names prevent issues
-- Verify card exists: `grep '"fullName":.*CardName' allCards.json`
+---
 
-## Critical UI Components
+## 📚 Critical Documentation Links
 
-- **CardActionMenu.tsx** - Card detail modal (has `role="dialog"`)
-- **ChoiceContainer.tsx** - Wrapper for all choice modals (has `data-testid="choice-modal"`)
-- **PlayerChoiceHandler.tsx** - Routes choice types to appropriate components
+*   **[Engine Architecture](file:///Users/mitchellclay/Developer/Lorai/docs/ENGINE_ARCHITECTURE.md)**: How the loop works.
+*   **[Test Guide](file:///Users/mitchellclay/Developer/Lorai/docs/TEST_GUIDE.md)**: How to write and run tests.
+*   **[UI Architecture](file:///Users/mitchellclay/Developer/Lorai/docs/UI_ARCHITECTURE.md)**: Component hierarchy.
+*   **[Executor Architecture](file:///Users/mitchellclay/Developer/Lorai/docs/EXECUTOR_ARCHITECTURE.md)**: How abilities work.
 
-## Debug Mode
-
-### Browser Debug URL
-```
-http://localhost:3000/game?test=true&autoMulligan=true&debug=true
-```
-
-### Debug Panel Features
-- **Cards Tab**: Add cards to any zone
-- **State Tab**: Export/Import state JSON
-- **Presets Tab**: Load pre-built test scenarios
-
-## Common Issues & Solutions
-
-### E2E Test: Cards are "drying" (can't act)
-**Fix**: Add `turnPlayed: 0` to cards in play:
-```typescript
-play: [{ name: 'Card', ready: true, turnPlayed: 0 }]
-```
-
-### E2E Test: Modal not found
-**Fix**: Ensure modals have `role="dialog"` or `data-testid="choice-modal"`. Use `getByRole` instead of scoped locators.
-
-### E2E Test: Card not in hand
-**Fix**: Verify card name exists in `allCards.json`. Check for typos.
-
-### Parser returning null
-**Fix**: Check parser ordering in `src/engine/parsers/`. Earlier patterns take priority.
-
-## Before Pushing Changes
-
-```bash
-npm run next:build    # Type check and build
-npm test              # Run all tests
-```
+---
+**Verification**: If you are unsure, run `npm test -- src/tests/abilities/choice-system.test.ts` to checking the choice system is working.

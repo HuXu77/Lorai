@@ -673,6 +673,57 @@ export function AnimationDemo({ onClose }: AnimationDemoProps) {
     );
 }
 
+// ============================================================================
+// INK EFFECT
+// ============================================================================
+
+interface InkEffectProps {
+    position: { x: number; y: number };
+    cardName: string;
+    playerName: string;
+    onComplete?: () => void;
+}
+
+export function InkEffect({ position, cardName, playerName, onComplete }: InkEffectProps) {
+    useEffect(() => {
+        const timer = setTimeout(() => onComplete?.(), 2000);
+        return () => clearTimeout(timer);
+    }, [onComplete]);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="animate-ink-reveal flex flex-col items-center">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full scale-150 animate-pulse" />
+
+                {/* Card Container */}
+                <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-4 rounded-xl border-2 border-yellow-500 shadow-2xl transform transition-all duration-500">
+                    <div className="text-yellow-400 font-bold text-center mb-2 uppercase tracking-wide text-sm">
+                        Inkwell
+                    </div>
+                    {/* Placeholder for Card Art - valid color for fallback */}
+                    <div className="w-48 h-64 bg-slate-700 rounded-lg flex items-center justify-center relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800 opacity-50" />
+                        <span className="relative z-10 text-white font-bold text-center px-4 text-xl drop-shadow-lg">
+                            {cardName}
+                        </span>
+                        {/* Ink Symbol Overlay */}
+                        <div className="absolute bottom-2 right-2 text-4xl opacity-20">
+                            🖋️
+                        </div>
+                    </div>
+                    <div className="mt-3 text-center">
+                        <span className="text-gray-300 text-sm">Inked by </span>
+                        <span className="text-yellow-400 font-bold">{playerName}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ... existing code ...
+
 export default {
     HealingEffect,
     ChallengeEffect,
@@ -680,5 +731,6 @@ export default {
     LoreGainEffect,
     StatChangeEffect,
     BanishEffect,
+    InkEffect, // Add export
     AnimationDemo,
 };

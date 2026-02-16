@@ -26,6 +26,7 @@ export class PlayerState implements Player {
     inkedThisTurn: boolean = false;
     costReductions: CostReduction[] = [];
     restrictions: ContinuousEffect[] = [];
+    handRevealed: boolean = false;
 
 
     constructor(id: string, name: string) {

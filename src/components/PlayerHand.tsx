@@ -159,6 +159,7 @@ function PlayerHand({
                                     {canPlay && onPlayCard && !isProcessing && (
                                         <div className="absolute inset-0 border-2 border-green-400 border-opacity-40 rounded-lg pointer-events-none transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] z-10">
                                             <button
+                                                data-testid="play-card-button"
                                                 onClick={(e) => handlePlayCard(card, e)}
                                                 disabled={isProcessing}
                                                 className="absolute bottom-1 left-1/2 transform -translate-x-1/2 bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-xs font-bold pointer-events-auto shadow-lg transition-all"

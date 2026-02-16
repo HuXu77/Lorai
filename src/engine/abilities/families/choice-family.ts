@@ -577,11 +577,16 @@ export class ChoiceFamilyHandler extends BaseFamilyHandler {
         if (this.turnManager) {
             const cardNames = opponent.hand.map((c: any) => c.name).join(', ');
             this.turnManager.logger.info(`${opponent.name} reveals hand: ${cardNames}`);
+
+            opponent.handRevealed = true;
+            opponent.hand.forEach((c: any) => c.revealed = true);
+
             // Send reveal event to the player who played the card
             this.turnManager.eventBus?.emit(GameEvent.HAND_REVEALED, {
                 player: context.player, // The one seeing the hand
                 revealedPlayer: opponent, // The one whose hand is revealed
-                hand: opponent.hand
+                hand: opponent.hand,
+                duration: 'until_end_of_turn'
             });
         }
 

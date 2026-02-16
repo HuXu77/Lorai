@@ -88,6 +88,9 @@ export default function ModalChoice({ choice, onResponse }: ModalChoiceProps) {
         </div>
     );
 
+    const hasCards = choice.options?.some(o => o.card);
+    const maxWidth = hasCards ? 'max-w-5xl' : 'max-w-2xl';
+
     return (
         <ChoiceContainer
             data-testid="choice-modal"
@@ -101,6 +104,7 @@ export default function ModalChoice({ choice, onResponse }: ModalChoiceProps) {
             canConfirm={canConfirm}
             confirmLabel={`Confirm (${selectedIds.length}/${max})`}
             instructionText={isMultiSelect ? instructionText : undefined}
+            maxWidth={maxWidth}
         >
             {/* Options List */}
             <div className={`${choice.options.some(o => o.card) ? 'grid grid-cols-2 gap-4' : 'space-y-2'}`}>

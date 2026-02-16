@@ -1,16 +1,26 @@
 # Code Conventions
 
+## Architecture & Layering
+
+1.  **State Layer** (`models.ts`): Passive data only. No methods, no logic.
+2.  **Abilities Layer** (`abilities/`):
+    - **Parser**: Converts text to AST.
+    - **Executor**: Executes AST effects. **Does NOT validate game rules.**
+3.  **Actions Layer** (`actions.ts`, `game-actions/`):
+    - **Validation**: Checks costs, permissions, and rules.
+    - **Delegation**: Calls `abilitySystem.execute()` only after validation.
+
+## Logging
+
+- **Engine**: Use `this.logger` (ILogger). Do NOT use `console.log`.
+- **UI**: Use `console.log` for debugging, but clean up before commit.
+
 ## TypeScript
 
 ### Imports
 - Use relative imports within `src/`
 - Engine imports: `import { X } from '../engine/models'`
 - Test utils: `import { TestHarness } from '../engine-test-utils'`
-
-### Type Safety
-- Always define interfaces for props
-- Avoid `any` - use proper typing
-- Use `CardInstance`, `PlayerState`, `GameState` from models
 
 ### Naming
 - Components: PascalCase (`CardActionMenu.tsx`)

@@ -22,6 +22,7 @@ interface ChoiceContainerProps {
     instructionText?: React.ReactNode;
     children: React.ReactNode;
     'data-testid'?: string;
+    maxWidth?: string;
 }
 
 export default function ChoiceContainer({
@@ -37,7 +38,8 @@ export default function ChoiceContainer({
     confirmLabel = 'Confirm',
     instructionText,
     'data-testid': testId,
-    children
+    children,
+    maxWidth = 'max-w-5xl'
 }: ChoiceContainerProps) {
     return (
         <div
@@ -45,7 +47,7 @@ export default function ChoiceContainer({
             onClick={(e) => e.stopPropagation()}
         >
             {/* Modal Container */}
-            <div data-testid={testId} className="bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-xl shadow-2xl max-w-5xl w-full border border-yellow-500/50 overflow-hidden flex flex-col max-h-[90vh]">
+            <div data-testid={testId} className={`bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 rounded-xl shadow-2xl ${maxWidth} w-full border border-yellow-500/50 overflow-hidden flex flex-col max-h-[90vh]`}>
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 p-4 border-b border-yellow-500/30 flex-shrink-0">

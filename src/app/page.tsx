@@ -41,12 +41,12 @@ export default function Home() {
                     <button
                         onClick={handleStartGame}
                         disabled={isLoading}
-                        className="group relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white transition-all duration-300 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-full hover:from-indigo-500 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                        className="group relative inline-flex items-center justify-center min-w-[320px] px-10 py-5 text-xl font-bold text-white transition-all duration-300 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-full hover:from-indigo-500 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                     >
                         {isLoading ? (
-                            <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>Summoning...</span>
+                            <div className="flex items-center justify-center gap-3 w-full">
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                <span className="tracking-widest uppercase text-lg">Summoning...</span>
                             </div>
                         ) : (
                             <span className="flex items-center gap-3">

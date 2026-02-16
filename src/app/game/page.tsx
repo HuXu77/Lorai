@@ -19,7 +19,7 @@ import PlayAreaActionMenu from '../../components/PlayAreaActionMenu'
 import GameZone from '../../components/GameZone'
 import LocationsZone from '../../components/LocationsZone'
 import ActiveEffectsPanel from '../../components/ActiveEffectsPanel'
-import { AnimationDemo, LoreGainEffect, StatChangeEffect, DrawAnimation, ChallengeEffect } from '../../components/animations'
+import { AnimationDemo, LoreGainEffect, StatChangeEffect, DrawAnimation, ChallengeEffect, InkEffect } from '../../components/animations'
 import VictoryOverlay from '../../components/VictoryOverlay'
 import { DebugPanel } from '../../components/DebugPanel'
 import GameHeader from '../../components/GameHeader'
@@ -152,6 +152,7 @@ function GamePageInner() {
     const [loreAnimation, setLoreAnimation] = useState<{ show: boolean; amount: number; position: { x: number; y: number }; key: number }>({ show: false, amount: 0, position: { x: 0, y: 0 }, key: 0 })
     const [statAnimation, setStatAnimation] = useState<{ show: boolean; amount: number; statType: 'strength' | 'willpower' | 'lore'; position: { x: number; y: number } }>({ show: false, amount: 0, statType: 'strength', position: { x: 0, y: 0 } })
     const [challengeAnimation, setChallengeAnimation] = useState<{ show: boolean; attackerPos: { x: number; y: number }; defenderPos: { x: number; y: number }; attackerDamage: number; defenderDamage: number }>({ show: false, attackerPos: { x: 0, y: 0 }, defenderPos: { x: 0, y: 0 }, attackerDamage: 0, defenderDamage: 0 })
+    const [inkAnimation, setInkAnimation] = useState<{ show: boolean; cardName: string; playerName: string; position: { x: number; y: number } }>({ show: false, cardName: '', playerName: '', position: { x: 0, y: 0 } })
 
     // Draw animation state
     const [drawAnim, setDrawAnim] = useState<{ active: boolean; from?: DOMRect; to?: DOMRect }>({ active: false });
@@ -260,7 +261,9 @@ function GamePageInner() {
                 // the actual engine state remains unchanged!
                 const realPlayer = gameEngine.stateManager.state.players[yourPlayer.id];
                 if (realPlayer) {
+                    console.log('[WARD DEBUG] handlePlayCard: Calling turnManager.playCard for', card.name);
                     const success = await gameEngine.turnManager.playCard(realPlayer as any, card.instanceId);
+                    console.log('[WARD DEBUG] handlePlayCard: result =', success);
                     if (!success) {
                         console.error("Engine returned failure for playCard");
                         addLogEntry({
@@ -342,7 +345,9 @@ function GamePageInner() {
         if (!player) return;
 
         try {
-            await gameEngine.turnManager.playCard(player as any, cardToPlay.instanceId);
+            console.log('[WARD DEBUG] Calling turnManager.playCard for', cardToPlay.name);
+            const success = await gameEngine.turnManager.playCard(player as any, cardToPlay.instanceId);
+            console.log('[WARD DEBUG] playCard result:', success);
 
             addLogEntry({
                 category: LogCategory.CARD,
@@ -352,6 +357,7 @@ function GamePageInner() {
 
             gameEngine.humanController.updateState(gameEngine.stateManager.state);
         } catch (error) {
+            console.error('[WARD DEBUG] playCard threw error:', error);
             addLogEntry({
                 category: LogCategory.SYSTEM,
                 message: `Failed to play ${cardToPlay.name}: ${error}`,
@@ -474,6 +480,25 @@ function GamePageInner() {
                     else if (details?.type === 'ability' || action === 'UseAbility' || action === 'useAbility') {
                         const cardName = getCardName(details?.card, details?.cardId) || 'Unknown Card';
                         action = `used ability of **${cardName}**`;
+                    }
+                    // 6. Ink (New Structured)
+                    else if (details?.type === 'ink') {
+                        const cardName = details.card || 'Unknown Card';
+                        action = `inked **${cardName}**`;
+                        category = LogCategory.CARD;
+
+                        // Trigger Animation
+                        // Calculate center position or use specific coordinates based on player
+                        const isPlayer = player === 'You' || player === 'Player 1' || player === 'player1';
+                        // Position doesn't matter much if we use fixed centered overlay, 
+                        // but if we want it to move to inkwell we need start/end.
+                        // For now, InkEffect uses fixed center, so position is dummy.
+                        setInkAnimation({
+                            show: true,
+                            cardName: cardName,
+                            playerName: player,
+                            position: { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+                        });
                     }
 
                     // Actually add to UI log!
@@ -1846,6 +1871,17 @@ function GamePageInner() {
                     onComplete={() => setChallengeAnimation({ show: false, attackerPos: { x: 0, y: 0 }, defenderPos: { x: 0, y: 0 }, attackerDamage: 0, defenderDamage: 0 })}
                 />
             )}
+
+            {/* Ink Animation */}
+            {inkAnimation.show && (
+                <InkEffect
+                    position={inkAnimation.position}
+                    cardName={inkAnimation.cardName}
+                    playerName={inkAnimation.playerName}
+                    onComplete={() => setInkAnimation(prev => ({ ...prev, show: false }))}
+                />
+            )}
+
 
             {/* Animation Demo Modal */}
             {showAnimationDemo && (

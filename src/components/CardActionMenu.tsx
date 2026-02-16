@@ -1,4 +1,3 @@
-'use client';
 
 import React, { useState } from 'react';
 import { CardInstance } from '../engine/models';
@@ -292,7 +291,10 @@ export default function CardActionMenu({
                             {/* Play Action */}
                             {canPlay ? (
                                 <button
-                                    onClick={onPlay}
+                                    onClick={() => {
+                                        console.log('[CLICK DEBUG] Play button clicked for', card.name);
+                                        onPlay();
+                                    }}
                                     className="w-full px-4 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                                 >
                                     <span className="text-xl">▶️</span>

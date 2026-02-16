@@ -116,6 +116,7 @@ export class GamePage {
                 throw new Error("Debug interface not found");
             }
         }, config);
+
         await this.page.waitForTimeout(1000); // Increased wait time
     }
 
@@ -431,6 +432,46 @@ export class GamePage {
         // Search the entire page (now including the open modal)
         await expect(this.page.locator('body')).toContainText(message, { timeout: 5000 });
     }
+    /**
+     * Click "Sing with Character" in the action menu
+     */
+    async clickSingOption() {
+        const singBtn = this.page.locator('button')
+            .filter({ hasText: /Sing with/i })
+            .first();
+        await expect(singBtn).toBeVisible();
+        await singBtn.click();
+    }
+
+    /**
+     * Assert card is in discard pile
+     */
+    async expectCardInDiscard(cardName: string, player: 1 | 2 = 1) {
+        // We might not see the discard pile contents directly unless we open it.
+        // But usually "Graveyard" or "Discard" count is visible.
+        // If we want to verify specific card, we should check if the discard modal can be opened or if the card is logged.
+        // For now, let's assume valid implementation requires opening the discard pile if not visible,
+        // OR just check the log if that's sufficient. 
+        // BUT strict E2E usually wants to see the UI state.
+        // Let's check if there's a discard pile element we can interact with.
+
+        // Actually, let's just check the integration/model or log for now if UI is complex.
+        // But wait, the test calls it, so I should implement it safely.
+
+        // Simplified approach: Open discard pile if possible, or check log.
+        // Let's assume we can click the discard pile to see contents.
+        const discardBtn = this.page.locator(player === 1 ? '[data-testid="player-discard"]' : '[data-testid="opponent-discard"]');
+        await expect(discardBtn).toBeVisible();
+        await discardBtn.click();
+
+        const modal = this.page.locator('[data-testid="discard-modal"], [role="dialog"]');
+        await expect(modal).toBeVisible();
+        await expect(modal).toContainText(cardName);
+
+        // Close it
+        await this.page.keyboard.press('Escape');
+    }
+
 }
 
 // ==================== STATE CONFIG TYPE ====================

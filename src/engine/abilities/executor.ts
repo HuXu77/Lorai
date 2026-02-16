@@ -196,7 +196,7 @@ export class EffectExecutor {
     async execute(effect: EffectAST, context: GameContext): Promise<boolean | void> {
         // Check optional
         // Skip check for effect types that handle optionality internally with specific prompts
-        const typesWithInternalCheck = ['draw', 'damage', 'banish', 'exert', 'ready', 'ready_card', 'look_and_move', 'play_for_free', 'discard_chosen'];
+        const typesWithInternalCheck = ['draw', 'damage', 'banish', 'exert', 'ready', 'ready_card', 'look_and_move', 'play_for_free', 'discard_chosen', 'return_from_discard'];
         if ((effect as any).optional && !typesWithInternalCheck.includes(effect.type) && !(await this.checkOptional(effect, context))) {
             return false;
         }
@@ -1756,11 +1756,15 @@ export class EffectExecutor {
 
                 this.turnManager.logger.info(`[EffectExecutor] ${target.name} reveals hand: ${handNames}${source}`);
 
+                target.hand.forEach((c: any) => c.revealed = true);
+                target.handRevealed = true;
+
                 // Emit event for UI handling
                 this.turnManager.abilitySystem.emitEvent(GameEvent.HAND_REVEALED, {
                     player: target, // The player whose hand is revealed
                     source: context.card,
-                    sourcePlayer: context.player
+                    sourcePlayer: context.player,
+                    duration: 'until_end_of_turn'
                 });
             }
         });

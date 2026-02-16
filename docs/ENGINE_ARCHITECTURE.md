@@ -33,12 +33,12 @@ The Lorcana game engine follows a **layered architecture** with clear separation
 │  │  Executor: EffectAST → Game Actions              │ │
 │  │  - 12 Family Handlers                            │ │
 │  │  - 329 effect implementations                    │ │
-│  │  - 100% coverage ✅                               │ │
+│  │  - High coverage ✅                               │ │
 │  └──────────────────┬────────────────────────────────┘ │
                      │ modify game state
                      ▼
 ┌─────────────────────────────────────────────────────────┐
-│             SHARED UTILS (ability-helpers.ts)           │
+│             SHARED UTILS (utils/ability-helpers.ts)     │
 │  - Centralized ability detection logic                  │
 │  - Shared constraints (Boost cost, Song eligibility)   │
 │  - Used by UI, Actions, and Executor layers             │
@@ -97,7 +97,7 @@ The Lorcana game engine follows a **layered architecture** with clear separation
   - `activated-parser.ts`: Exert/ink costs
 
 **B. Executor** (`executor.ts`)
-- **100% coverage** of all 321 effect types
+- **High coverage** of all 321 effect types
 - Routes effects to 12 family handlers:
   - `CostFamilyHandler`: Pay costs
   - `DamageFamilyHandler`: Damage/heal
@@ -160,8 +160,9 @@ All game actions emit events for triggered abilities:
 - `ink-action.ts`: Move card from hand to inkwell
 - `quest-action.ts`: Quest with character (lore, Support, on_quest triggers)
 - `move-action.ts`: Move character to location (checks move cost, willpower)
-- *(planned)* `play-card.ts`: Play card from hand
-- *(planned)* `use-ability.ts`: Activated abilities
+- `play-card-action.ts`: Play card from hand
+- `use-ability.ts`: Activated abilities
+- `sing-song.ts`: Sing songs with characters
 
 #### `combat/` - Combat System
 - `challenge.ts`: Challenge execution (validation, damage, keywords)
@@ -311,9 +312,9 @@ This follows the architecture:
 
 ## 📊 Current Coverage Status
 
-- **Parser**: 100% (317/317 tests) ✅
-- **Executor**: 100% (329/329 effects) ✅
+- **Parser**: Extensively tested (317/317 core tests) ✅
+- **Executor**: High coverage of all 329 effect types ✅
 - **Actions**: Modularized & Tested ✅
 - **AI**: Functional but needs loop detection
 
-**Next Priority**: Complete Actions layer validation to match Executor's 100% coverage.
+**Next Priority**: Complete Actions layer validation and expand regression tests for edge cases.

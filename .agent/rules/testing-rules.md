@@ -10,13 +10,24 @@
 | E2E features | `src/tests/e2e/` | `feature.spec.ts` |
 | Mechanics | `src/tests/mechanics/[mechanic-name]/` | `mechanic.test.ts` AND `mechanic.spec.ts` |
 
-## Mechanics Testing Strategy (Preferred)
+## Mechanics Testing Strategy (Mandatory)
 For any new mechanic (e.g., Singer, Bodyguard, Shift), you **MUST** create a dedicated directory in `src/tests/mechanics/`.
 This directory must contain TWO test files:
-1.  **Engine Test**: `[mechanic].test.ts` (Vitest) - Verifies the rules/math/state.
+1.  **Engine Test**: `[mechanic].test.ts` (Vitest) - Verifies the rules/math/state using `TestHarness`.
 2.  **UI Test**: `[mechanic].spec.ts` (Playwright) - Verifies the user interaction/modals.
 
 **Do NOT** split these into separate `abilities/` and `e2e/` folders. Keep them together.
+
+## Bug Fixes & Regressions
+- Create a reproduction test in `src/tests/bugs/` (e.g., `elsa-infinite-loop.test.ts`).
+- Ensure the test fails BEFORE the fix and passes AFTER.
+- Use `TestHarness` for engine bugs, Playwright for UI bugs.
+
+## TestHarness Usage
+Always use `TestHarness` from `src/tests/engine-test-utils.ts` for engine tests.
+- `harness.setHand(playerId, ['Card Name'])`: Setup hand.
+- `harness.setInkwell(playerId, ['Card'], true)`: Setup ink.
+- `harness.turnManager`: Access engine actions.
 
 ## Unit Test Structure
 

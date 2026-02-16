@@ -24,6 +24,7 @@ declare global {
             addToHand: (playerId: string, cardName: string) => any;
             addToPlay: (playerId: string, cardName: string, options?: { ready?: boolean }) => any;
             addToInkwell: (playerId: string, cardName: string) => any;
+            addToDiscard: (playerId: string, cardName: string) => any;
             setLore: (playerId: string, amount: number) => boolean;
             setTurn: (playerId: string) => boolean;
             setDeck: (playerId: string, cardNames: string[]) => boolean;
@@ -112,6 +113,11 @@ export function DebugPanel({ gameEngine, engineState, onStateChange }: DebugPane
                 },
                 addToInkwell: (playerId: string, cardName: string) => {
                     const result = manipulator.addToInkwell(playerId, cardName);
+                    refreshState();
+                    return result;
+                },
+                addToDiscard: (playerId: string, cardName: string) => {
+                    const result = manipulator.addToDiscard(playerId, cardName);
                     refreshState();
                     return result;
                 },

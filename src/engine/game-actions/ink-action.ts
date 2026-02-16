@@ -43,7 +43,12 @@ export function executeInkCard(turnManager: TurnManager, player: PlayerState, ca
 
     player.inkedThisTurn = true;
 
-    logger.action(player.name, 'Inked card', card.name);
+    logger.action(player.name, 'inked', {
+        type: 'ink',
+        card: card.fullName || card.name,
+        cardId: card.instanceId,
+        // UI can resolve image path from card name/ID
+    });
 
     // Emit CARD_INKED event (fire-and-forget to preserve sync behavior)
     turnManager.abilitySystem.emitEvent(GameEvent.CARD_INKED, {

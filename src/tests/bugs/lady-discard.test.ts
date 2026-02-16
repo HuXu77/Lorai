@@ -76,10 +76,14 @@ describe('Lady - Miss Park Avenue Discard Return Bug', () => {
         // 4. Mock the choice response
         // First choice: Optional "Yes"
         // Second choice: Target selection
-        let choiceCallCount = 0;
+        const choiceCalls: any[] = [];
         (turnManager.requestChoice as any).mockImplementation(async (req: any) => {
-            choiceCallCount++;
-            if (req.type === 'yes_no') return { selectedIds: ['yes'], declined: false };
+            choiceCalls.push(req);
+
+            // Fail if optional yes/no prompt is requested
+            if (req.type === 'yes_no') {
+                throw new Error('Should not request generic optional prompt for return_from_discard');
+            }
 
             // Validate that we are getting the correct choice request type
             if (req.type === 'target_card_in_discard' || req.type === 'general_select') {

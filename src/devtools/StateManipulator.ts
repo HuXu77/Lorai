@@ -247,6 +247,29 @@ export class StateManipulator {
     }
 
     /**
+     * Add a card to a player's discard pile
+     */
+    addToDiscard(playerId: string, cardName: string): CardInstance | null {
+        const cardDef = this.findCard(cardName);
+        if (!cardDef) {
+            console.error(`[StateManipulator] Card not found: ${cardName}`);
+            return null;
+        }
+
+        const player = this.engine.stateManager.getPlayer(playerId);
+        if (!player) {
+            console.error(`[StateManipulator] Player not found: ${playerId}`);
+            return null;
+        }
+
+        const instance = this.createCardInstance(cardDef, playerId, ZoneType.Discard);
+        player.discard.push(instance);
+
+        console.log(`[StateManipulator] Added ${cardDef.fullName} to ${playerId}'s discard`);
+        return instance;
+    }
+
+    /**
      * Set the top cards of a player's deck
      */
     setDeckTop(playerId: string, cardNames: string[]): boolean {
@@ -451,7 +474,7 @@ export class StateManipulator {
             const processCardSetup = (
                 playerId: string,
                 cards: (string | CardSetup)[],
-                zone: 'hand' | 'play' | 'inkwell' | 'deck'
+                zone: 'hand' | 'play' | 'inkwell' | 'deck' | 'discard'
             ) => {
                 if (!cards) return;
                 for (const card of cards) {
@@ -475,6 +498,9 @@ export class StateManipulator {
                         case 'deck':
                             this.setDeckTop(playerId, [name]);
                             break;
+                        case 'discard':
+                            this.addToDiscard(playerId, name);
+                            break;
                     }
                 }
             };
@@ -484,6 +510,9 @@ export class StateManipulator {
                 processCardSetup('player1', preset.setup.player1.hand, 'hand');
                 processCardSetup('player1', preset.setup.player1.play, 'play');
                 processCardSetup('player1', preset.setup.player1.inkwell, 'inkwell');
+                if (preset.setup.player1.discard) {
+                    processCardSetup('player1', preset.setup.player1.discard, 'discard');
+                }
                 if (preset.setup.player1.deck) {
                     processCardSetup('player1', preset.setup.player1.deck, 'deck');
                 }
@@ -497,6 +526,9 @@ export class StateManipulator {
                 processCardSetup('player2', preset.setup.player2.hand, 'hand');
                 processCardSetup('player2', preset.setup.player2.play, 'play');
                 processCardSetup('player2', preset.setup.player2.inkwell, 'inkwell');
+                if (preset.setup.player2.discard) {
+                    processCardSetup('player2', preset.setup.player2.discard, 'discard');
+                }
                 if (preset.setup.player2.deck) {
                     processCardSetup('player2', preset.setup.player2.deck, 'deck');
                 }

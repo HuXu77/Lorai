@@ -2,13 +2,28 @@
 
 Rules for optimal AI agent collaboration on this project.
 
+## Agentic Workflow
+
+1.  **Task Tracking**: Use `task.md` to break down complex requests into tracked steps.
+2.  **Planning**: Always create `implementation_plan.md` for non-trivial changes. Request user review before execution.
+3.  **Artifacts**: Keep artifacts concise and up-to-date.
+
+## Documentation Maintenance
+
+- **Sync Code & Docs**: If you change architecture or add features, update `docs/ENGINE_ARCHITECTURE.md`.
+- **Ability Inventory**: If you add new ability mechanics, check if `docs/ability_inventory.md` needs updates.
+
 ## File Organization
 
-- **Engine code**: `src/engine/` - Core game logic
-- **UI components**: `src/components/` - React components
-- **Unit tests**: `src/tests/abilities/`, `src/tests/parser/`
-- **E2E tests**: `src/tests/e2e/`
-- **Workflows**: `.agent/workflows/` - Reference before complex tasks
+- **Engine** (`src/engine/`):
+    - `abilities/`: Parsing and execution logic (no validation).
+    - `actions.ts` / `game-actions/`: Validation and orchestration.
+    - `state.ts` / `models.ts`: Passive data structures.
+- **UI** (`src/components/`): React components (keep logic minimal).
+- **Tests**:
+    - `src/tests/mechanics/`: Paired Engine/UI tests for features.
+    - `src/tests/bugs/`: Regression tests for specific issues.
+- **Workflows** (`.agent/workflows/`): Reference for complex tasks.
 
 ## Testing Patterns
 

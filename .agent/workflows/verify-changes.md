@@ -4,11 +4,12 @@ description: Verify changes before pushing (Lint, Build, Test)
 
 Always run these steps before pushing changes to ensure the codebase is stable and buildable.
 
-1. **Verify Build & Types**
-   Run the Next.js build to check for type errors and build issues.
+1. **Verify Production Build (Mandatory)**
+   Run the full production build to catch type errors and ESLint issues.
    ```bash
-   npm run next:build
+   npm run build
    ```
+   *Note: This catches `react/no-unescaped-entities` and other build-time errors that `dev` mode misses.*
 
 2. **Run Tests**
    Ensure all tests pass.
@@ -17,4 +18,4 @@ Always run these steps before pushing changes to ensure the codebase is stable a
    ```
 
 3. **Check Linting (Optional)**
-   If you have a specific lint script, run it. Otherwise, the build step usually covers type checking.
+   Running `npm run lint` explicitly can catch issues faster than the full build, but always do a full build before pushing.

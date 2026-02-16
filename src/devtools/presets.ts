@@ -18,6 +18,7 @@ export interface PlayerSetup {
     play: (string | CardSetup)[];
     inkwell: string[];
     deck?: string[];
+    discard?: string[];
     lore: number;
 }
 

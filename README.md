@@ -45,6 +45,18 @@ npm run test:executor
 npm run test:e2e
 ```
 
+### Coverage Analysis
+
+To analyze the implementation status of card sets and view detailed coverage reports:
+
+```bash
+# Analyze coverage for a specific set (e.g. Set 11 Winterspell)
+npm run analyze:set -- 11
+
+# Analyze coverage for Set 1
+npm run analyze:set -- 1
+```
+
 ### Deployment
 
 This project is optimized for deployment on **Vercel**:

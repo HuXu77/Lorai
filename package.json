@@ -28,7 +28,8 @@
     "validate:abilities:parse-only": "ts-node src/ability-validator.ts --level=1",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug"
+    "test:e2e:debug": "playwright test --debug",
+    "analyze:set": "ts-node src/scripts/analyze-set-coverage.ts"
   },
   "keywords": [
     "lorcana",

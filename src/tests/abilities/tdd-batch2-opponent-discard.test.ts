@@ -204,4 +204,63 @@ describe('TDD Batch 2: Opponent Discard & Reveal', () => {
             expect(p2.hand.length).toBe(1);
         });
     });
+    describe('4. Persistent Reveal State', () => {
+        it('should persist revealed hand state until end of turn', async () => {
+            const p1 = harness.game.getPlayer(harness.p1Id);
+            const p2 = harness.game.getPlayer(harness.p2Id);
+
+            // Setup P1 with Mowgli
+            const mowgli = p1.addCardToZone({
+                id: 'mowgli-persist-1',
+                name: 'Mowgli',
+                type: 'Character' as CardType,
+                cost: 2,
+                abilities: [{
+                    type: 'triggered',
+                    effect: "When you play this character, chosen opponent reveals their hand and discards a non-character card of their choice."
+                }]
+            } as any, ZoneType.Hand);
+
+            (harness.turnManager as any).abilitySystem.registerCard(mowgli);
+
+            p1.addCardToZone({ name: 'Ink', inkwell: true } as any, ZoneType.Inkwell).ready = true;
+            p1.addCardToZone({ name: 'Ink', inkwell: true } as any, ZoneType.Inkwell).ready = true;
+
+            // P2 has a card to discard and one to keep
+            const item = p2.addCardToZone({ name: 'Dinglehopper', type: 'Item' as CardType } as any, ZoneType.Hand);
+            const other = p2.addCardToZone({ name: 'Other Card', type: 'Action' as CardType } as any, ZoneType.Hand);
+
+            harness.turnManager.startGame(p1.id);
+
+            // Initial state: not revealed
+            expect(p2.handRevealed).toBeFalsy();
+            expect(other.revealed).toBeFalsy();
+
+            // Play Mowgli
+            await harness.turnManager.resolveAction({
+                type: ActionType.PlayCard,
+                playerId: p1.id,
+                cardId: mowgli.instanceId,
+                targetId: p2.id,
+                payload: {
+                    discardChoiceId: item.instanceId
+                }
+            });
+
+            // State after ability: revealed
+            expect(p2.handRevealed).toBe(true);
+            expect(other.revealed).toBe(true);
+
+            // Pass turn
+            await harness.turnManager.resolveAction({
+                type: ActionType.PassTurn,
+                playerId: p1.id
+            });
+
+            // State after turn end: hidden again
+            expect(p2.handRevealed).toBe(false);
+            expect(other.revealed).toBe(false);
+        });
+    });
 });
+

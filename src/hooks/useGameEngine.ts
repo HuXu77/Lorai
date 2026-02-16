@@ -111,14 +111,8 @@ export function useGameEngine(options: GameOptions): UseGameEngineReturn {
                 info: (msg: string, data?: any) => {
                     console.log('[INFO]', msg, data);
 
-                    // Handle opponent hand reveal
                     if (msg.includes('reveals hand:')) {
-                        const isOpponent = msg.toLowerCase().includes('bot') ||
-                            msg.toLowerCase().includes('player 2');
-                        if (isOpponent) {
-                            onRevealOpponentHand?.(true);
-                            setTimeout(() => onRevealOpponentHand?.(false), 4000);
-                        }
+                        // Removed legacy log parsing for reveal
                     }
                 },
                 action: (player: string, action: string, details?: any) => {
@@ -351,6 +345,14 @@ export function useGameEngine(options: GameOptions): UseGameEngineReturn {
     const isYourTurn = engineState && engine
         ? engineState.turnPlayerId === engine.humanController.id
         : true;
+
+    // Sync hand reveal state with UI
+    useEffect(() => {
+        if (opponent) {
+            // Note: engine guarantees handRevealed is false at end of turn
+            onRevealOpponentHand?.(!!opponent.handRevealed);
+        }
+    }, [opponent?.handRevealed, onRevealOpponentHand]);
 
     return {
         engine,
