@@ -26,6 +26,7 @@ export function executeSetPhase(turnManager: TurnManager, player: PlayerState): 
     abilitySystem.emitEvent(GameEvent.TURN_START, {
         player,
         event: GameEvent.TURN_START,
+        gameState: turnManager.game,
         timestamp: Date.now()
     });
 

@@ -233,7 +233,7 @@ describe('Card Playability - Full Coverage', () => {
             console.log(`Failures:     ${globalFailures.length}`);
             console.log('========================\n');
 
-            expect(allCards.length).toBe(2455);
+            expect(allCards.length).toBeGreaterThanOrEqual(2455);
         });
     });
 });

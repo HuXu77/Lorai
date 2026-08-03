@@ -445,7 +445,6 @@ export class EffectExecutor {
                 await this.executeInkFromHand(effect as any, context);
                 break;
             case 'mill_to_inkwell':
-            case 'one_to_hand_rest_bottom':
                 {
                     const handler = this.familyHandlers.get('specialized');
                     if (handler) {
@@ -474,7 +473,7 @@ export class EffectExecutor {
             //     await this.executeMoveDamage(effect as any, context);
             //     break;
             case 'prevent_damage':
-                // case 'prevent_next_damage': // Already handled above
+                // Routed to the prevention family, which registers a damage shield.
                 if (this.familyHandlers.has('prevention')) {
                     await this.familyHandlers.get('prevention').execute(effect, context);
                 }
@@ -648,7 +647,6 @@ export class EffectExecutor {
             case 'remove_all_damage':
             case 'damage_reflection':
             case 'redirect_damage':
-            case 'prevent_damage':
             case 'prevent_damage_removal':
             case 'prevent_damage_high_strength':
             case 'multi_target_damage':
@@ -668,8 +666,9 @@ export class EffectExecutor {
                 }
                 break;
 
-            // === READY/EXERT FAMILY === (13 types) - routed to family handler
-            case 'ready':
+            // === READY/EXERT FAMILY === - routed to family handler
+            // NOTE: 'ready' is handled above via executeReadyCard (readies chosen cards
+            // and can raise a pendingChoice), so it is intentionally not routed here.
             case 'prevent_ready':
             case 'ready_after_challenge':
             case 'exert_characters':
@@ -3310,11 +3309,7 @@ export class EffectExecutor {
                     return Object.values(this.turnManager.game.state.players);
                 }
                 return [];
-            case 'variable':
-                if (context.variables && context.variables[target.name]) {
-                    return [context.variables[target.name]];
-                }
-                return [];
+
             case 'each_opposing_character':
                 // Same as all_opposing_characters but semantically "each" for clarity
                 if (this.turnManager) {
@@ -3355,16 +3350,6 @@ export class EffectExecutor {
                 // Return the card that triggered the ability
                 if (context.eventContext && context.eventContext.card) {
                     return [context.eventContext.card];
-                }
-                return [];
-            case 'chosen_location':
-                // Return chosen location (for now, filter player's locations)
-                if (this.turnManager && context.player) {
-                    const locations = context.player.play.filter((c: any) => c.type === 'Location');
-                    if (target.filter) {
-                        return locations.filter((loc: any) => this.checkFilter(loc, target.filter, context));
-                    }
-                    return locations;
                 }
                 return [];
             case 'all_opposing_cards':
