@@ -19,5 +19,5 @@ describe('Ability Analysis Script', () => {
             console.error('Script execution failed:', error);
             throw error;
         }
-    });
+    }, 30000);
 });

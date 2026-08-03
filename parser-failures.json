@@ -1,1 +1,597 @@
-[]
+[
+  {
+    "name": "Beast - Relentless",
+    "abilities": [
+      "SECOND WIND Whenever an opposing character takes damage, you may ready this character."
+    ]
+  },
+  {
+    "name": "Beast - Relentless",
+    "abilities": [
+      "SECOND WIND Whenever an opposing character takes damage, you may ready this character."
+    ]
+  },
+  {
+    "name": "Hydra - Deadly Serpent",
+    "abilities": [
+      "WATCH THE TEETH Whenever this character takes damage, deal that much damage to chosen opposing character."
+    ]
+  },
+  {
+    "name": "Nathaniel Flint - Notorious Pirate",
+    "abilities": [
+      "PREDATORY INSTINCT You can't play this character unless an opposing character took damage this turn."
+    ]
+  },
+  {
+    "name": "Grandmother Willow - Ancient Advisor",
+    "abilities": [
+      "SMOOTH THE WAY Once during your turn, you pay 1 ⬡ less for the next character you play this turn."
+    ]
+  },
+  {
+    "name": "Cobra Bubbles - Dedicated Official",
+    "abilities": [
+      "AURA OF AUTHORITY Whenever this character quests, chosen opposing character can't challenge and must quest during their next turn if able."
+    ]
+  },
+  {
+    "name": "John Smith's Compass",
+    "abilities": [
+      "SPINNING ARROW At the end of your turn, if a character of yours challenged this turn, banish this item.",
+      "YOUR PATH At the end of your turn, if none of your characters challenged this turn, reveal the top card of your deck. If it's a character card with cost 3 or less or named Pocahontas, you may put it into your hand. Otherwise, put it on the bottom of your deck."
+    ]
+  },
+  {
+    "name": "Pocahontas - Following the Wind",
+    "abilities": [
+      "WHAT IS MY PATH? Whenever this character quests, gain lore equal to another chosen exerted character's ◊."
+    ]
+  },
+  {
+    "name": "Anna - Soothing Sister",
+    "abilities": [
+      "UNUSUAL TRANSFORMATION If a card left a player's discard this turn, this card gains Shift 0 ⬡. (You may pay 0 ⬡ to play this on top of one of your characters named Anna.)",
+      "WARM HEART Whenever this character quests, you may gain lore equal to the ◊ of a character card in your discard. If you do, put that card on the bottom of your deck."
+    ]
+  },
+  {
+    "name": "Anna - Little Sister",
+    "abilities": [
+      "UNEXPECTED DISCOVERY When you play this character, you may put a card from chosen player's discard on the bottom of their deck."
+    ]
+  },
+  {
+    "name": "Marshmallow - Cranky Climber",
+    "abilities": [
+      "ICY BLAST Whenever this character quests, each opponent can't ready more than 1 of their characters at the start of their next turn."
+    ]
+  },
+  {
+    "name": "HeiHei - Persistent Presence",
+    "abilities": [
+      "HE'S BACK! When this character is banished in a challenge, return this card from your discard to your hand."
+    ]
+  },
+  {
+    "name": "The Frozen Vine - Monstrous Plant",
+    "abilities": [
+      "PERSISTENT PROBLEM When this location is banished, if there was an exerted character here, return this card from your discard to your hand."
+    ]
+  },
+  {
+    "name": "Mulan - Resourceful Recruit",
+    "abilities": [
+      "RIGOROUS TRAINING Whenever this character quests, gain lore equal to her ¤, to a maximum of 6 lore."
+    ]
+  },
+  {
+    "name": "Chernabog - Unnatural Force",
+    "abilities": [
+      "DARK DANCE When you play this character, you may shuffle chosen opposing character into their player's deck. If you do, that player may play a character from their discard for free."
+    ]
+  },
+  {
+    "name": "Copper - Hound Pup",
+    "abilities": [
+      "FOUND YA When you play this character, chosen player reveals their hand."
+    ]
+  },
+  {
+    "name": "Game Preserve - Protected Land",
+    "abilities": [
+      "EASY TO MISS While there's a character with Evasive here, this location gains Evasive. (Only characters with Evasive can challenge it.)"
+    ]
+  },
+  {
+    "name": "Kristoff's Lute",
+    "abilities": [
+      "MOMENT OF INSPIRATION ⟳, 2 ⬡ — Reveal the top card of your deck. You may play it as if it were in your hand. Otherwise, put it in your discard."
+    ]
+  },
+  {
+    "name": "Graveyard of Christmas Future - Lonely Resting Place",
+    "abilities": [
+      "NEW ARRIVAL Whenever you move a character here, put the top card of your deck under this location facedown.",
+      "ANOTHER CHANCE At the start of your turn, you may put all cards from under this location into your hand. If you do, banish this location."
+    ]
+  },
+  {
+    "name": "Beast's Castle - Winter Gardens",
+    "abilities": [
+      "SNOWBALL STANDOFF Whenever a character here challenges another character, gain 1 lore."
+    ]
+  },
+  {
+    "name": "Roo - Little Helper",
+    "abilities": [
+      "HOPPING IN ⟳ — Put this character facedown under one of your characters or locations with Boost."
+    ]
+  },
+  {
+    "name": "Moana - Curious Explorer",
+    "abilities": [
+      "ANCESTRAL LEGACY You can ink cards from your discard."
+    ]
+  },
+  {
+    "name": "Belle - Snowfield Strategist",
+    "abilities": [
+      "WINTER STOCKPILE Whenever one of your characters is banished, you may put that card from your discard into your inkwell facedown and exerted."
+    ]
+  },
+  {
+    "name": "Mickey Mouse - Bob Cratchit",
+    "abilities": [
+      "HARD WORK Whenever this character quests, put the top card of your deck facedown under him.",
+      "A GIVING HEART When this character is banished in a challenge, you may put all cards that were under him under another chosen character or location of yours."
+    ]
+  },
+  {
+    "name": "Launchpad - Hideout Defender",
+    "abilities": [
+      "STAND GUARD Your locations gain Resist +1. (Damage dealt to them is reduced by 1.)"
+    ]
+  },
+  {
+    "name": "Angela - Night Warrior",
+    "abilities": [
+      "SHADOW POWER When you play this character, you may give chosen character Challenger +2 and Resist +2 until the start of your next turn. (They get +2 ¤ while challenging. Damage dealt to them is reduced by 2.)",
+      "ETERNAL NIGHT Your Gargoyle characters lose the Stone by Day ability."
+    ]
+  },
+  {
+    "name": "Lilo - Bundled Up",
+    "abilities": [
+      "EXTRA LAYERS During each opponent's turn, the first time this character would take damage, she takes no damage instead."
+    ]
+  },
+  {
+    "name": "Grandmother Willow - Ancient Advisor",
+    "abilities": [
+      "SMOOTH THE WAY Once during your turn, you pay 1 ⬡ less for the next character you play this turn."
+    ]
+  },
+  {
+    "name": "Anna - Little Sister",
+    "abilities": [
+      "UNEXPECTED DISCOVERY When you play this character, you may put a card from chosen player's discard on the bottom of their deck."
+    ]
+  },
+  {
+    "name": "Mickey Mouse - Bob Cratchit",
+    "abilities": [
+      "HARD WORK Whenever this character quests, put the top card of your deck facedown under him.",
+      "A GIVING HEART When this character is banished in a challenge, you may put all cards that were under him under another chosen character or location of yours."
+    ]
+  },
+  {
+    "name": "Mulan - Resourceful Recruit",
+    "abilities": [
+      "RIGOROUS TRAINING Whenever this character quests, gain lore equal to her ¤, to a maximum of 6 lore."
+    ]
+  },
+  {
+    "name": "Belle - Snowfield Strategist",
+    "abilities": [
+      "WINTER STOCKPILE Whenever one of your characters is banished, you may put that card from your discard into your inkwell facedown and exerted."
+    ]
+  },
+  {
+    "name": "Moana - Curious Explorer",
+    "abilities": [
+      "ANCESTRAL LEGACY You can ink cards from your discard."
+    ]
+  },
+  {
+    "name": "Monterey Jack - Watchful Ranger",
+    "abilities": [
+      "BIRD'S-EYE VIEW When you play this character, you may reveal the top card of your deck. If it's a character card, you may put it into your hand. Otherwise, put it on the bottom of your deck."
+    ]
+  },
+  {
+    "name": "Dolores Madrigal - Hears Everything",
+    "abilities": [
+      "NO SECRETS When you play this character, look at chosen opponent's hand."
+    ]
+  },
+  {
+    "name": "Ariel - Curious Traveler",
+    "abilities": [
+      "FAMILIAR GROUND Whenever this character quests, if you played another character this turn, chosen opposing character can't challenge and must quest during their next turn if able."
+    ]
+  },
+  {
+    "name": "Dale - Ready for His Shot",
+    "abilities": [
+      "SPIKE SUIT During challenges, your characters deal damage with their ⛉ instead of their ¤."
+    ]
+  },
+  {
+    "name": "Andy's Room - Home Base",
+    "abilities": [
+      "ANDY'S FAVORITE While you have only 1 character here, they get +2 ⛉ and +1 ◊."
+    ]
+  },
+  {
+    "name": "Hamish, Hubert & Harris - Making Mischief",
+    "abilities": [
+      "STAY QUIET This character may enter play exerted.",
+      "CLEVER TRAP At the end of your turn, if this character is exerted, chosen opposing character can't ready at the start of their next turn."
+    ]
+  },
+  {
+    "name": "Mor'du - Savage Cursed Prince",
+    "abilities": [
+      "FEROCIOUS ROAR When you play this character, exert all your characters not named Mor'du.",
+      "ROOTED BY FEAR Your characters not named Mor'du can't ready at the start of your turn."
+    ]
+  },
+  {
+    "name": "Buzz Lightyear - On the Way",
+    "abilities": [
+      "SECRET MISSION Whenever you pay 2 ⬡ or less to play a non-character, draw a card, then choose and discard a card.",
+      "WORLD'S GREATEST TOY Whenever you pay 2 ⬡ or less to play a character, deal 1 damage to chosen opposing damaged character."
+    ]
+  },
+  {
+    "name": "Joshua Sweet - Field Surgeon",
+    "abilities": [
+      "NO PATIENCE Whenever this character is challenged, chosen opponent chooses and discards a card."
+    ]
+  },
+  {
+    "name": "Buzz's Arm",
+    "abilities": [
+      "MISSING PIECE If a character named Buzz Lightyear was banished this turn, you may play this item for free.",
+      "SOME ASSEMBLY REQUIRED ⟳ — You pay 1 ⬡ less for the next action or item you play this turn."
+    ]
+  },
+  {
+    "name": "The Claw",
+    "abilities": [
+      "THE CLAW CHOOSES ⟳, 2 ⬡, Banish one of your characters — Return chosen opposing character to their player's hand."
+    ]
+  },
+  {
+    "name": "Preston Whitmore - Expedition Financier",
+    "abilities": [
+      "PRICE OF PROGRESS When you play this character, you may put the top 2 cards of your deck into your discard."
+    ]
+  },
+  {
+    "name": "Roller Bob - Sid's Toy",
+    "abilities": [
+      "TIME TO MOVE When you play this character, you may put 2 character cards from your discard on the bottom of your deck to give this character Rush this turn. (They can challenge the turn they're played.)"
+    ]
+  },
+  {
+    "name": "Hercules - Young Rescuer",
+    "abilities": [
+      "HEROIC SACRIFICE When you play this character, you may discard your hand. If you do, return a card from your discard to your hand."
+    ]
+  },
+  {
+    "name": "The Leviathan - Guardian of Atlantis",
+    "abilities": [
+      "IT'S A MACHINE! When you play this character, if 2 or more cards were put into your discard this turn, you may banish any number of chosen opposing characters with total ¤ 10 or less."
+    ]
+  },
+  {
+    "name": "Bruno Madrigal - Seeing the Future",
+    "abilities": [
+      "CHANGE THE OUTCOME When you play this character, you may look at the top card of chosen player's deck. Put it on either the top or the bottom of their deck."
+    ]
+  },
+  {
+    "name": "Escape Plan",
+    "abilities": [
+      "You can't play this action unless 2 or more cards were put into your discard this turn."
+    ]
+  },
+  {
+    "name": "Lord Macintosh - Wiry and High-Strung",
+    "abilities": [
+      "TOUGH IT OUT This character may enter play exerted to give chosen character Resist +2 until the start of your next turn. (Damage dealt to them is reduced by 2.)"
+    ]
+  },
+  {
+    "name": "Mr. Incredible - Taking Out the Trash",
+    "abilities": [
+      "KA-POW! When you play this character, you may deal 2 damage to chosen opposing Robot or Villain character."
+    ]
+  },
+  {
+    "name": "Lord Dingwall - Bullheaded",
+    "abilities": [
+      "FIGHTIN' TALK This character may enter play exerted to give chosen character Challenger +3 this turn. (They get +3 ¤ while challenging.)"
+    ]
+  },
+  {
+    "name": "Fat Cat - Criminal Businessman",
+    "abilities": [
+      "WORTHY INVESTMENT Your locations gain Resist +1. (Damage dealt to them is reduced by 1.)"
+    ]
+  },
+  {
+    "name": "The Leviathan - Guardian of Atlantis",
+    "abilities": [
+      "IT'S A MACHINE! When you play this character, if 2 or more cards were put into your discard this turn, you may banish any number of chosen opposing characters with total ¤ 10 or less."
+    ]
+  },
+  {
+    "name": "Ariel - Curious Traveler",
+    "abilities": [
+      "FAMILIAR GROUND Whenever this character quests, if you played another character this turn, chosen opposing character can't challenge and must quest during their next turn if able."
+    ]
+  },
+  {
+    "name": "Pocahontas - Guiding the Tribe",
+    "abilities": [
+      "STAY CLOSE When you play this character, you may play a character with cost 1 for free."
+    ]
+  },
+  {
+    "name": "Woody - Town Sheriff",
+    "abilities": [
+      "MOVE ALONG When you play this character, until the start of your next turn, chosen opposing character can't challenge and must quest if able."
+    ]
+  },
+  {
+    "name": "Mike Wazowski - Heroic Climber",
+    "abilities": [
+      "FIND A FRIEND When you play this character and whenever he quests, each player reveals the top card of their deck. If it's a character card, they may put it into their hand. Otherwise, put it on the bottom of their deck."
+    ]
+  },
+  {
+    "name": "The Horned King - Merciless Master",
+    "abilities": [
+      "CAULDRON'S POWER While this character is exerted, you may play characters from your discard. If you do, they enter play exerted. (You pay all costs.)"
+    ]
+  },
+  {
+    "name": "Mirabel Madrigal - Family Guardian",
+    "abilities": [
+      "MIRACULOUS PROTECTION Whenever you remove damage from one of your characters, you may ready them. If you do, they can't quest or challenge for the rest of this turn."
+    ]
+  },
+  {
+    "name": "Powhatan's Staff",
+    "abilities": [
+      "STEP FORWARD ⟳, 1 ⬡ — The next character you play this turn enters play exerted and gains Bodyguard until the start of your next turn. (An opposing character who challenges one of your characters must choose one with Bodyguard if able.)"
+    ]
+  },
+  {
+    "name": "Abu - Wise Sultan",
+    "abilities": [
+      "RULER FOR A DAY When this character quests, banish him."
+    ]
+  },
+  {
+    "name": "Meilin Lee - Superficially Obedient",
+    "abilities": [
+      "NEWFOUND CONFIDENCE When you shift a character on top of her, this character gains Evasive until the start of your next turn. (Only characters with Evasive can challenge them.)"
+    ]
+  },
+  {
+    "name": "Ming Lee - Overprotective Parent",
+    "abilities": [
+      "YOU'RE GROUNDED When you shift a character on top of this character, chosen opposing exerted character can't ready at the start of their next turn."
+    ]
+  },
+  {
+    "name": "Hera - Created by the Vine",
+    "abilities": [
+      "MYSTICAL BOON Whenever you play this or another Floodborn character, gain 1 lore."
+    ]
+  },
+  {
+    "name": "Morph - Little Imitator",
+    "abilities": [
+      "ADVANCED MIMICRY You can shift any character on top of this character. (This includes all Shift variants.)"
+    ]
+  },
+  {
+    "name": "Christopher Robin - Hunny Sage",
+    "abilities": [
+      "GATHER THE PARTY You can have other Hunny characters in your deck regardless of ink type.",
+      "MAGICAL SUMMONS When you play this character, you may search your deck for a Hunny card, reveal it, and put it in your hand. If you do, shuffle your deck."
+    ]
+  },
+  {
+    "name": "Broken Pod",
+    "abilities": [
+      "RENEWAL PROCESS ⟳, 1 ⬡ — Put a card from chosen player's discard on the bottom of their deck."
+    ]
+  },
+  {
+    "name": "Magical Hunny Staff",
+    "abilities": [
+      "GIFT OF THE HIVE Once during your turn, you may pay 1 ⬡ to give chosen character of yours the Hunny classification until the start of your next turn.",
+      "SPELL OF SWIFTNESS ⟳, 2 ⬡ — Chosen Hunny character of yours gains Evasive until the start of your next turn. (Only characters with Evasive can challenge them.)"
+    ]
+  },
+  {
+    "name": "Ellie Fredricksen - Loving Wife",
+    "abilities": [
+      "ADVENTUROUS HEART Whenever you play a location, gain 1 lore."
+    ]
+  },
+  {
+    "name": "Buzz Lightyear - Grounded",
+    "abilities": [
+      "NOT A FLYING TOY This character can't gain Evasive."
+    ]
+  },
+  {
+    "name": "Russell - Junior Wilderness Explorer",
+    "abilities": [
+      "ASSISTING THE ELDERLY BADGE Whenever this character quests, you may move him and one of your other characters to the same location for free."
+    ]
+  },
+  {
+    "name": "Kevin - Flightless Bird",
+    "abilities": [
+      "BACK TO THE NEST Whenever this character quests, put this card on the top of your deck."
+    ]
+  },
+  {
+    "name": "Peter Pan - Created by the Vine",
+    "abilities": [
+      "CLEVER TRICK Whenever one of your Floodborn characters is challenged, the challenging player chooses and discards a card."
+    ]
+  },
+  {
+    "name": "Mother Gothel - Evil as Ever",
+    "abilities": [
+      "MUMMY'S BACK During your turn, when you discard this card, you may play this character from your discard. (You pay all costs.)"
+    ]
+  },
+  {
+    "name": "Rapunzel - Escaping the Tower",
+    "abilities": [
+      "THE CALL OF ADVENTURE Once during your turn, you may discard a card to give this character +1 ◊ and Evasive until the start of your next turn. (Only characters with Evasive can challenge them.)"
+    ]
+  },
+  {
+    "name": "My Adventure Book",
+    "abilities": [
+      "NEW MEMORIES ⟳, 1 ⬡ — Reveal the top card of your deck. If it's a non-character card or a character card named Kevin, put it into your hand. Otherwise, put it on the bottom of your deck."
+    ]
+  },
+  {
+    "name": "Paradise Falls - Exotic Destination",
+    "abilities": [
+      "QUITE A SIGHT While you have a character here, this location gets +3 ◊."
+    ]
+  },
+  {
+    "name": "Carl Fredricksen - On the Move",
+    "abilities": [
+      "MOVING PARTNER Whenever you play a location, you may move this character and up to 1 of your other characters to that location for free.",
+      "ADVENTURE AWAITS Whenever this character quests while at a location, draw cards equal to that location's ◊."
+    ]
+  },
+  {
+    "name": "Colonel Hathi - On the March",
+    "abilities": [
+      "HUP, TWO, THREE, FOUR Whenever this character quests, you may move him to one of your locations for free."
+    ]
+  },
+  {
+    "name": "Roz - Always Watching",
+    "abilities": [
+      "ALWAYS Each opponent plays with the top card of their deck faceup."
+    ]
+  },
+  {
+    "name": "Belle - Always Reading",
+    "abilities": [
+      "DREAMING OF MORE You pay 1 ⬡ less to shift a character on top of this character."
+    ]
+  },
+  {
+    "name": "Maid Marian - Created by the Vine",
+    "abilities": [
+      "INKFLOW Whenever one of your Floodborn characters is banished, you may put the top card of your deck into your inkwell facedown and exerted."
+    ]
+  },
+  {
+    "name": "Eeyore - Hunny Scholar",
+    "abilities": [
+      "HUNNY TACTICS Whenever this character quests, chosen Hunny character of yours gets +1 ◊ and gains Ward until the start of your next turn. (Opponents can't choose them except to challenge.)"
+    ]
+  },
+  {
+    "name": "Big Book of Hunny",
+    "abilities": [
+      "INVOKE HUNNY ⟳, 2 ⬡ — Reveal the top card of your deck. If it's a Hunny card, put it into your hand. Otherwise, put it on the bottom of your deck."
+    ]
+  },
+  {
+    "name": "Mulan - Created by the Vine",
+    "abilities": [
+      "DEMOLISH Whenever you play this or another Floodborn character, you may banish chosen item."
+    ]
+  },
+  {
+    "name": "Mother Gothel - Evil as Ever",
+    "abilities": [
+      "MUMMY'S BACK During your turn, when you discard this card, you may play this character from your discard. (You pay all costs.)"
+    ]
+  },
+  {
+    "name": "Kevin - Flightless Bird",
+    "abilities": [
+      "BACK TO THE NEST Whenever this character quests, put this card on the top of your deck."
+    ]
+  },
+  {
+    "name": "Peter Pan - Created by the Vine",
+    "abilities": [
+      "CLEVER TRICK Whenever one of your Floodborn characters is challenged, the challenging player chooses and discards a card."
+    ]
+  },
+  {
+    "name": "Roz - Always Watching",
+    "abilities": [
+      "ALWAYS Each opponent plays with the top card of their deck faceup."
+    ]
+  },
+  {
+    "name": "Mulan - Created by the Vine",
+    "abilities": [
+      "DEMOLISH Whenever you play this or another Floodborn character, you may banish chosen item."
+    ]
+  },
+  {
+    "name": "Mike Wazowski - Heroic Climber",
+    "abilities": [
+      "FIND A FRIEND When you play this character and whenever he quests, each player reveals the top card of their deck. If it's a character card, they may put it into their hand. Otherwise, put it on the bottom of their deck."
+    ]
+  },
+  {
+    "name": "Morph - Little Imitator",
+    "abilities": [
+      "ADVANCED MIMICRY You can shift any character on top of this character. (This includes all Shift variants.)"
+    ]
+  },
+  {
+    "name": "Rapunzel - Escaping the Tower",
+    "abilities": [
+      "THE CALL OF ADVENTURE Once during your turn, you may discard a card to give this character +1 ◊ and Evasive until the start of your next turn. (Only characters with Evasive can challenge them.)"
+    ]
+  },
+  {
+    "name": "Rapunzel - Escaping the Tower",
+    "abilities": [
+      "THE CALL OF ADVENTURE Once during your turn, you may discard a card to give this character +1 ◊ and Evasive until the start of your next turn. (Only characters with Evasive can challenge them.)"
+    ]
+  },
+  {
+    "name": "Pocahontas - Guiding the Tribe",
+    "abilities": [
+      "STAY CLOSE When you play this character, you may play a character with cost 1 for free."
+    ]
+  }
+]

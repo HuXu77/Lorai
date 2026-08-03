@@ -29,7 +29,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "analyze:set": "ts-node src/scripts/analyze-set-coverage.ts"
+    "analyze:set": "ts-node src/scripts/analyze-set-coverage.ts",
+    "update:cards": "ts-node src/scripts/update-cards.ts"
   },
   "keywords": [
     "lorcana",

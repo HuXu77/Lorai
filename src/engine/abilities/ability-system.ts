@@ -186,6 +186,10 @@ export class AbilitySystemManager {
      * - Queued (useQueue=true): Add to queue for turn-order resolution
      */
     async emitEvent(event: GameEvent, context: any): Promise<void> {
+        if (!context.gameState && this.turnManager?.game) {
+            context.gameState = this.turnManager.game;
+        }
+        
         const triggered = this.eventBus.emit(event, context);
 
         if (triggered.length > 0) {

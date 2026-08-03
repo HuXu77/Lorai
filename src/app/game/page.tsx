@@ -261,9 +261,9 @@ function GamePageInner() {
                 // the actual engine state remains unchanged!
                 const realPlayer = gameEngine.stateManager.state.players[yourPlayer.id];
                 if (realPlayer) {
-                    console.log('[WARD DEBUG] handlePlayCard: Calling turnManager.playCard for', card.name);
+
                     const success = await gameEngine.turnManager.playCard(realPlayer as any, card.instanceId);
-                    console.log('[WARD DEBUG] handlePlayCard: result =', success);
+
                     if (!success) {
                         console.error("Engine returned failure for playCard");
                         addLogEntry({
@@ -345,9 +345,9 @@ function GamePageInner() {
         if (!player) return;
 
         try {
-            console.log('[WARD DEBUG] Calling turnManager.playCard for', cardToPlay.name);
+
             const success = await gameEngine.turnManager.playCard(player as any, cardToPlay.instanceId);
-            console.log('[WARD DEBUG] playCard result:', success);
+
 
             addLogEntry({
                 category: LogCategory.CARD,
@@ -357,7 +357,7 @@ function GamePageInner() {
 
             gameEngine.humanController.updateState(gameEngine.stateManager.state);
         } catch (error) {
-            console.error('[WARD DEBUG] playCard threw error:', error);
+            console.error('playCard threw error:', error);
             addLogEntry({
                 category: LogCategory.SYSTEM,
                 message: `Failed to play ${cardToPlay.name}: ${error}`,

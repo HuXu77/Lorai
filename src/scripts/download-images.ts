@@ -18,6 +18,7 @@ interface CardData {
         thumbnail?: string;
         foilMask?: string;
     };
+    subtypes?: string[];
 }
 
 interface AllCardsData {
@@ -133,6 +134,7 @@ async function main() {
     let force = false;
     let concurrency = 10;
     let targetSet: string | null = null;
+    let targetSubtype: string | null = null;
 
     for (let i = 0; i < args.length; i++) {
         const arg = args[i];
@@ -149,6 +151,9 @@ async function main() {
             case '--set':
                 targetSet = args[++i];
                 break;
+            case '--subtype':
+                targetSubtype = args[++i];
+                break;
             case '--help':
                 console.log(`
 Usage: npx ts-node src/scripts/download-images.ts [options]
@@ -158,6 +163,7 @@ Options:
   --force                              Re-download existing images
   --concurrency <number>               Number of parallel downloads (default: 10)
   --set <setCode>                      Download only specific set
+  --subtype <subtype>                  Download only specific subtype (e.g., Dreamborn)
   --help                               Show this help message
         `);
                 process.exit(0);
@@ -179,7 +185,15 @@ Options:
     if (targetSet) {
         cards = cards.filter(card => card.setCode === targetSet);
         console.log(`🎯 Filtering to set ${targetSet}: ${cards.length} cards`);
-    } else {
+    }
+
+    // Filter by subtype if specified
+    if (targetSubtype) {
+        cards = cards.filter(card => card.subtypes?.includes(targetSubtype!));
+        console.log(`🎯 Filtering to subtype ${targetSubtype}: ${cards.length} cards`);
+    }
+
+    if (!targetSet && !targetSubtype) {
         console.log(`📊 Total cards: ${cards.length}`);
     }
 
